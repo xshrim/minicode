@@ -1,2 +1,0 @@
-# minicode
-Just test
