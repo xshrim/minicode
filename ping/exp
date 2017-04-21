@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+set timeout 20  
+spawn ssh root@110.1.1.65  
+expect {  
+"*yes/no*" {send "yes\r"; exp_continue}
+"*password:" {send "redhat\r"}  
+}  
+expect {
+"*$*" {send "ps -ef > test.txt\r"}
+"*#*" {send "ps -ef > test.txt\r"}
+}
+expect {
+"*$*" {send "scp test.txt root@110.1.1.215:/root/\r"}
+"*#*" {send "scp test.txt root@110.1.1.215:/root/\r"}
+}
+expect {  
+"*yes/no*" {send "yes\r"}
+"*password:" {send "redhat\r"}  
+}
+expect {
+"*$*" {send "exit\r"}
+"*#*" {send "exit\r"}
+}
+expect eof
+#interact  
