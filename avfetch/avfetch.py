@@ -10,6 +10,7 @@ import socks
 import getopt
 import socket
 import chardet
+import sqlite3
 from urllib import request
 # from urllib import parse
 from pyquery import PyQuery
@@ -18,17 +19,18 @@ from pyquery import PyQuery
 
 
 class av:
-    code = '' 
+    code = ''
     title = ''
     issuedate = ''
     length = ''
     director = ''
     category = ''
     actors = ''
-    preview = ''
+    coverlink = ''
+    cover = b''
     links = ''
 
-    def __init__(self, code, title, issuedate, length, director, category, actors, preview, links):
+    def __init__(self, code, title, issuedate, length, director, category, actors, coverlink, cover, links):
         self.code = code
         self.title = title
         self.issuedate = issuedate
@@ -36,7 +38,8 @@ class av:
         self.director = director
         self.category = category
         self.actors = actors
-        self.preview = preview
+        self.coverlink = coverlink
+        self.cover = cover
         self.links = links
 
     def display(self):
@@ -47,7 +50,7 @@ class av:
         print('导演:'.rjust(5) + self.director)
         print('类别:'.rjust(5) + self.category)
         print('女优:'.rjust(5) + self.actors)
-        print('预览:'.rjust(5) + self.preview)
+        print('预览:'.rjust(5) + self.coverlink)
         print('磁链:'.rjust(5) + self.links)
 
 
@@ -71,6 +74,149 @@ class avlinkinfo:
         print(self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' +
               self.hot + ' -- ' + self.size + ' -- ' + self.link)
 
+######################################### DB START#########################################
+
+
+def get_conn(path):
+    '''获取到数据库的连接对象，参数为数据库文件的绝对路径
+    如果传递的参数是存在，并且是文件，那么就返回硬盘上面改
+    路径下的数据库文件的连接对象；否则，返回内存中的数据接
+    连接对象'''
+    conn = sqlite3.connect(path)
+    if os.path.exists(path) and os.path.isfile(path):
+        # print('硬盘上面:[{}]'.format(path))
+        return conn
+    else:
+        conn = None
+        # print('内存上面:[:memory:]')
+        return sqlite3.connect(':memory:')
+
+
+def get_cursor(conn):
+    '''该方法是获取数据库的游标对象，参数为数据库的连接对象
+    如果数据库的连接对象不为None，则返回数据库连接对象所创
+    建的游标对象；否则返回一个游标对象，该对象是内存中数据
+    库连接对象所创建的游标对象'''
+    if conn is not None:
+        return conn.cursor()
+    else:
+        return get_conn('').cursor()
+
+
+def drop_table(conn, table):
+    '''如果表存在,则删除表，如果表中存在数据的时候，使用该
+    方法的时候要慎用！'''
+    if table is not None and table != '':
+        sql = 'DROP TABLE IF EXISTS ' + table
+        # print('执行sql:[{}]'.format(sql))
+        cu = get_cursor(conn)
+        cu.execute(sql)
+        conn.commit()
+        print('删除数据库表[{}]成功!'.format(table))
+        close_all(conn, cu)
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+
+def create_table(conn, sql):
+    '''创建数据库表'''
+    if sql is not None and sql != '':
+        cu = get_cursor(conn)
+        # print('执行sql:[{}]'.format(sql))
+        cu.execute(sql)
+        conn.commit()
+        # print('创建数据库表成功!'
+        close_all(conn, cu)
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+
+def close_all(conn, cu):
+    '''关闭数据库游标对象和数据库连接对象'''
+    try:
+        if cu is not None:
+            cu.close()
+    finally:
+        if cu is not None:
+            cu.close()
+
+
+def save(conn, sql, data):
+    '''插入数据'''
+    if sql is not None and sql != '':
+        if data is not None:
+            cu = get_cursor(conn)
+            for d in data:
+                # print('执行sql:[{}],参数:[{}]'.format(sql, d))
+                cu.execute(sql, d)
+                conn.commit()
+            close_all(conn, cu)
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+
+def fetchall(conn, sql):
+    '''查询所有数据'''
+    if sql is not None and sql != '':
+        cu = get_cursor(conn)
+        # print('执行sql:[{}]'.format(sql))
+        cu.execute(sql)
+        r = cu.fetchall()
+        if len(r) > 0:
+            for e in range(len(r)):
+                print(r[e])
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+
+def fetchone(conn, sql, data):
+    '''查询一条数据'''
+    if sql is not None and sql != '':
+        if data is not None:
+            # Do this instead
+            d = (data,)
+            cu = get_cursor(conn)
+            # print('执行sql:[{}],参数:[{}]'.format(sql, data))
+            cu.execute(sql, d)
+            r = cu.fetchall()
+            if len(r) > 0:
+                for e in range(len(r)):
+                    print(r[e])
+        else:
+            print('the [{}] equal None!'.format(data))
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+
+def update(conn, sql, data):
+    '''更新数据'''
+    if sql is not None and sql != '':
+        if data is not None:
+            cu = get_cursor(conn)
+            for d in data:
+                # print('执行sql:[{}],参数:[{}]'.format(sql, d))
+                cu.execute(sql, d)
+                conn.commit()
+            close_all(conn, cu)
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+
+def delete(conn, sql, data):
+    '''删除数据'''
+    if sql is not None and sql != '':
+        if data is not None:
+            cu = get_cursor(conn)
+            for d in data:
+                # print('执行sql:[{}],参数:[{}]'.format(sql, d))
+                cu.execute(sql, d)
+                conn.commit()
+            close_all(conn, cu)
+    else:
+        print('the [{}] is empty or equal None!'.format(sql))
+
+######################################### DB END#########################################
+
 
 def curDir():
     try:
@@ -93,7 +239,7 @@ def charDetect(data):
             except:
                 continue
     return ''
-        
+
 
 def getHTML(url, timeout, retry, sleep, proxy=''):
     proxyDict = {}
@@ -132,7 +278,7 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
             data = opener.open(url)
             headertype = str(data.info()['Content-Type']).lower()
             contents = data.read()
-            #if 'text/html' in headertype or 'text/xml' in headertype or 'text/asp' in headertype or 'text/css' in headertype or 'text/plain' in headertype or 'text/scriptlet' in headertype or 'text/h323' in headertype or 'text/asa' in headertype:
+            # if 'text/html' in headertype or 'text/xml' in headertype or 'text/asp' in headertype or 'text/css' in headertype or 'text/plain' in headertype or 'text/scriptlet' in headertype or 'text/h323' in headertype or 'text/asa' in headertype:
             if 'text/' in headertype:
                 chartype = charDetect(contents)
                 contents = contents.decode(chartype)
@@ -153,7 +299,7 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
         pattern = re.compile(r'[A-Za-z]+-\d+')
         if type == 'file':
             sfile = os.path.join(curDir(), keyword)
-            chartype = charDetect(open(sfile,'rb').read())
+            chartype = charDetect(open(sfile, 'rb').read())
             for line in open(sfile, encoding=chartype):
                 items.append(line)
         elif type == 'url':
@@ -178,7 +324,7 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
             director = ''
             category = ''
             actors = ''
-            preview = ''
+            coverlink = ''
             links = ''
             if engine == 'javbus':
                 curl = 'https://www.javbus.com/' + code
@@ -196,61 +342,21 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
                 director = avinfo('p:eq(3)').text().split(' ')[-1]
                 category = avinfo('p:eq(7)').text()
                 actors = avinfo('p:eq(9)').text()
-                preview = content('a.bigImage').attr('href')
+                coverlink = content('a.bigImage').attr('href')
+                cover = getHTML(coverlink, 5, 5, 0, proxy)
                 # magnets = content('table#magnet-table')
                 try:
                     links = avfilter(avlinkFetch(code, 'BT工厂', proxy)).link
                 except Exception as ex:
                     print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                     links = 'page:' + curl
-            avs.append(av(code, title, issuedate, length, director, category, actors, preview, links))
+            avs.append(av(code, title, issuedate, length, director, category, actors, coverlink, cover, links))
             print('#' * 100)
             avs[-1].display()
-            # print(title + ' <-> ' + actors + ' <-> ' + preview + ' <-> ' + links)
+            # print(title + ' <-> ' + actors + ' <-> ' + coverlink + ' <-> ' + links)
         except Exception as ex:
             print('avinfoFetch:' + str(ex))
     return avs
-
-
-def avparse(avs, tpath=curDir(), proxy=''):
-    if avs is not None and len(avs) > 0:
-        try:
-            txtname = 'avinfos.txt'
-            dirpath = os.path.join(curDir(), tpath)
-            if not os.path.isdir(dirpath):
-                os.mkdir(dirpath)
-            txtpath = os.path.join(dirpath, txtname)
-            txtfs = open(txtpath, 'a', encoding='utf8')
-            for cav in avs:
-                try:
-                    print('*' * 100)
-                    print('Creating image : ' + cav.title, end=' ...... ')
-                    txtfs.write('番号:'.rjust(5) + cav.code + '\n')
-                    txtfs.write('标题:'.rjust(5) + cav.title + '\n')
-                    txtfs.write('发行:'.rjust(5) + cav.issuedate + '\n')
-                    txtfs.write('时长:'.rjust(5) + cav.length + '\n')
-                    txtfs.write('导演:'.rjust(5) + cav.director + '\n')
-                    txtfs.write('类别:'.rjust(5) + cav.category + '\n')
-                    txtfs.write('女优:'.rjust(5) + cav.actors + '\n')
-                    txtfs.write('预览:'.rjust(5) + cav.preview + '\n')
-                    txtfs.write('磁链:'.rjust(5) + cav.links + '\n')
-                    txtfs.write('#' * 100 + '\n')
-                    ext = cav.preview.split('.')[-1] if '.' in cav.preview else 'jpg'
-                    imgname = cav.title + '.' + ext
-                    imgname = imgname.replace('<', '').replace('>', '').replace('/', '').replace('\\', '').replace('|', '').replace(':', '').replace('"', '').replace('*', '').replace('?', '')
-                    imgpath = os.path.join(dirpath, imgname)
-                    imgfs = open(imgpath, 'wb')
-                    imgfs.write(getHTML(cav.preview, 5, 5, 0, proxy))
-                    imgfs.close()
-                    print('OK')
-                except Exception as ex:
-                    print('avparse:' + str(ex))
-                    print('Failed')
-            txtfs.close()
-        except Exception as ex:
-            print('avparse:' + str(ex))
-    else:
-        print('No AV Infomation!')
 
 
 def avlinkFetch(code, engine='BT工厂', proxy=''):
@@ -301,18 +407,108 @@ def avfilter(avlinks):
     return selectedav
 
 
+def av2file(avs, dirpath):
+    txtfs = None
+    txtname = 'avinfos.txt'
+    try:
+        txtpath = os.path.join(dirpath, txtname)
+        txtfs = open(txtpath, 'a', encoding='utf8')
+        for cav in avs:
+            print('*' * 100)
+            print('Creating AV Information : ' + cav.title, end=' ...... ')
+            txtfs.write('番号:'.rjust(5) + cav.code + '\n')
+            txtfs.write('标题:'.rjust(5) + cav.title + '\n')
+            txtfs.write('发行:'.rjust(5) + cav.issuedate + '\n')
+            txtfs.write('时长:'.rjust(5) + cav.length + '\n')
+            txtfs.write('导演:'.rjust(5) + cav.director + '\n')
+            txtfs.write('类别:'.rjust(5) + cav.category + '\n')
+            txtfs.write('女优:'.rjust(5) + cav.actors + '\n')
+            txtfs.write('预览:'.rjust(5) + cav.coverlink + '\n')
+            txtfs.write('磁链:'.rjust(5) + cav.links + '\n')
+            txtfs.write('#' * 100 + '\n')
+            ext = cav.coverlink.split('.')[-1] if '.' in cav.coverlink else 'jpg'
+            imgname = cav.title + '.' + ext
+            imgname = imgname.replace('<', '').replace('>', '').replace('/', '').replace('\\', '').replace('|', '').replace(':', '').replace('"', '').replace('*', '').replace('?', '')
+            imgpath = os.path.join(dirpath, imgname)
+            imgfs = open(imgpath, 'wb')
+            # imgfs.write(getHTML(cav.coverlink, 5, 5, 0, proxy))
+            imgfs.write(cav.cover)
+            imgfs.close()
+            print('OK')
+        txtfs.close()
+    except Exception as ex:
+        if txtfs is not None:
+            txtfs.close()
+        print('av2file:' + str(ex))
+        print('Failed to save information to files!')
+
+
+def av2db(avs, dirpath):
+    dbname = 'avinfos.db'
+    try:
+        dbpath = os.path.join(dirpath, dbname)
+        create_table_sql = '''CREATE TABLE  IF NOT EXISTS `av` (
+                              `code` varchar(20) NOT NULL,
+                              `title` varchar(300) NOT NULL,
+                              `issuedate` varchar(20) DEFAULT NULL,
+                              `length` varchar(20) DEFAULT NULL,
+                              `director` varchar(20) DEFAULT NULL,
+                              `category` varchar(300) DEFAULT NULL,
+                              `actors` varchar(300) DEFAULT NULL,
+                              `coverlink` varchar(300) DEFAULT NULL,
+                              `cover` BLOB DEFAULT NULL,
+                              `links` varchar(10000) DEFAULT NUll,
+                               PRIMARY KEY (`code`)
+                            )'''
+        create_table(get_conn(dbpath), create_table_sql)
+
+        save_sql = '''INSERT INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+        for cav in avs:
+            print('*' * 100)
+            print('Creating AV Information : ' + cav.title, end=' ...... ')
+            save(get_conn(dbpath), save_sql, [(cav.code, cav.title, cav.issuedate, cav.length, cav.director, cav.category, cav.actors, cav.coverlink, sqlite3.Binary(cav.cover), cav.links)])
+            print('OK')
+    except Exception as ex:
+        if 'UNIQUE constraint failed' in str(ex):
+            print('OK')
+        else:
+            print('av2db:' + str(ex))
+            print('Failed to save information to database!')
+
+
+def avsave(avs, savetype, tpath=curDir()):
+    if avs is not None and len(avs) > 0:
+        try:
+            dirpath = os.path.join(curDir(), tpath)
+            if not os.path.isdir(dirpath):
+                os.mkdir(dirpath)
+            if savetype.lower() == 'file':
+                av2file(avs, dirpath)
+            elif savetype.lower() == 'db':
+                av2db(avs, dirpath)
+            elif savetype.lower == 'both':
+                av2file(avs, dirpath)
+                av2db(avs, dirpath)
+
+        except Exception as ex:
+            print('avsave:' + str(ex))
+    else:
+        print('No AV Infomation!')
+
+
 def main(argv):
     codes = []
+    stype = 'file'
     surl = ''
     sfile = ''
     tpath = ''
     sengine = ''
     sproxy = ''
     try:
-        opts, args = getopt.getopt(argv, "hd:e:p:u:f:s:", ["dir=", "engine=", "proxy=", "url=", "file=", "code="])
+        opts, args = getopt.getopt(argv, "hd:e:t:p:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "url=", "file=", "code="])
     except getopt.GetoptError:
         print(
-            'Usage  : avfetch.py [-d <targetpath>] [-e <engine>] [-p <proxy>] [-f <filename>] [-s <codes>] [<codes>]\nExample: avfetch.py -d D:/ -e javbus -p socks5@127.0.0.1:1080 -f a.txt -s ABP-563 SRS-064 SNIS-862'
+            'Usage  : avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\nExample: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'
         )
         exit(2)
 
@@ -321,13 +517,15 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             print(
-                'Usage  : avfetch.py [-d <targetpath>] [-e <engine>] [-p <proxy>] [-f <filename>] [-s <codes>] [<codes>]\nExample: avfetch.py -d D:/ -e javbus -p socks5@127.0.0.1:1080 -f a.txt -s ABP-563 SRS-064 SNIS-862'
+                'Usage  : avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\nExample: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'
             )
             exit()
         elif opt in ("-d", "--dir"):
             tpath = arg
         elif opt in ("-e", "--engine"):
             sengine = arg
+        elif opt in ("-t", "--type"):
+            stype = arg
         elif opt in ("-p", "--proxy"):
             sproxy = arg
             if not re.match(r'^.+@.+:.+$', sproxy, flags=0):
@@ -343,12 +541,12 @@ def main(argv):
         if surl != '':
             codes.append(str(getHTML(surl, 5, 5, 0, proxy=sproxy)))
         if sfile != '' and os.path.isfile(sfile):
-            chartype = charDetect(open(sfile,'rb').read())
+            chartype = charDetect(open(sfile, 'rb').read())
             for line in open(sfile, encoding=chartype):
                 codes.append(line)
         if len(codes) > 0:
             avs = avinfoFetch(' '.join(codes), 'code', engine=sengine, proxy=sproxy)
-            avparse(avs, tpath, sproxy)
+            avsave(avs, stype, tpath)
     except Exception as ex:
         print('main:' + str(ex))
 
@@ -356,8 +554,6 @@ def main(argv):
 if __name__ == '__main__':
     main(sys.argv[1:])
 
-# avparse('ABP-563 SRS-064 SNIS-862', 'code', 'imgs')
-
-main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
-#main(['-d', 'imgss', '-e', 'javbus', '-f', 'a.txt'])
+# main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
+main(['-d', 'imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ-820 MDS-825'])
 # main(['-d', 'imgs', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-f', 'a.txt'])
