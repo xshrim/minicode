@@ -301,7 +301,7 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
     items = []
     codes = []
     try:
-        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,3}')
+        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,3}|\d{6}[-_]\d{3}')
         if type == 'file':
             sfile = os.path.join(curDir(), keyword)
             chartype = charDetect(open(sfile, 'rb').read())
@@ -317,8 +317,11 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
         for item in items:
             for number in pattern.finditer(item):
                 code = str(number.group()).upper()
-                p = re.match(r'([A-Za-z]+).*?(\d+)', code)
-                code = str(p.group(1)) + '-' + str(p.group(2))
+                if re.match(r'\d{6}[-_]\d{3}', code):
+                    code = code.replace('-', '_')
+                else:
+                    p = re.match(r'([A-Za-z]+).*?(\d+)', code)
+                    code = str(p.group(1)) + '-' + str(p.group(2))
                 if code not in codes:
                     codes.append(code)
     except Exception as ex:
@@ -557,10 +560,13 @@ def main(argv):
     try:
         if surl != '':
             codes.append(str(getHTML(surl, 5, 5, 0, proxy=sproxy)))
-        if sfile != '' and os.path.isfile(sfile):
-            chartype = charDetect(open(sfile, 'rb').read())
-            for line in open(sfile, encoding=chartype):
-                codes.append(line)
+        if sfile != '':
+            if os.path.isfile(sfile):
+                chartype = charDetect(open(sfile, 'rb').read())
+                for line in open(sfile, encoding=chartype):
+                    codes.append(line)
+            else:
+                print('main:' + 'File ' + sfile + ' is not exist!')
         if len(codes) > 0:
             avs = avinfoFetch(' '.join(codes), 'code', engine=sengine, proxy=sproxy)
             avsave(avs, stype, tpath)
@@ -572,5 +578,13 @@ if __name__ == '__main__':
     main(sys.argv[1:])
 
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
-main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-# main(['-d', 'imgs', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-f', 'a.txt'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'file', '-f', 'C:/Users/xshrim/Desktop/a.txt'])
+
+# 搜索引擎：
+# btso:https://btso.pw/search/ipz-137/
+# javhoo:https://www.javhoo.com/av/ipz-137/
+# btdb:https://btdb.in/q/ipz-137/
+# sukebei:https://sukebei.nyaa.se/?page=search&term=ipz-137&sort=4
+# torrentant:http://www.torrentant.com/cn/s/ipz-137?sort=hot
+# btgongchang:http://btgongchang.org/search/MDS-825-first-asc-1
