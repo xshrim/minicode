@@ -18,7 +18,8 @@ from pyquery import PyQuery
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
 
-class av:
+class av(object):
+    '''
     code = ''
     title = ''
     issuedate = ''
@@ -29,6 +30,7 @@ class av:
     coverlink = ''
     cover = b''
     links = ''
+    '''
 
     def __init__(self, code, title, issuedate, length, director, category, actors, coverlink, cover, links):
         self.code = code
@@ -42,7 +44,8 @@ class av:
         self.cover = cover
         self.links = links
 
-    def display(self):
+    def __str__(self):
+        '''
         print('番号:'.rjust(5) + self.code)
         print('标题:'.rjust(5) + self.title)
         print('发行:'.rjust(5) + self.issuedate)
@@ -52,15 +55,21 @@ class av:
         print('女优:'.rjust(5) + self.actors)
         print('预览:'.rjust(5) + self.coverlink)
         print('磁链:'.rjust(5) + self.links)
+        '''
+        return '番号:'.rjust(5) + self.code + '\n' + '标题:'.rjust(5) + self.title + '\n' + '发行:'.rjust(5) + self.issuedate + '\n' + '时长:'.rjust(5) + self.length + '\n' + '导演:'.rjust(5) + self.director + '\n' + '类别:'.rjust(5) + self.category + '\n' + '女优:'.rjust(5) + self.actors + '\n' + '预览:'.rjust(5) + self.coverlink + '\n' + '磁链:'.rjust(5) + self.links
+
+    __repr__ = __str__
 
 
-class avlinkinfo:
+class avlinkinfo(object):
+    '''
     code = ''
     title = ''
     time = ''
     hot = ''
     size = ''
     link = ''
+    '''
 
     def __init__(self, code, title, time, hot, size, link):
         self.code = code
@@ -70,9 +79,10 @@ class avlinkinfo:
         self.size = size
         self.link = link
 
-    def display(self):
-        print(self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' +
-              self.hot + ' -- ' + self.size + ' -- ' + self.link)
+    def __str__(self):
+        return self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' + self.hot + ' -- ' + self.size + ' -- ' + self.link
+
+    __repr__ = __str__
 
 ######################################### DB START#########################################
 
@@ -112,7 +122,7 @@ def drop_table(conn, table):
         cu = get_cursor(conn)
         cu.execute(sql)
         conn.commit()
-        print('删除数据库表[{}]成功!'.format(table))
+        # print('删除数据库表[{}]成功!'.format(table))
         close_all(conn, cu)
     else:
         print('the [{}] is empty or equal None!'.format(sql))
@@ -236,7 +246,7 @@ def charDetect(data):
             try:
                 data.decode(chartype)
                 return chartype
-            except:
+            except Exception as ex:
                 continue
     return ''
 
@@ -261,11 +271,7 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
     # ('Accept-Encoding','gzip,deflate,sdch'),
     # ('Connection','close'),
     # ('Referer',None )]#注意如果依然不能抓取的话，这里可以设置抓取网站的host
-    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'keep-alive'), ('Cache-Control', 'max-age=0'),
-    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
-    ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'),
-    ('Referer', 'http://www.deviantart.com/whats-hot/'),
-    ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
+    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'keep-alive'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
 
     opener = request.build_opener()
     opener.addheaders = headers
@@ -278,7 +284,6 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
             data = opener.open(url)
             headertype = str(data.info()['Content-Type']).lower()
             contents = data.read()
-            # if 'text/html' in headertype or 'text/xml' in headertype or 'text/asp' in headertype or 'text/css' in headertype or 'text/plain' in headertype or 'text/scriptlet' in headertype or 'text/h323' in headertype or 'text/asa' in headertype:
             if 'text/' in headertype:
                 chartype = charDetect(contents)
                 contents = contents.decode(chartype)
@@ -296,7 +301,7 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
     items = []
     codes = []
     try:
-        pattern = re.compile(r'[A-Za-z]+-\d+')
+        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,3}')
         if type == 'file':
             sfile = os.path.join(curDir(), keyword)
             chartype = charDetect(open(sfile, 'rb').read())
@@ -312,6 +317,8 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
         for item in items:
             for number in pattern.finditer(item):
                 code = str(number.group()).upper()
+                p = re.match(r'([A-Za-z]+).*?(\d+)', code)
+                code = str(p.group(1)) + '-' + str(p.group(2))
                 if code not in codes:
                     codes.append(code)
     except Exception as ex:
@@ -352,7 +359,7 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
                     links = 'page:' + curl
             avs.append(av(code, title, issuedate, length, director, category, actors, coverlink, cover, links))
             print('#' * 100)
-            avs[-1].display()
+            print(avs[-1])
             # print(title + ' <-> ' + actors + ' <-> ' + coverlink + ' <-> ' + links)
         except Exception as ex:
             print('avinfoFetch:' + str(ex))
@@ -411,6 +418,7 @@ def av2file(avs, dirpath):
     txtfs = None
     txtname = 'avinfos.txt'
     try:
+        print('Saving AV Infomation to Files:')
         txtpath = os.path.join(dirpath, txtname)
         txtfs = open(txtpath, 'a', encoding='utf8')
         for cav in avs:
@@ -434,49 +442,56 @@ def av2file(avs, dirpath):
             # imgfs.write(getHTML(cav.coverlink, 5, 5, 0, proxy))
             imgfs.write(cav.cover)
             imgfs.close()
-            print('OK')
+            print('READY')
         txtfs.close()
+        print('COMPLETE')
     except Exception as ex:
         if txtfs is not None:
             txtfs.close()
         print('av2file:' + str(ex))
-        print('Failed to save information to files!')
+        print('FAILED')
 
 
 def av2db(avs, dirpath):
+    data = []
     dbname = 'avinfos.db'
     try:
+        print('Saving AV Infomation to Database:')
         dbpath = os.path.join(dirpath, dbname)
-        create_table_sql = '''CREATE TABLE  IF NOT EXISTS `av` (
-                              `code` varchar(20) NOT NULL,
-                              `title` varchar(300) NOT NULL,
-                              `issuedate` varchar(20) DEFAULT NULL,
-                              `length` varchar(20) DEFAULT NULL,
-                              `director` varchar(20) DEFAULT NULL,
-                              `category` varchar(300) DEFAULT NULL,
-                              `actors` varchar(300) DEFAULT NULL,
-                              `coverlink` varchar(300) DEFAULT NULL,
-                              `cover` BLOB DEFAULT NULL,
-                              `links` varchar(10000) DEFAULT NUll,
-                               PRIMARY KEY (`code`)
-                            )'''
-        create_table(get_conn(dbpath), create_table_sql)
+        sql = '''CREATE TABLE  IF NOT EXISTS `av` (
+              `code` varchar(20) NOT NULL,
+              `title` varchar(300) NOT NULL,
+              `issuedate` varchar(20) DEFAULT NULL,
+              `length` varchar(20) DEFAULT NULL,
+              `director` varchar(20) DEFAULT NULL,
+              `category` varchar(300) DEFAULT NULL,
+              `actors` varchar(300) DEFAULT NULL,
+              `coverlink` varchar(300) DEFAULT NULL,
+              `cover` BLOB DEFAULT NULL,
+              `links` varchar(10000) DEFAULT NUll,
+               PRIMARY KEY (`code`)
+            )'''
+        conn = get_conn(dbpath)
+        create_table(conn, sql)
 
-        save_sql = '''INSERT INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+        sql = '''INSERT OR IGNORE INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         for cav in avs:
             print('*' * 100)
             print('Creating AV Information : ' + cav.title, end=' ...... ')
-            save(get_conn(dbpath), save_sql, [(cav.code, cav.title, cav.issuedate, cav.length, cav.director, cav.category, cav.actors, cav.coverlink, sqlite3.Binary(cav.cover), cav.links)])
-            print('OK')
+            data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.director, cav.category, cav.actors, cav.coverlink, sqlite3.Binary(cav.cover), cav.links))
+            print('READY')
+        save(conn, sql, data)
+        print('COMPLETE')
     except Exception as ex:
         if 'UNIQUE constraint failed' in str(ex):
-            print('OK')
+            print('av2db:' + str(ex))
+            print('COMPLETE')
         else:
             print('av2db:' + str(ex))
-            print('Failed to save information to database!')
+            print('FAILED')
 
 
-def avsave(avs, savetype, tpath=curDir()):
+def avsave(avs, savetype='file', tpath=curDir()):
     if avs is not None and len(avs) > 0:
         try:
             dirpath = os.path.join(curDir(), tpath)
@@ -493,7 +508,7 @@ def avsave(avs, savetype, tpath=curDir()):
         except Exception as ex:
             print('avsave:' + str(ex))
     else:
-        print('No AV Infomation!')
+        print('No AV Infomation')
 
 
 def main(argv):
@@ -508,7 +523,8 @@ def main(argv):
         opts, args = getopt.getopt(argv, "hd:e:t:p:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "url=", "file=", "code="])
     except getopt.GetoptError:
         print(
-            'Usage  : avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\nExample: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'
+            '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
+            Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
         )
         exit(2)
 
@@ -517,7 +533,8 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             print(
-                'Usage  : avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\nExample: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'
+                '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
+                Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
             )
             exit()
         elif opt in ("-d", "--dir"):
@@ -555,5 +572,5 @@ if __name__ == '__main__':
     main(sys.argv[1:])
 
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
-main(['-d', 'imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ-820 MDS-825'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # main(['-d', 'imgs', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-f', 'a.txt'])
