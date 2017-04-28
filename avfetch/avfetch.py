@@ -12,8 +12,9 @@ import socket
 import chardet
 import sqlite3
 from urllib import request
-# from urllib import parse
+from urllib import parse
 from pyquery import PyQuery
+from chardet.universaldetector import UniversalDetector
 
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
@@ -69,18 +70,20 @@ class avlinkinfo(object):
     hot = ''
     size = ''
     link = ''
+    origin = ''
     '''
 
-    def __init__(self, code, title, time, hot, size, link):
+    def __init__(self, code, title, time, hot, size, link, origin):
         self.code = code
         self.title = title
         self.time = time
         self.hot = hot
         self.size = size
         self.link = link
+        self.origin = origin
 
     def __str__(self):
-        return self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' + self.hot + ' -- ' + self.size + ' -- ' + self.link
+        return self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' + self.hot + ' -- ' + self.size + ' -- ' + self.link + ' -- ' + self.origin
 
     __repr__ = __str__
 
@@ -236,7 +239,7 @@ def curDir():
 
 
 def charDetect(data):
-    charsets = ['UTF-8', 'UTF-8-SIG', 'GBK', 'GB2312', 'GB18030', 'UTF-16', 'UTF-32', 'BIG5', 'LATIN-1', 'ASCII', 'SHIFT_JIS', 'EUC-CN', 'EUC-TW', 'EUC-JP', 'EUC-KR', 'HKSCS', 'KOREAN', 'KOI8-R', 'KOI8-U', 'UTF-7', 'ISO-8859-1', 'ISO-8859-1', 'ISO-8859-5', 'ISO-8859-6', 'ISO-8859-7', 'ISO-8859-11', 'ISO-8859-15', 'TIS-620']
+    charsets = ['UTF-8', 'UTF-8-SIG', 'GBK', 'GB2312', 'GB18030', 'BIG5', 'SHIFT_JIS', 'EUC-CN', 'EUC-TW', 'EUC-JP', 'EUC-KR', 'ASCII', 'HKSCS', 'KOREAN', 'UTF-7', 'TIS-620', 'LATIN-1', 'KOI8-R', 'KOI8-U', 'ISO-8859-5', 'ISO-8859-6', 'ISO-8859-7', 'ISO-8859-11', 'ISO-8859-15', 'UTF-16', 'UTF-32']
     try:
         charinfo = chardet.detect(data)
         data.decode(charinfo['encoding'])
@@ -285,8 +288,13 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
             headertype = str(data.info()['Content-Type']).lower()
             contents = data.read()
             if 'text/' in headertype:
-                chartype = charDetect(contents)
-                contents = contents.decode(chartype)
+                if 'charset' in headertype:
+                    for item in ['utf-8', 'utf8', 'gbk', 'gb2312', 'gb18030', 'big5', 'latin-1', 'latin1']:
+                        if item in headertype:
+                            chartype = item.upper()
+                else:
+                    chartype = charDetect(contents)
+                contents = contents.decode(chartype, errors='ignore')
             break
         except Exception as ex:
             print('getHTML:' + str(ex))
@@ -356,7 +364,7 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
                 cover = getHTML(coverlink, 5, 5, 0, proxy)
                 # magnets = content('table#magnet-table')
                 try:
-                    links = avfilter(avlinkFetch(code, 'BT工厂', proxy)).link
+                    links = avfilter(avlinkFetch(code, 'btgongchang', proxy)).link
                 except Exception as ex:
                     print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                     links = 'page:' + curl
@@ -369,10 +377,11 @@ def avinfoFetch(keyword, type, engine='javbus', proxy=''):
     return avs
 
 
-def avlinkFetch(code, engine='BT工厂', proxy=''):
+def avlinkFetch(code, engine='btgongchang', proxy=''):
+    code = code.upper()
     avlinks = []
     try:
-        if engine == 'BT工厂':
+        if engine == 'btgongchang':
             data = PyQuery(getHTML('http://btgongchang.org/search/' + code + '-first-asc-1', 5, 5, 1, proxy))
             content = data('table[class="data mb20"]')
             items = content('tr')
@@ -394,16 +403,75 @@ def avlinkFetch(code, engine='BT工厂', proxy=''):
                             time = str(time.text()).replace(' ', '')
                             hot = str(hot.text()).replace(' ', '')
                             size = str(size.text()).lower()
-                            if 'gb' in size:
-                                size = str(float(size.split(' ')[0]) * 1024)
-                            elif 'kb' in size:
-                                size = str(float(size.split(' ')[0]) / 1024)
+                            if 'g' in size:
+                                size = str(size.replace('gb', '').replace('g', '').strip())
+                            elif 'm' in size:
+                                size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                            elif 'k' in size:
+                                size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                             else:
-                                size = str(float(size.split(' ')[0]))
+                                size = str(size).strip()
+                            size = str("%.2f" % float(size))
                             link = link('a:first').attr('href')
-                            avlinks.append(avlinkinfo(code, title, time, hot, size, link))
+                            avlinks.append(avlinkinfo(code, title, time, hot, size, link, engine))
                 except Exception as ex:
-                    print('avlinkFetch:' + str(ex))
+                    print('avlinkFetch:btgongchang:' + str(ex))
+        if engine == 'btso':
+            data = PyQuery(getHTML('https://btso.pw/search/' + code, 5, 5, 1, proxy))
+            content = data('div.data-list')
+            items = content('div[class="row"]')
+            for item in items.items():
+                try:
+                    title = str(item('a').attr('title')).strip()
+                    time = str(item('div[class="col-sm-2 col-lg-2 hidden-xs text-right date"]').text()).strip()
+                    size = str(item('div[class="col-sm-2 col-lg-1 hidden-xs text-right size"]').text()).strip().lower()
+                    tmplink = str(item('a').attr('href')).strip()
+                    hot = '100'
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).strip()
+                    size = str("%.2f" % float(size))
+                    linkdata = PyQuery(getHTML(parse.urljoin('https://btso.pw/', tmplink), 5, 5, 1, proxy))
+                    link = str(linkdata('textarea#magnetLink').text()).strip()
+                    avlinks.append(avlinkinfo(code, title, time, hot, size, link, engine))
+                except Exception as ex:
+                    print('avlinkFetch:btso:' + str(ex))
+        if engine == 'btdb':
+            data = PyQuery(getHTML('https://btdb.in/q/' + code + '/?sort=popular', 5, 5, 1, proxy))
+            content = data('ul.search-ret-list')
+            items = content('li.search-ret-item')
+
+            for item in items.items():
+                try:
+                    title = str(item('h2.item-title')('a').attr('title')).strip()
+                    # title = re.sub(r'\/\*.*\*\/', '', title)
+                    # title = title.encode('latin-1').decode('utf-8')
+                    linkinfo = item('div.item-meta-info')
+                    link = str(linkinfo('a.magnet').attr('href')).strip()
+                    linkinfodata = str(linkinfo.text()).lower()
+                    linkinfos = re.match(r'^.*size:(.*)files:(.*)addtime:(.*)popularity:(.*)$', linkinfodata).groups()
+                    size = str(linkinfos[0]).strip().replace('  ', ' ')
+                    time = str(linkinfos[2]).strip()
+                    hot = str(linkinfos[3]).strip()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).strip()
+                    size = str("%.2f" % float(size))
+                    avlinks.append(avlinkinfo(code, title, time, hot, size, link, engine))
+                except Exception as ex:
+                    print('avlinkFetch:btdb:' + str(ex))
+        if engine == '':
+            pass
     except Exception as ex:
         print('avlinkFetch:' + str(ex))
     return avlinks
@@ -579,7 +647,11 @@ if __name__ == '__main__':
 
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'file', '-f', 'C:/Users/xshrim/Desktop/a.txt'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'file', '-f', 'C:/Users/xshrim/Desktop/a.txt'])
+
+for cav in avlinkFetch('ipz-137', 'btso'):
+    print(cav)
+
 
 # 搜索引擎：
 # btso:https://btso.pw/search/ipz-137/
