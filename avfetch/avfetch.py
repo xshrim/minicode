@@ -32,12 +32,13 @@ class av(object):
     series = ''
     category = ''
     actors = ''
+    favor = ''
     coverlink = ''
     cover = b''
     link = ''
     '''
 
-    def __init__(self, code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, coverlink, cover, link):
+    def __init__(self, code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link):
         self.code = code
         self.title = title
         self.issuedate = issuedate
@@ -49,6 +50,7 @@ class av(object):
         self.series = series
         self.category = category
         self.actors = actors
+        self.favor = favor
         self.coverlink = coverlink
         self.cover = cover
         self.link = link
@@ -66,10 +68,11 @@ class av(object):
         print('系列:'.rjust(5) + self.series)
         print('类别:'.rjust(5) + self.category)
         print('女优:'.rjust(5) + self.actors)
+        print('收藏:'.rjust(5) + self.favor)
         print('预览:'.rjust(5) + self.coverlink)
         print('磁链:'.rjust(5) + self.link)
         '''
-        return '番号:'.rjust(5) + self.code + '\n' + '标题:'.rjust(5) + self.title + '\n' + '日期:'.rjust(5) + self.issuedate + '\n' + '时长:'.rjust(5) + self.length + '\n' + '修正:'.rjust(5) + self.mosaic + '\n' + '导演:'.rjust(5) + self.director + '\n' + '制作:'.rjust(5) + self.manufacturer + '\n' + '发行:'.rjust(5) + self.publisher + '\n' + '系列:'.rjust(5) + self.series + '\n' + '类别:'.rjust(5) + self.category + '\n' + '女优:'.rjust(5) + self.actors + '\n' + '预览:'.rjust(5) + self.coverlink + '\n' + '磁链:'.rjust(5) + self.link
+        return '番号:'.rjust(5) + self.code + '\n' + '标题:'.rjust(5) + self.title + '\n' + '日期:'.rjust(5) + self.issuedate + '\n' + '时长:'.rjust(5) + self.length + '\n' + '修正:'.rjust(5) + self.mosaic + '\n' + '导演:'.rjust(5) + self.director + '\n' + '制作:'.rjust(5) + self.manufacturer + '\n' + '发行:'.rjust(5) + self.publisher + '\n' + '系列:'.rjust(5) + self.series + '\n' + '类别:'.rjust(5) + self.category + '\n' + '女优:'.rjust(5) + self.actors + '\n' + '收藏:'.rjust(5) + self.favor + '\n' + '预览:'.rjust(5) + self.coverlink + '\n' + '磁链:'.rjust(5) + self.link
 
     __repr__ = __str__
 
@@ -172,9 +175,12 @@ def save(conn, sql, data):
         if data is not None:
             cu = get_cursor(conn)
             for d in data:
-                # print('执行sql:[{}],参数:[{}]'.format(sql, d))
-                cu.execute(sql, d)
-                conn.commit()
+                try:
+                    # print('执行sql:[{}],参数:[{}]'.format(sql, d))
+                    cu.execute(sql, d)
+                    conn.commit()
+                except Exception as ex:
+                    print('save:' + str(ex))
             close_all(conn, cu)
     else:
         print('the [{}] is empty or equal None!'.format(sql))
@@ -454,8 +460,10 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
     series = ''
     category = ''
     actors = ''
+    favor = ''
     coverlink = ''
     link = ''
+
     for keyword in keywords:
         try:
             if engine == 'javbus':
@@ -508,8 +516,9 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                                 category = str(item.next().text()).strip()
                             if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
                                 actors = str(item.next().text()).strip()
+                        favor = '0'
                         coverlink = str(content('a.bigImage').attr('href')).strip()
-                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '预览:'.rjust(5) + coverlink)
+                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '收藏:'.rjust(5) + favor + '\n' + '预览:'.rjust(5) + coverlink)
 
                         cover = getHTML(coverlink, 5, 5, 0, proxy)
                         # magnets = content('table#magnet-table')
@@ -519,7 +528,7 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                             print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                             link = 'page:' + avpage['url']
                         print('磁链:'.rjust(5) + link)
-                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, coverlink, cover, link))
+                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
                     except Exception as ex:
                         print('avinfoFetch:javbus:' + str(ex))
             if engine == 'javhoo':
@@ -563,8 +572,9 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                                 category = str(item.next().text()).strip()
                             if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
                                 actors = str(item.next().text()).strip()
+                        favor = '0'
                         coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
-                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '预览:'.rjust(5) + coverlink)
+                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '收藏:'.rjust(5) + favor + '\n' + '预览:'.rjust(5) + coverlink)
 
                         cover = getHTML(coverlink, 5, 5, 0, proxy)
                         try:
@@ -573,7 +583,7 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                             print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                             link = 'page:' + avpage['url']
                         print('磁链:'.rjust(5) + link)
-                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, coverlink, cover, link))
+                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
                     except Exception as ex:
                         print('avinfoFetch:javhoo:' + str(ex))
             if engine == 'torrentant':
@@ -595,8 +605,9 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                         series = str(avinfo('tr:eq(6)')('td:eq(1)').text()).strip()
                         category = str(content('div[class="col-md-12 tags"]').text()).strip()
                         actors = str(content('div#avatar-waterfall').text()).strip()
+                        favor = '0'
                         coverlink = ''
-                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '预览:'.rjust(5) + coverlink)
+                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '收藏:'.rjust(5) + favor + '\n' + '预览:'.rjust(5) + coverlink)
 
                         cover = b''
                         try:
@@ -605,7 +616,7 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                             print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                             link = 'page:' + avpage['url']
                         print('磁链:'.rjust(5) + link)
-                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, coverlink, cover, link))
+                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
                         if len(avs) > 0:
                             print(avs[-1])
                     except Exception as ex:
@@ -642,7 +653,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     clink = item('td:eq(4)')('a:first').attr('href')
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
@@ -666,7 +677,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     tmplink = str(item('a').attr('href')).strip()
                     tmplink = parse.urljoin('https://btso.pw/', tmplink)
@@ -698,7 +709,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
@@ -723,7 +734,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     tmplink = str(item('div[class="search-content text-left"]')('h2')('a').attr('href')).strip()
                     tmplink = parse.urljoin('http://www.torrentant.com/', tmplink)
@@ -748,7 +759,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     hot = '100'
                     clink = str(item('td:eq(0)')('a').attr('href')).strip()
@@ -772,7 +783,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     hot = str(item('tr:eq(1)')('td:eq(2)')('strong:first').text()).strip()
                     clink = str(item('tr:eq(1)')('td:eq(3)')('a').attr('href')).strip()
@@ -801,7 +812,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     elif 'k' in size:
                         size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
                     else:
-                        size = str(size).strip()
+                        size = str(size).replace('b', '').strip()
                     size = str("%.2f" % float(size))
                     linkdata = PyQuery(getHTML(tmplink, 5, 5, 1, proxy))
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
@@ -850,30 +861,34 @@ def av2file(avs, dirpath):
         txtpath = os.path.join(dirpath, txtname)
         txtfs = open(txtpath, 'a', encoding='utf8')
         for cav in avs:
-            print('Creating AV Information : ' + cav.title, end=' ...... ')
-            txtfs.write('番号:'.rjust(5) + cav.code + '\n')
-            txtfs.write('标题:'.rjust(5) + cav.code + '-' + cav.title + '\n')
-            txtfs.write('日期:'.rjust(5) + cav.issuedate + '\n')
-            txtfs.write('时长:'.rjust(5) + cav.length + '\n')
-            txtfs.write('修正:'.rjust(5) + cav.mosaic + '\n')
-            txtfs.write('导演:'.rjust(5) + cav.director + '\n')
-            txtfs.write('制作:'.rjust(5) + cav.manufacturer + '\n')
-            txtfs.write('发行:'.rjust(5) + cav.publisher + '\n')
-            txtfs.write('系列:'.rjust(5) + cav.series + '\n')
-            txtfs.write('类别:'.rjust(5) + cav.category + '\n')
-            txtfs.write('女优:'.rjust(5) + cav.actors + '\n')
-            txtfs.write('预览:'.rjust(5) + cav.coverlink + '\n')
-            txtfs.write('磁链:'.rjust(5) + cav.link + '\n')
-            txtfs.write('#' * 100 + '\n')
-            ext = cav.coverlink.split('.')[-1] if '.' in cav.coverlink else 'jpg'
-            imgname = cav.title + '.' + ext
-            imgname = imgname.replace('<', '').replace('>', '').replace('/', '').replace('\\', '').replace('|', '').replace(':', '').replace('"', '').replace('*', '').replace('?', '')
-            imgpath = os.path.join(dirpath, imgname)
-            imgfs = open(imgpath, 'wb')
-            # imgfs.write(getHTML(cav.coverlink, 5, 5, 0, proxy))
-            imgfs.write(cav.cover)
-            imgfs.close()
-            print('READY')
+            try:
+                print('Creating AV Information : ' + cav.title, end=' ...... ')
+                txtfs.write('番号:'.rjust(5) + cav.code + '\n')
+                txtfs.write('标题:'.rjust(5) + cav.title + '\n')
+                txtfs.write('日期:'.rjust(5) + cav.issuedate + '\n')
+                txtfs.write('时长:'.rjust(5) + cav.length + '\n')
+                txtfs.write('修正:'.rjust(5) + cav.mosaic + '\n')
+                txtfs.write('导演:'.rjust(5) + cav.director + '\n')
+                txtfs.write('制作:'.rjust(5) + cav.manufacturer + '\n')
+                txtfs.write('发行:'.rjust(5) + cav.publisher + '\n')
+                txtfs.write('系列:'.rjust(5) + cav.series + '\n')
+                txtfs.write('类别:'.rjust(5) + cav.category + '\n')
+                txtfs.write('女优:'.rjust(5) + cav.actors + '\n')
+                txtfs.write('收藏:'.rjust(5) + cav.favor + '\n')
+                txtfs.write('预览:'.rjust(5) + cav.coverlink + '\n')
+                txtfs.write('磁链:'.rjust(5) + cav.link + '\n')
+                txtfs.write('#' * 100 + '\n')
+                ext = cav.coverlink.split('.')[-1] if '.' in cav.coverlink else 'jpg'
+                imgname = cav.code + '_' + cav.title + '.' + ext
+                imgname = imgname.replace('<', '').replace('>', '').replace('/', '').replace('\\', '').replace('|', '').replace(':', '').replace('"', '').replace('*', '').replace('?', '')
+                imgpath = os.path.join(dirpath, imgname)
+                imgfs = open(imgpath, 'wb')
+                # imgfs.write(getHTML(cav.coverlink, 5, 5, 0, proxy))
+                imgfs.write(cav.cover)
+                imgfs.close()
+                print('READY')
+            except Exception as ex:
+                print('av2file:' + str(ex))
         txtfs.close()
         print('COMPLETE')
     except Exception as ex:
@@ -901,6 +916,7 @@ def av2db(avs, dirpath):
               `series` varchar(100) DEFAULT NULL,
               `category` varchar(500) DEFAULT NULL,
               `actors` varchar(500) DEFAULT NULL,
+              `favor` varchar(20) DEFAULT '0',
               `coverlink` varchar(300) DEFAULT NULL,
               `cover` BLOB DEFAULT NULL,
               `link` varchar(10000) DEFAULT NUll,
@@ -909,10 +925,10 @@ def av2db(avs, dirpath):
         conn = get_conn(dbpath)
         create_table(conn, sql)
 
-        sql = '''INSERT OR IGNORE INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+        sql = '''INSERT OR IGNORE INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         for cav in avs:
             print('Creating AV Information : ' + cav.title, end=' ...... ')
-            data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.coverlink, sqlite3.Binary(cav.cover), cav.link))
+            data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(cav.cover), cav.link))
             print('READY')
         save(conn, sql, data)
         print('COMPLETE')
@@ -956,6 +972,7 @@ def avquickFetch(code, proxy=''):
     series = ''
     category = ''
     actors = ''
+    favor = ''
     coverlink = ''
     links = []
     link = ''
@@ -987,6 +1004,7 @@ def avquickFetch(code, proxy=''):
                 category = str(item.next().text()).strip()
             if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
                 actors = str(item.next().text()).strip()
+        favor = '0'
         coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
         cover = getHTML(coverlink, 5, 5, 0, proxy)
 
@@ -1016,7 +1034,7 @@ def avquickFetch(code, proxy=''):
         except Exception as ex:
             print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
             link = 'page:' + 'https://www.javhoo.com/av/' + code
-        return av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, coverlink, cover, link)
+        return av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
     except Exception as ex:
         print('avquickFetch:' + str(ex))
         return None
@@ -1096,11 +1114,12 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'AAJ-002 DTRS-027'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-f', 'C:/Users/xshrim/Desktop/a.txt'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # print(avquickFetch('ipz-371'))
 
