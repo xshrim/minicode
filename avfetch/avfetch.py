@@ -441,7 +441,7 @@ def avkeywordParse(textargs, type):
     lines = []
     keywords = []
     try:
-        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,3}|\d{6}[-_]\d{3}')
+        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,4}|\d{6}[-_]\d{3}')
         if type == 'file':
             sfile = os.path.join(curDir(), textargs)
             chartype = charDetect(open(sfile, 'rb').read())
