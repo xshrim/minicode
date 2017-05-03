@@ -11,6 +11,7 @@ import getopt
 import socket
 import chardet
 import sqlite3
+import logging
 from urllib import request
 from urllib import parse
 from urllib.parse import quote
@@ -52,7 +53,10 @@ class av(object):
         self.actors = actors
         self.favor = favor
         self.coverlink = coverlink
-        self.cover = cover
+        if isinstance(cover, bytes):
+            self.cover = cover
+        else:
+            self.cover = str(cover).encode()
         self.link = link
 
     def __str__(self):
@@ -143,7 +147,7 @@ def drop_table(conn, table):
         # print('删除数据库表[{}]成功!'.format(table))
         close_all(conn, cu)
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 
 def create_table(conn, sql):
@@ -156,7 +160,7 @@ def create_table(conn, sql):
         # print('创建数据库表成功!'
         close_all(conn, cu)
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 
 def close_all(conn, cu):
@@ -175,15 +179,12 @@ def save(conn, sql, data):
         if data is not None:
             cu = get_cursor(conn)
             for d in data:
-                try:
-                    # print('执行sql:[{}],参数:[{}]'.format(sql, d))
-                    cu.execute(sql, d)
-                    conn.commit()
-                except Exception as ex:
-                    print('save:' + str(ex))
+                # print('执行sql:[{}],参数:[{}]'.format(sql, d))
+                cu.execute(sql, d)
+                conn.commit()
             close_all(conn, cu)
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 
 def fetchall(conn, sql):
@@ -197,7 +198,7 @@ def fetchall(conn, sql):
             for e in range(len(r)):
                 print(r[e])
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 
 def fetchone(conn, sql, data):
@@ -214,9 +215,9 @@ def fetchone(conn, sql, data):
                 for e in range(len(r)):
                     print(r[e])
         else:
-            print('the [{}] equal None!'.format(data))
+            logging.error('the [{}] equal None!'.format(data))
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 
 def update(conn, sql, data):
@@ -230,7 +231,7 @@ def update(conn, sql, data):
                 conn.commit()
             close_all(conn, cu)
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 
 def delete(conn, sql, data):
@@ -244,9 +245,19 @@ def delete(conn, sql, data):
                 conn.commit()
             close_all(conn, cu)
     else:
-        print('the [{}] is empty or equal None!'.format(sql))
+        logging.error('the [{}] is empty or equal None!'.format(sql))
 
 ######################################### DB END#########################################
+
+
+def logInit():
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S', filename=os.path.join(curDir(), 'avfetch.log'), filemode='w')
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.ERROR)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
 
 def curDir():
@@ -263,11 +274,13 @@ def charDetect(data):
         data.decode(charinfo['encoding'])
         return str(charinfo['encoding']).upper()
     except Exception as ex:
+        logging.debug('charDetect:' + str(ex))
         for chartype in charsets:
             try:
                 data.decode(chartype)
                 return chartype
             except Exception as ex:
+                logging.debug('charDetect:' + str(ex))
                 continue
     return ''
 
@@ -282,6 +295,12 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
     if len(proxyDict) > 0 and proxyDict['type'] is not None and proxyDict['type'].lower() == 'socks5':
         socks.set_default_proxy(socks.SOCKS5, proxyDict['host'], int(proxyDict['port']))
         socket.socket = socks.socksocket
+    elif len(proxyDict) > 0 and proxyDict['type'] is not None and proxyDict['type'].lower() == 'socks4':
+        socks.set_default_proxy(socks.SOCKS4, proxyDict['host'], int(proxyDict['port']))
+        socket.socket = socks.socksocket
+    elif len(proxyDict) > 0 and proxyDict['type'] is not None and proxyDict['type'].lower() == 'http':
+        socks.set_default_proxy(socks.HTTP, proxyDict['host'], int(proxyDict['port']))
+        socket.socket = socks.socksocket
     socket.setdefaulttimeout(timeout)
     # url = 'https://www.javbus2.com/HIZ-015'
     # url = "http://img0.imgtn.bdimg.com/it/u=4054848240,1657436512&fm=21&gp=0.jpg"
@@ -292,7 +311,7 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
     # ('Accept-Encoding','gzip,deflate,sdch'),
     # ('Connection','close'),
     # ('Referer',None )]#注意如果依然不能抓取的话，这里可以设置抓取网站的host
-    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'keep-alive'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
+    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'close'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
 
     opener = request.build_opener()
     opener.addheaders = headers
@@ -312,9 +331,11 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
                 else:
                     chartype = charDetect(contents)
                 contents = contents.decode(chartype, errors='ignore')
+            opener.close()
             break
         except Exception as ex:
-            print('getHTML:' + str(ex))
+            opener.close()
+            logging.debug('getHTML:' + str(ex))
             if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
                 break
         i -= 1
@@ -345,7 +366,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     url = str(urlitem.attr('href')).strip()
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
-            print("avurlFetch:javbus:" + str(ex))
+            logging.warning("avurlFetch:javbus:" + str(ex))
     if engine == 'javhoo':
         surls = []
         try:
@@ -367,7 +388,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     url = str(urlitem('div.project-list-media')('a:first').attr('href')).strip()
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
-            print("avurlFetch:javhoo:url:" + str(ex))
+            logging.warning("avurlFetch:javhoo:url:" + str(ex))
     if engine == 'torrentant':
         surls = []
         try:
@@ -389,7 +410,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     url = parse.urljoin('http://m.torrentant.com/', str(urlitem('a:first').attr('href')).strip())
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
-            print("avurlFetch:javhoo:url:" + str(ex))
+            logging.warning("avurlFetch:javhoo:url:" + str(ex))
     if engine == 'avmoo':
         surls = []
         try:
@@ -412,7 +433,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     url = str(urlitem.attr('href')).strip()
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
-            print("avurlFetch:javhoo:url:" + str(ex))
+            logging.warning("avurlFetch:javhoo:url:" + str(ex))
     return avpages
 
 
@@ -444,7 +465,7 @@ def avkeywordParse(textargs, type):
                 if code not in keywords:
                     keywords.append(str(code))
     except Exception as ex:
-        print('avkeywordParse:' + str(ex))
+        logging.error('avkeywordParse:' + str(ex))
     return keywords
 
 
@@ -462,6 +483,7 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
     actors = ''
     favor = ''
     coverlink = ''
+    cover = b''
     link = ''
 
     for keyword in keywords:
@@ -525,12 +547,12 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                         try:
                             link = avlinkFilter(avlinkFetch(avpage['code'], 'zhongziso', proxy)).link
                         except Exception as ex:
-                            print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+                            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                             link = 'page:' + avpage['url']
                         print('磁链:'.rjust(5) + link)
                         avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
                     except Exception as ex:
-                        print('avinfoFetch:javbus:' + str(ex))
+                        logging.warning('avinfoFetch:javbus:' + str(ex))
             if engine == 'javhoo':
                 print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
                 for avpage in avurlFetch(keyword, 'javhoo', proxy):
@@ -580,12 +602,12 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                         try:
                             link = avlinkFilter(avlinkFetch(avpage['code'], 'zhongziso', proxy)).link
                         except Exception as ex:
-                            print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+                            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                             link = 'page:' + avpage['url']
                         print('磁链:'.rjust(5) + link)
                         avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
                     except Exception as ex:
-                        print('avinfoFetch:javhoo:' + str(ex))
+                        logging.warning('avinfoFetch:javhoo:' + str(ex))
             if engine == 'torrentant':
                 print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
                 for avpage in avurlFetch(keyword, 'torrentant', proxy):
@@ -613,16 +635,14 @@ def avinfoFetch(keywords, engine='javbus', proxy=''):
                         try:
                             link = avlinkFilter(avlinkFetch(avpage['code'], 'zhongziso', proxy)).link
                         except Exception as ex:
-                            print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+                            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                             link = 'page:' + avpage['url']
                         print('磁链:'.rjust(5) + link)
                         avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
-                        if len(avs) > 0:
-                            print(avs[-1])
                     except Exception as ex:
-                        print('avinfoFetch:torrentant:' + str(ex))
+                        logging.warning('avinfoFetch:torrentant:' + str(ex))
         except Exception as ex:
-            print('avinfoFetch:' + str(ex))
+            logging.error('avinfoFetch:' + str(ex))
     return avs
 
 
@@ -658,7 +678,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     clink = item('td:eq(4)')('a:first').attr('href')
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:btgongchang:' + str(ex))
+                    logging.debug('avlinkFetch:btgongchang:' + str(ex))
         if engine == 'btso':
             data = PyQuery(getHTML('https://btso.pw/search/' + code + '/', 5, 5, 1, proxy))
             content = data('div.data-list')
@@ -685,7 +705,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     clink = str(linkdata('textarea#magnetLink').text()).strip()
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:btso:' + str(ex))
+                    logging.debug('avlinkFetch:btso:' + str(ex))
         if engine == 'btdb':
             data = PyQuery(getHTML('https://btdb.in/q/' + code + '/?sort=popular', 5, 5, 1, proxy))
             content = data('ul.search-ret-list')
@@ -713,7 +733,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     size = str("%.2f" % float(size))
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:btdb:' + str(ex))
+                    logging.debug('avlinkFetch:btdb:' + str(ex))
         if engine == 'torrentant':
             data = PyQuery(getHTML('http://www.torrentant.com/cn/s/' + code + '?sort=hot', 5, 5, 1, proxy))
             content = data('ul[class="search-container"]')
@@ -741,7 +761,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     linkdata = PyQuery(getHTML(tmplink, 5, 5, 1, proxy))
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:torrentant:' + str(ex))
+                    logging.debug('avlinkFetch:torrentant:' + str(ex))
         if engine == 'javhoo':
             data = PyQuery(getHTML('https://www.javhoo.com/av/' + code + '/', 5, 5, 1, proxy))
             content = data('table#magnet-table')
@@ -765,7 +785,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     clink = str(item('td:eq(0)')('a').attr('href')).strip()
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:javhoo:' + str(ex))
+                    logging.debug('avlinkFetch:javhoo:' + str(ex))
         if engine == 'zhongziso':
             data = PyQuery(getHTML('http://www.zhongziso.com/list/' + code + '/1', 5, 5, 1, proxy))
             content = data('div.inerTop')
@@ -789,7 +809,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     clink = str(item('tr:eq(1)')('td:eq(3)')('a').attr('href')).strip()
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:zhongziso:' + str(ex))
+                    logging.debug('avlinkFetch:zhongziso:' + str(ex))
         '''
         if engine == 'btago':
             data = PyQuery(getHTML('http://www.btago.com/e/' + code + '/', 5, 5, 1, proxy))
@@ -817,10 +837,10 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     linkdata = PyQuery(getHTML(tmplink, 5, 5, 1, proxy))
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    print('avlinkFetch:btago:' + str(ex))
+                    logging.debug('avlinkFetch:btago:' + str(ex))
         '''
     except Exception as ex:
-        print('avlinkFetch:' + str(ex))
+        logging.warning('avlinkFetch:' + str(ex))
     return avlinks
 
 
@@ -888,13 +908,14 @@ def av2file(avs, dirpath):
                 imgfs.close()
                 print('READY')
             except Exception as ex:
-                print('av2file:' + str(ex))
+                logging.debug('av2file:' + str(ex))
+                print('FAILED')
         txtfs.close()
         print('COMPLETE')
     except Exception as ex:
         if txtfs is not None:
             txtfs.close()
-        print('av2file:' + str(ex))
+        logging.error('av2file:' + str(ex))
         print('FAILED')
 
 
@@ -922,22 +943,26 @@ def av2db(avs, dirpath):
               `link` varchar(10000) DEFAULT NUll,
                PRIMARY KEY (`code`)
             )'''
-        conn = get_conn(dbpath)
-        create_table(conn, sql)
+        # conn = get_conn(dbpath)
+        create_table(get_conn(dbpath), sql)
 
         sql = '''INSERT OR IGNORE INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         for cav in avs:
-            print('Creating AV Information : ' + cav.title, end=' ...... ')
-            data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(cav.cover), cav.link))
-            print('READY')
-        save(conn, sql, data)
+            try:
+                print('Creating AV Information : ' + cav.title, end=' ...... ')
+                # data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(bytes(cav.cover)), cav.link))
+                save(get_conn(dbpath), sql, [(cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(cav.cover), cav.link)])
+                print('READY')
+            except Exception as ex:
+                logging.debug('av2db:' + str(ex))
+                print('FAILED')
         print('COMPLETE')
     except Exception as ex:
         if 'UNIQUE constraint failed' in str(ex):
-            print('av2db:' + str(ex))
+            logging.debug('av2db:' + str(ex))
             print('COMPLETE')
         else:
-            print('av2db:' + str(ex))
+            logging.error('av2db:' + str(ex))
             print('FAILED')
 
 
@@ -956,9 +981,9 @@ def avsave(avs, savetype='file', tpath=curDir()):
                 av2db(avs, dirpath)
 
         except Exception as ex:
-            print('avsave:' + str(ex))
+            logging.error('avsave:' + str(ex))
     else:
-        print('No AV Infomation')
+        logging.error('No AV Infomation')
 
 
 def avquickFetch(code, proxy=''):
@@ -1028,15 +1053,15 @@ def avquickFetch(code, proxy=''):
                 clink = str(linkitem('td:eq(0)')('a').attr('href')).strip()
                 links.append(avlinkinfo(code, head, time, hot, size, clink, 'javhoo'))
             except Exception as ex:
-                print('avlinkFetch:javhoo:' + str(ex))
+                logging.debug('avlinkFetch:javhoo:' + str(ex))
         try:
             link = avlinkFilter(links).link
         except Exception as ex:
-            print('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
             link = 'page:' + 'https://www.javhoo.com/av/' + code
         return av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
     except Exception as ex:
-        print('avquickFetch:' + str(ex))
+        logging.error('avquickFetch:' + str(ex))
         return None
 
 
@@ -1045,14 +1070,15 @@ def main(argv):
     stype = 'file'
     surl = ''
     sfile = ''
-    tpath = ''
+    tpath = curDir()
     sengine = ''
     sproxy = ''
     keywords = []
     textwords = []
     filewords = []
     urlwords = []
-    # pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,3}|\d{6}[-_]\d{3}')
+    logInit()
+
     if argv is not None and len(argv) > 0:
         try:
             opts, args = getopt.getopt(argv, "hd:e:t:p:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "url=", "file=", "code="])
@@ -1108,13 +1134,13 @@ def main(argv):
             avsave(avs, stype, tpath)
 
         except Exception as ex:
-            print('main:' + str(ex))
+            logging.error('main:' + str(ex))
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'AAJ-002 DTRS-027'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'FSET-337'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
