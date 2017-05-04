@@ -272,7 +272,7 @@ class Window(QWidget):
 
         self.setLayout(self.vbox)
 
-        self.setGeometry(300, 300, 1000, 450)
+        self.setGeometry(300, 300, 1000, 600)
         self.setWindowTitle('浏览')
         self.show()
 
