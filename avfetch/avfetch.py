@@ -293,6 +293,51 @@ def charDetect(data):
     return ''
 
 
+def detectPage(url, timeout, retry, sleep, proxy=''):
+    proxyDict = {}
+    if proxy is not None and re.match(r'^.+@.+:.+$', proxy, flags=0):
+        proxyDict['type'] = proxy.split('@')[0]
+        proxy = proxy.split('@')[1]
+        proxyDict['host'] = proxy.split(':')[0]
+        proxyDict['port'] = proxy.split(':')[1]
+    if len(proxyDict) > 0 and proxyDict['type'] is not None and proxyDict['type'].lower() == 'socks5':
+        socks.set_default_proxy(socks.SOCKS5, proxyDict['host'], int(proxyDict['port']))
+        socket.socket = socks.socksocket
+    elif len(proxyDict) > 0 and proxyDict['type'] is not None and proxyDict['type'].lower() == 'socks4':
+        socks.set_default_proxy(socks.SOCKS4, proxyDict['host'], int(proxyDict['port']))
+        socket.socket = socks.socksocket
+    elif len(proxyDict) > 0 and proxyDict['type'] is not None and proxyDict['type'].lower() == 'http':
+        socks.set_default_proxy(socks.HTTP, proxyDict['host'], int(proxyDict['port']))
+        socket.socket = socks.socksocket
+    socket.setdefaulttimeout(timeout)
+    # url = 'https://www.javbus2.com/HIZ-015'
+    # url = "http://img0.imgtn.bdimg.com/it/u=4054848240,1657436512&fm=21&gp=0.jpg"
+    # headers = [('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) \
+    # Chrome/23.0.1271.64 Safari/537.11'),
+    # ('Accept','text/html;q=0.9,*/*;q=0.8'),
+    # ('Accept-Charset','ISO-8859-1,utf-8;q=0.7,*;q=0.3'),
+    # ('Accept-Encoding','gzip,deflate,sdch'),
+    # ('Connection','close'),
+    # ('Referer',None )]#注意如果依然不能抓取的话，这里可以设置抓取网站的host
+    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'close'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
+
+    opener = request.build_opener()
+    opener.addheaders = headers
+    i = retry
+    while i > 0:
+        try:
+            time.sleep(sleep)
+            data = opener.open(quote(url, safe='/:?=%-&'))
+            opener.close()
+            return True
+        except Exception as ex:
+            opener.close()
+            if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
+                return False
+        i -= 1
+    return False
+
+
 def getHTML(url, timeout, retry, sleep, proxy=''):
     proxyDict = {}
     if proxy is not None and re.match(r'^.+@.+:.+$', proxy, flags=0):
@@ -348,6 +393,24 @@ def getHTML(url, timeout, retry, sleep, proxy=''):
                 break
         i -= 1
     return contents
+
+
+def avpageFetch(url, engine='javbus', proxy=''):
+    avpage = []
+    if engine == 'javbus':
+        try:
+            curl = url
+            urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
+            urlcontent = urldata('div#waterfall')
+            for urlitem in urlcontent('a.movie-box').items():
+                code = str(urlitem('div.photo-info')('date:first').text()).strip().upper()
+                urlitem('div.photo-info')('span')('date').remove()
+                title = str(urlitem('div.photo-info')('span').text().replace('/', '')).strip()
+                url = str(urlitem.attr('href')).strip()
+                avpage.append({'code': code, 'title': title, 'url': url})
+        except Exception as ex:
+            logging.warning("avurlFetch:javbus:" + str(ex))
+    return avpage
 
 
 def avurlFetch(keyword, engine='javbus', proxy=''):
@@ -449,7 +512,7 @@ def avkeywordParse(textargs, type):
     lines = []
     keywords = []
     try:
-        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,4}|\d{6}[-_]\d{3}')
+        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,4}|\d{6}[-_]\d{2,3}')
         if type == 'file':
             sfile = os.path.join(curDir(), textargs)
             chartype = charDetect(open(sfile, 'rb').read())
@@ -465,7 +528,7 @@ def avkeywordParse(textargs, type):
         for line in lines:
             for number in pattern.finditer(line):
                 code = str(number.group()).upper()
-                if re.match(r'\d{6}[-_]\d{3}', code):
+                if re.match(r'\d{6}[-_]\d{2,3}', code):
                     code = code.replace('-', '_')
                 else:
                     p = re.match(r'([A-Za-z]+).*?(\d+)', code)
