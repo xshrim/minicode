@@ -109,6 +109,14 @@ class avlink(object):
 ######################################### DB START#########################################
 
 
+def dict_factory(cursor, row):
+    '''将数据库查询结果按字典输出的字典工厂'''
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
 def get_conn(path):
     '''获取到数据库的连接对象，参数为数据库文件的绝对路径
     如果传递的参数是存在，并且是文件，那么就返回硬盘上面改
@@ -883,20 +891,20 @@ def av2file(avs, dirpath):
         for cav in avs:
             try:
                 print('Creating AV Information : ' + cav.title, end=' ...... ')
-                txtfs.write('番号:'.rjust(5) + cav.code + '\n')
-                txtfs.write('标题:'.rjust(5) + cav.title + '\n')
-                txtfs.write('日期:'.rjust(5) + cav.issuedate + '\n')
-                txtfs.write('时长:'.rjust(5) + cav.length + '\n')
-                txtfs.write('修正:'.rjust(5) + cav.mosaic + '\n')
-                txtfs.write('导演:'.rjust(5) + cav.director + '\n')
-                txtfs.write('制作:'.rjust(5) + cav.manufacturer + '\n')
-                txtfs.write('发行:'.rjust(5) + cav.publisher + '\n')
-                txtfs.write('系列:'.rjust(5) + cav.series + '\n')
-                txtfs.write('类别:'.rjust(5) + cav.category + '\n')
-                txtfs.write('女优:'.rjust(5) + cav.actors + '\n')
-                txtfs.write('收藏:'.rjust(5) + cav.favor + '\n')
-                txtfs.write('预览:'.rjust(5) + cav.coverlink + '\n')
-                txtfs.write('磁链:'.rjust(5) + cav.link + '\n')
+                txtfs.write('番号:'.center(5) + cav.code + '\n')
+                txtfs.write('标题:'.center(5) + cav.title + '\n')
+                txtfs.write('日期:'.center(5) + cav.issuedate + '\n')
+                txtfs.write('时长:'.center(5) + cav.length + '\n')
+                txtfs.write('修正:'.center(5) + cav.mosaic + '\n')
+                txtfs.write('导演:'.center(5) + cav.director + '\n')
+                txtfs.write('制作:'.center(5) + cav.manufacturer + '\n')
+                txtfs.write('发行:'.center(5) + cav.publisher + '\n')
+                txtfs.write('系列:'.center(5) + cav.series + '\n')
+                txtfs.write('类别:'.center(5) + cav.category + '\n')
+                txtfs.write('女优:'.center(5) + cav.actors + '\n')
+                txtfs.write('收藏:'.center(5) + cav.favor + '\n')
+                txtfs.write('预览:'.center(5) + cav.coverlink + '\n')
+                txtfs.write('磁链:'.center(5) + cav.link + '\n')
                 txtfs.write('#' * 100 + '\n')
                 ext = cav.coverlink.split('.')[-1] if '.' in cav.coverlink else 'jpg'
                 imgname = cav.code + '_' + cav.title + '.' + ext

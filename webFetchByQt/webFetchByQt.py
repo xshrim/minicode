@@ -3,8 +3,7 @@
 def render(curl):
     """Fully render HTML, JavaScript and all."""
     import sys
-    from PyQt5.QtCore import QUrl
-    from PyQt5.QtCore import QEventLoop
+    from PyQt5.QtCore import (QUrl, QEventLoop)
     from PyQt5.QtWidgets import QApplication
     from PyQt5.QtWebEngineWidgets import QWebEngineView
 
