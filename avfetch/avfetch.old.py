@@ -62,22 +62,22 @@ class av(object):
 
     def __str__(self):
         '''
-        print('番号:'.center(5) + self.code)
-        print('标题:'.center(5) + self.title)
-        print('日期:'.center(5) + self.issuedate)
-        print('时长:'.center(5) + self.length)
-        print('修正:'.center(5) + self.mosaic)
-        print('导演:'.center(5) + self.director)
-        print('制作:'.center(5) + self.manufacturer)
-        print('发行:'.center(5) + self.publisher)
-        print('系列:'.center(5) + self.series)
-        print('类别:'.center(5) + self.category)
-        print('女优:'.center(5) + self.actors)
-        print('收藏:'.center(5) + self.favor)
-        print('预览:'.center(5) + self.coverlink)
-        print('磁链:'.center(5) + self.link)
+        print('番号:'.rjust(5) + self.code)
+        print('标题:'.rjust(5) + self.title)
+        print('日期:'.rjust(5) + self.issuedate)
+        print('时长:'.rjust(5) + self.length)
+        print('修正:'.rjust(5) + self.mosaic)
+        print('导演:'.rjust(5) + self.director)
+        print('制作:'.rjust(5) + self.manufacturer)
+        print('发行:'.rjust(5) + self.publisher)
+        print('系列:'.rjust(5) + self.series)
+        print('类别:'.rjust(5) + self.category)
+        print('女优:'.rjust(5) + self.actors)
+        print('收藏:'.rjust(5) + self.favor)
+        print('预览:'.rjust(5) + self.coverlink)
+        print('磁链:'.rjust(5) + self.link)
         '''
-        return '番号:'.center(5) + self.code + '\n' + '标题:'.center(5) + self.title + '\n' + '日期:'.center(5) + self.issuedate + '\n' + '时长:'.center(5) + self.length + '\n' + '修正:'.center(5) + self.mosaic + '\n' + '导演:'.center(5) + self.director + '\n' + '制作:'.center(5) + self.manufacturer + '\n' + '发行:'.center(5) + self.publisher + '\n' + '系列:'.center(5) + self.series + '\n' + '类别:'.center(5) + self.category + '\n' + '女优:'.center(5) + self.actors + '\n' + '收藏:'.center(5) + self.favor + '\n' + '预览:'.center(5) + self.coverlink + '\n' + '磁链:'.center(5) + self.link
+        return '番号:'.rjust(5) + self.code + '\n' + '标题:'.rjust(5) + self.title + '\n' + '日期:'.rjust(5) + self.issuedate + '\n' + '时长:'.rjust(5) + self.length + '\n' + '修正:'.rjust(5) + self.mosaic + '\n' + '导演:'.rjust(5) + self.director + '\n' + '制作:'.rjust(5) + self.manufacturer + '\n' + '发行:'.rjust(5) + self.publisher + '\n' + '系列:'.rjust(5) + self.series + '\n' + '类别:'.rjust(5) + self.category + '\n' + '女优:'.rjust(5) + self.actors + '\n' + '收藏:'.rjust(5) + self.favor + '\n' + '预览:'.rjust(5) + self.coverlink + '\n' + '磁链:'.rjust(5) + self.link
 
     __repr__ = __str__
 
@@ -541,26 +541,8 @@ def avkeywordParse(textargs, type):
     return keywords
 
 
-def avfullFetch(keywords, stype, tpath, engine='javbus', proxy=''):
+def avinfoFetch(keywords, engine='javbus', proxy=''):
     avs = []
-    try:
-        print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
-        for keyword in keywords:
-            print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
-            for avpage in avurlFetch(keyword, engine, proxy):
-                print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
-                cav = avinfoFetch(avpage['url'], engine, proxy)
-                if cav:
-                    avs.append(cav)
-        print((' [ Saving Information to ' + tpath + ' ] ').center(100, '/'))
-        avsave(avs, stype, tpath)
-    except Exception as ex:
-        logging.error("avfullFetch:" + str(ex))
-
-
-def avinfoFetch(url, engine='javbus', proxy=''):
-    cav = None
-    code = ''
     title = ''
     issuedate = ''
     length = ''
@@ -576,152 +558,164 @@ def avinfoFetch(url, engine='javbus', proxy=''):
     cover = b''
     link = ''
 
-    if engine == 'javbus' or 'javbus' in url:
+    for keyword in keywords:
         try:
-            data = PyQuery(getHTML(url, 5, 5, 1, proxy))
-            content = data('div.container')
-            mosaic = str(data('ul[class="nav navbar-nav"]')('li[class="active"]').text()).strip()
-            mosaic = mosaic.replace('無', '无').replace('碼', '码').replace('修正', '码')
-            if mosaic == '码':
-                mosaic = '有码'
-            title = str(content('h3').eq(0).text()).strip()
-            avinfo = content('div[class="col-md-3 info"]')
-            '''
-            issuedate = str(re.search(r'\d*-\d*-\d*', avinfo('p:eq(1)').text()).group())
-            length = str(avinfo('p:eq(2)').text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
-            director = str(avinfo('p:eq(3)')('a').text()).strip()
-            manufacturer = str(avinfo('p:eq(4)')('a').text()).strip()
-            publisher = str(avinfo('p:eq(5)')('a').text()).strip()
-            if avinfo('p:eq(6)')('a') is not None and str(avinfo('p:eq(6)')('a')).strip() != '':
-                series = str(avinfo('p:eq(6)')('a').text()).strip()
-                category = str(avinfo('p:eq(8)').text()).strip()
-                actors = str(avinfo('p:eq(10)').text()).strip()
-            else:
-                series = ''
-                category = str(avinfo('p:eq(7)').text()).strip()
-                actors = str(avinfo('p:eq(9)').text()).strip()
-            '''
-            for item in avinfo('p').items():
-                if '識別碼' in item.text() or '品番' in item.text() or '番號' in item.text()or '识别码' in item.text()or '番号' in item.text():
-                    code = str(item('span:eq(1)').text()).strip()
-                if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
-                    issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group()).strip()
-                if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
-                    length = str(item.text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
-                if '監督' in item.text() or '導演' in item.text() or '监督' in item.text() or '导演' in item.text():
-                    director = str(item('a').text()).strip()
-                if 'メーカー' in item.text() or '製作商' in item.text() or '制作商' in item.text():
-                    manufacturer = str(item('a').text()).strip()
-                if 'レーベル' in item.text() or '發行商' in item.text() or '发行商' in item.text():
-                    publisher = str(item('a').text()).strip()
-                if 'シリーズ' in item.text() or '系列' in item.text():
-                    series = str(item('a').text()).strip()
-                if 'ジャンル' in item.text() or '類別' in item.text() or '类别' in item.text():
-                    category = str(item.next().text()).strip()
-                if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
-                    actors = str(item.next().text()).strip()
-            favor = '0'
-            coverlink = str(content('a.bigImage').attr('href')).strip()
-            title = title.replace(code, '').strip()
-            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink)
+            if engine == 'javbus':
+                print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
+                for avpage in avurlFetch(keyword, 'javbus', proxy):
+                    # curl = 'https://www.javbus.com/' + avpage['code']
+                    # curl = parse.urljoin('https://www.javbus.com/', avpage['code'])
+                    # data = PyQuery('https://avmo.pw/cn/search/' + avpage['code'])
+                    # url = str(data('a.movie-box').attr('href'))
+                    # avs[avpage['code']] = url
+                    print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
+                    try:
+                        data = PyQuery(getHTML(avpage['url'], 5, 5, 1, proxy))
+                        content = data('div.container')
+                        mosaic = str(data('ul[class="nav navbar-nav"]')('li[class="active"]').text()).strip()
+                        mosaic = mosaic.replace('無', '无').replace('碼', '码').replace('修正', '码')
+                        if mosaic == '码':
+                            mosaic = '有码'
+                        title = str(content('h3').eq(0).text().replace(avpage['code'], '')).strip()
+                        avinfo = content('div[class="col-md-3 info"]')
+                        '''
+                        issuedate = str(re.search(r'\d*-\d*-\d*', avinfo('p:eq(1)').text()).group())
+                        length = str(avinfo('p:eq(2)').text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
+                        director = str(avinfo('p:eq(3)')('a').text()).strip()
+                        manufacturer = str(avinfo('p:eq(4)')('a').text()).strip()
+                        publisher = str(avinfo('p:eq(5)')('a').text()).strip()
+                        if avinfo('p:eq(6)')('a') is not None and str(avinfo('p:eq(6)')('a')).strip() != '':
+                            series = str(avinfo('p:eq(6)')('a').text()).strip()
+                            category = str(avinfo('p:eq(8)').text()).strip()
+                            actors = str(avinfo('p:eq(10)').text()).strip()
+                        else:
+                            series = ''
+                            category = str(avinfo('p:eq(7)').text()).strip()
+                            actors = str(avinfo('p:eq(9)').text()).strip()
+                        '''
+                        for item in avinfo('p').items():
+                            if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
+                                issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group())
+                            if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
+                                length = str(item.text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
+                            if '監督' in item.text() or '導演' in item.text() or '监督' in item.text() or '导演' in item.text():
+                                director = str(item('a').text()).strip()
+                            if 'メーカー' in item.text() or '製作商' in item.text() or '制作商' in item.text():
+                                manufacturer = str(item('a').text()).strip()
+                            if 'レーベル' in item.text() or '發行商' in item.text() or '发行商' in item.text():
+                                publisher = str(item('a').text()).strip()
+                            if 'シリーズ' in item.text() or '系列' in item.text():
+                                series = str(item('a').text()).strip()
+                            if 'ジャンル' in item.text() or '類別' in item.text() or '类别' in item.text():
+                                category = str(item.next().text()).strip()
+                            if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
+                                actors = str(item.next().text()).strip()
+                        favor = '0'
+                        coverlink = str(content('a.bigImage').attr('href')).strip()
+                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '收藏:'.rjust(5) + favor + '\n' + '预览:'.rjust(5) + coverlink)
 
-            cover = getHTML(coverlink, 5, 5, 0, proxy)
-            # magnets = content('table#magnet-table')
-            try:
-                link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
-            except Exception as ex:
-                logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
-                link = 'page:' + url
-            print('磁链:'.center(5) + link)
-            cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
-        except Exception as ex:
-            logging.warning('avinfoFetch:javbus:' + str(ex))
-    if engine == 'javhoo' or 'javhoo' in url:
-        try:
-            data = PyQuery(getHTML(url, 5, 5, 1, proxy))
-            content = data('div#content')('div.wf-container')
-            avinfo = content('div.project_info')
-            mosaic = str(avinfo('span.category-link').text()).strip()
-            mosaic = mosaic.replace('無', '无').replace('碼', '码').replace('修正', '码')
-            if mosaic == '码':
-                mosaic = '有码'
-            title = str(data('h1[class="h3-size entry-title"]').text()).strip()
-            '''
-            issuedate = str(re.search(r'\d*-\d*-\d*', avinfo('p:eq(1)').text()).group())
-            length = str(avinfo('p:eq(2)').text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
-            director = str(avinfo('p:eq(3)')('a').text()).strip()
-            manufacturer = str(avinfo('p:eq(4)')('a').text()).strip()
-            publisher = str(avinfo('p:eq(5)')('a').text()).strip()
-            series = str(avinfo('p:eq(6)')('a').text()).strip()
-            category = str(avinfo('p:eq(8)').text()).strip()
-            actors = str(avinfo('p:eq(10)').text()).strip()
-            '''
-            for item in avinfo('p').items():
-                if '識別碼' in item.text() or '品番' in item.text() or '番號' in item.text()or '识别码' in item.text()or '番号' in item.text():
-                    code = str(item('span:eq(1)').text()).strip()
-                if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
-                    issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group()).strip()
-                if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
-                    length = str(item.text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
-                if '監督' in item.text() or '導演' in item.text() or '监督' in item.text() or '导演' in item.text():
-                    director = str(item('a').text()).strip()
-                if 'メーカー' in item.text() or '製作商' in item.text() or '制作商' in item.text():
-                    manufacturer = str(item('a').text()).strip()
-                if 'レーベル' in item.text() or '發行商' in item.text() or '发行商' in item.text():
-                    publisher = str(item('a').text()).strip()
-                if 'シリーズ' in item.text() or '系列' in item.text():
-                    series = str(item('a').text()).strip()
-                if 'ジャンル' in item.text() or '類別' in item.text() or '类别' in item.text():
-                    category = str(item.next().text()).strip()
-                if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
-                    actors = str(item.next().text()).strip()
-            favor = '0'
-            title = title.replace(code, '').strip()
-            coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
-            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink)
+                        cover = getHTML(coverlink, 5, 5, 0, proxy)
+                        # magnets = content('table#magnet-table')
+                        try:
+                            link = avlinkFilter(avlinkFetch(avpage['code'], 'zhongziso', proxy)).link
+                        except Exception as ex:
+                            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+                            link = 'page:' + avpage['url']
+                        print('磁链:'.rjust(5) + link)
+                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
+                    except Exception as ex:
+                        logging.warning('avinfoFetch:javbus:' + str(ex))
+            if engine == 'javhoo':
+                print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
+                for avpage in avurlFetch(keyword, 'javhoo', proxy):
+                    # curl = 'https://www.javhoo.com/av/' + avpage['code']
+                    print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
+                    try:
+                        data = PyQuery(getHTML(avpage['url'], 5, 5, 1, proxy))
+                        content = data('div#content')('div.wf-container')
+                        avinfo = content('div.project_info')
+                        mosaic = str(avinfo('span.category-link').text()).strip()
+                        mosaic = mosaic.replace('無', '无').replace('碼', '码').replace('修正', '码')
+                        if mosaic == '码':
+                            mosaic = '有码'
+                        title = str(data('h1[class="h3-size entry-title"]').text().replace(avpage['code'], '')).strip()
+                        '''
+                        issuedate = str(re.search(r'\d*-\d*-\d*', avinfo('p:eq(1)').text()).group())
+                        length = str(avinfo('p:eq(2)').text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
+                        director = str(avinfo('p:eq(3)')('a').text()).strip()
+                        manufacturer = str(avinfo('p:eq(4)')('a').text()).strip()
+                        publisher = str(avinfo('p:eq(5)')('a').text()).strip()
+                        series = str(avinfo('p:eq(6)')('a').text()).strip()
+                        category = str(avinfo('p:eq(8)').text()).strip()
+                        actors = str(avinfo('p:eq(10)').text()).strip()
+                        '''
+                        for item in avinfo('p').items():
+                            if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
+                                issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group())
+                            if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
+                                length = str(item.text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
+                            if '監督' in item.text() or '導演' in item.text() or '监督' in item.text() or '导演' in item.text():
+                                director = str(item('a').text()).strip()
+                            if 'メーカー' in item.text() or '製作商' in item.text() or '制作商' in item.text():
+                                manufacturer = str(item('a').text()).strip()
+                            if 'レーベル' in item.text() or '發行商' in item.text() or '发行商' in item.text():
+                                publisher = str(item('a').text()).strip()
+                            if 'シリーズ' in item.text() or '系列' in item.text():
+                                series = str(item('a').text()).strip()
+                            if 'ジャンル' in item.text() or '類別' in item.text() or '类别' in item.text():
+                                category = str(item.next().text()).strip()
+                            if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
+                                actors = str(item.next().text()).strip()
+                        favor = '0'
+                        coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
+                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '收藏:'.rjust(5) + favor + '\n' + '预览:'.rjust(5) + coverlink)
 
-            cover = getHTML(coverlink, 5, 5, 0, proxy)
-            try:
-                link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
-            except Exception as ex:
-                logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
-                link = 'page:' + url
-            print('磁链:'.center(5) + link)
-            cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
-        except Exception as ex:
-            logging.warning('avinfoFetch:javhoo:' + str(ex))
-    if engine == 'torrentant' or 'torrentant' in url:
-        try:
-            data = PyQuery(getHTML(url, 5, 5, 1, proxy))
-            content = data('div.container-fluid')('div.movie-view:first')
-            avinfo = content('table.movie-view-table')
-            mosaic = '未知'
-            title = str(content('h1:first').text()).strip()
-            code = str(avinfo('tr:eq(0)')('td:eq(1)').text()).strip()
-            issuedate = str(avinfo('tr:eq(1)')('td:eq(1)').text()).strip()
-            length = str(avinfo('tr:eq(2)')('td:eq(1)').text()).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
-            director = str(avinfo('tr:eq(5)')('td:eq(1)').text()).strip()
-            manufacturer = str(avinfo('tr:eq(3)')('td:eq(1)').text()).strip()
-            publisher = str(avinfo('tr:eq(4)')('td:eq(1)').text()).strip()
-            series = str(avinfo('tr:eq(6)')('td:eq(1)').text()).strip()
-            category = str(content('div[class="col-md-12 tags"]').text()).strip()
-            actors = str(content('div#avatar-waterfall').text()).strip()
-            favor = '0'
-            title = title.replace(code, '').strip()
-            coverlink = ''
-            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink)
+                        cover = getHTML(coverlink, 5, 5, 0, proxy)
+                        try:
+                            link = avlinkFilter(avlinkFetch(avpage['code'], 'zhongziso', proxy)).link
+                        except Exception as ex:
+                            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+                            link = 'page:' + avpage['url']
+                        print('磁链:'.rjust(5) + link)
+                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
+                    except Exception as ex:
+                        logging.warning('avinfoFetch:javhoo:' + str(ex))
+            if engine == 'torrentant':
+                print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
+                for avpage in avurlFetch(keyword, 'torrentant', proxy):
+                    # curl = 'https://www.javhoo.com/av/' + avpage['code']
+                    print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
+                    try:
+                        data = PyQuery(getHTML(avpage['url'], 5, 5, 1, proxy))
+                        content = data('div.container-fluid')('div.movie-view:first')
+                        avinfo = content('table.movie-view-table')
+                        mosaic = '未知'
+                        title = str(content('h1:first').text().replace(avpage['code'], '')).strip()
+                        issuedate = str(avinfo('tr:eq(1)')('td:eq(1)').text()).strip()
+                        length = str(avinfo('tr:eq(2)')('td:eq(1)').text()).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
+                        director = str(avinfo('tr:eq(5)')('td:eq(1)').text()).strip()
+                        manufacturer = str(avinfo('tr:eq(3)')('td:eq(1)').text()).strip()
+                        publisher = str(avinfo('tr:eq(4)')('td:eq(1)').text()).strip()
+                        series = str(avinfo('tr:eq(6)')('td:eq(1)').text()).strip()
+                        category = str(content('div[class="col-md-12 tags"]').text()).strip()
+                        actors = str(content('div#avatar-waterfall').text()).strip()
+                        favor = '0'
+                        coverlink = ''
+                        print('番号:'.rjust(5) + avpage['code'] + '\n' + '标题:'.rjust(5) + title + '\n' + '日期:'.rjust(5) + issuedate + '\n' + '时长:'.rjust(5) + length + '\n' + '修正:'.rjust(5) + mosaic + '\n' + '导演:'.rjust(5) + director + '\n' + '制作:'.rjust(5) + manufacturer + '\n' + '发行:'.rjust(5) + publisher + '\n' + '系列:'.rjust(5) + series + '\n' + '类别:'.rjust(5) + category + '\n' + '女优:'.rjust(5) + actors + '\n' + '收藏:'.rjust(5) + favor + '\n' + '预览:'.rjust(5) + coverlink)
 
-            cover = b''
-            try:
-                link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
-            except Exception as ex:
-                logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
-                link = 'page:' + url
-            print('磁链:'.center(5) + link)
-            cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
+                        cover = b''
+                        try:
+                            link = avlinkFilter(avlinkFetch(avpage['code'], 'zhongziso', proxy)).link
+                        except Exception as ex:
+                            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+                            link = 'page:' + avpage['url']
+                        print('磁链:'.rjust(5) + link)
+                        avs.append(av(avpage['code'], title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link))
+                    except Exception as ex:
+                        logging.warning('avinfoFetch:torrentant:' + str(ex))
         except Exception as ex:
-            logging.warning('avinfoFetch:torrentant:' + str(ex))
-    return cav
+            logging.error('avinfoFetch:' + str(ex))
+    return avs
 
 
 def avlinkFetch(code, engine='btso', proxy=''):
@@ -1149,7 +1143,7 @@ def main(argv):
     surl = ''
     sfile = ''
     tpath = curDir()
-    sengine = 'javbus'
+    sengine = ''
     sproxy = ''
     keywords = []
     textwords = []
@@ -1208,7 +1202,9 @@ def main(argv):
             keywords.extend(textwords)
             keywords.extend(filewords)
             keywords.extend(urlwords)
-            avfullFetch(keywords, stype, tpath, sengine, sproxy)
+            avs = avinfoFetch(keywords, engine=sengine, proxy=sproxy)
+            avsave(avs, stype, tpath)
+
         except Exception as ex:
             logging.error('main:' + str(ex))
 
@@ -1216,7 +1212,7 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'FSET-337'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'FSET-337'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
@@ -1228,14 +1224,6 @@ if __name__ == "__main__":
 # for cav in avlinkFetch('ipz-371', 'zhongziso'):
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
-
-avs = []
-for i in range(1, 2):
-    url = 'https://www.javbus.com/page/' + str(i)
-    for avpage in avpageFetch(url, 'javbus', ''):
-        print(('Fetching Page ' + avpage['url']).center(100, '*'))
-        avs.append(avinfoFetch(avpage['url'], 'javbus', ''))
-print(len(avs))
 
 # 搜索引擎：
 # btso:https://btso.pw/search/ipz-137/
