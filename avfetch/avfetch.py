@@ -13,10 +13,11 @@ import chardet
 import sqlite3
 import logging
 import threading
-from urllib import request
-from urllib import parse
-from urllib.parse import quote
+import concurrent.futures
 from pyquery import PyQuery
+from urllib import parse
+from urllib import request
+from urllib.parse import quote
 
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
@@ -211,7 +212,6 @@ def fetchall(conn, sql):
 
 
 def fetchone(conn, sql, data):
-    '''查询一条数据'''
     if sql is not None and sql != '':
         if data is not None:
             # Do this instead
@@ -220,13 +220,12 @@ def fetchone(conn, sql, data):
             # print('执行sql:[{}],参数:[{}]'.format(sql, data))
             cu.execute(sql, d)
             r = cu.fetchall()
-            if len(r) > 0:
-                for e in range(len(r)):
-                    print(r[e])
+            return r
         else:
             logging.error('the [{}] equal None!'.format(data))
     else:
         logging.error('the [{}] is empty or equal None!'.format(sql))
+    return None
 
 
 def update(conn, sql, data):
@@ -274,6 +273,15 @@ def curDir():
         return os.path.split(os.path.realpath(__file__))[0]
     except Exception as ex:
         return os.getcwd()
+
+
+def duplicateCheck(code, dbfile):
+    sql = 'SELECT code FROM av WHERE code = ?'
+    res = fetchone(get_conn(dbfile), sql, code)
+    if res is not None and len(res) > 0:
+        return True
+    else:
+        return False
 
 
 def charDetect(data):
@@ -513,7 +521,7 @@ def avkeywordParse(textargs, type):
     lines = []
     keywords = []
     try:
-        pattern = re.compile(r'[A-Za-z]{2,5}-?\d{2,4}|\d{6}[-_]\d{2,3}')
+        pattern = re.compile(r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}')
         if type == 'file':
             sfile = os.path.join(curDir(), textargs)
             chartype = charDetect(open(sfile, 'rb').read())
@@ -526,32 +534,88 @@ def avkeywordParse(textargs, type):
                 lines.append(textarg)
                 keywords.append(str(textarg).upper())
 
+        while len(lines) > 0:
+            for number in pattern.finditer(lines.pop(0)):
+                code = str(number.group()).upper()
+                if re.match(r'^\d{6}_\d{2,3}$', code):
+                    lines.append(code.replace('_', '-'))
+                elif re.match(r'([A-Za-z]+)(\d+)', code):
+                    p = re.match(r'([A-Za-z]+)(\d+)', code)
+                    lines.append(str(p.group(1)) + '-' + str(p.group(2)))
+                if code not in keywords:
+                    keywords.append(str(code))
+        '''
         for line in lines:
             for number in pattern.finditer(line):
                 code = str(number.group()).upper()
                 if re.match(r'\d{6}[-_]\d{2,3}', code):
+                    if code not in keywords:
+                        keywords.append(str(code))
                     code = code.replace('-', '_')
-                else:
+                    if code not in keywords:
+                        keywords.append(str(code))
+                elif re.match(r'([A-Za-z]+).*?(\d+)', code):
+                    if code not in keywords:
+                        keywords.append(str(code))
                     p = re.match(r'([A-Za-z]+).*?(\d+)', code)
                     code = str(p.group(1)) + '-' + str(p.group(2))
+                    if code not in keywords:
+                        keywords.append(str(code))
                 if code not in keywords:
                     keywords.append(str(code))
+        '''
     except Exception as ex:
         logging.error('avkeywordParse:' + str(ex))
     return keywords
 
 
-def avfullFetch(keywords, stype, tpath, engine='javbus', proxy=''):
-    avs = []
+def avitemFetch(keyword, avs, engine='javbus', proxy='', dbfile=None):
+    print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
     try:
-        print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
-        for keyword in keywords:
-            print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
+        if dbfile is None or not duplicateCheck(keyword.upper(), dbfile):
             for avpage in avurlFetch(keyword, engine, proxy):
                 print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
                 cav = avinfoFetch(avpage['url'], engine, proxy)
                 if cav:
                     avs.append(cav)
+    except Exception as ex:
+        logging.debug("avitemFetch:" + str(ex))
+
+
+def avfullFetch(keywords, stype, tpath, mthread=5, engine='javbus', proxy=''):
+    avs = []
+    try:
+        print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
+        if mthread > 0:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=mthread) as executor:
+                tasks = []
+                pool = concurrent.futures.ThreadPoolExecutor(10)
+                for i in range(0, len(keywords)):
+                    tasks.append(executor.submit(avitemFetch, *(keywords[i], avs, engine, proxy)))
+                concurrent.futures.wait(tasks)
+        else:
+            for keyword in keywords:
+                avitemFetch(keyword, avs, engine, proxy)
+        print((' [ Saving Information to ' + tpath + ' ] ').center(100, '/'))
+        avsave(avs, stype, tpath)
+    except Exception as ex:
+        logging.error("avfullFetch:" + str(ex))
+
+
+def avfullFetchWithDB(keywords, stype, tpath, mthread=5, engine='javbus', proxy=''):
+    avs = []
+    try:
+        print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
+        if mthread > 0:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=mthread) as executor:
+                tasks = []
+                pool = concurrent.futures.ThreadPoolExecutor(10)
+                for i in range(0, len(keywords)):
+                    tasks.append(executor.submit(avitemFetch, *(keywords[i], avs, engine, proxy, os.path.join(tpath, 'avinfos.db'))))
+                concurrent.futures.wait(tasks)
+        else:
+            for keyword in keywords:
+                avitemFetch(keyword, avs, engine, proxy, os.path.join(tpath, 'avinfos.db'))
         print((' [ Saving Information to ' + tpath + ' ] ').center(100, '/'))
         avsave(avs, stype, tpath)
     except Exception as ex:
@@ -621,18 +685,16 @@ def avinfoFetch(url, engine='javbus', proxy=''):
                 if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
                     actors = str(item.next().text()).strip()
             favor = '0'
-            coverlink = str(content('a.bigImage').attr('href')).strip()
             title = title.replace(code, '').strip()
-            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink)
-
+            coverlink = str(content('a.bigImage').attr('href')).strip()
             cover = getHTML(coverlink, 5, 5, 0, proxy)
-            # magnets = content('table#magnet-table')
             try:
                 link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
-            print('磁链:'.center(5) + link)
+            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink + '\n' + '磁链:'.center(5) + link)
+
             cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
         except Exception as ex:
             logging.warning('avinfoFetch:javbus:' + str(ex))
@@ -678,15 +740,14 @@ def avinfoFetch(url, engine='javbus', proxy=''):
             favor = '0'
             title = title.replace(code, '').strip()
             coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
-            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink)
-
             cover = getHTML(coverlink, 5, 5, 0, proxy)
             try:
                 link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
-            print('磁链:'.center(5) + link)
+            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink + '\n' + '磁链:'.center(5) + link)
+
             cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
         except Exception as ex:
             logging.warning('avinfoFetch:javhoo:' + str(ex))
@@ -709,15 +770,14 @@ def avinfoFetch(url, engine='javbus', proxy=''):
             favor = '0'
             title = title.replace(code, '').strip()
             coverlink = ''
-            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink)
-
             cover = b''
             try:
                 link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
-            print('磁链:'.center(5) + link)
+            print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink + '\n' + '磁链:'.center(5) + link)
+
             cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
         except Exception as ex:
             logging.warning('avinfoFetch:torrentant:' + str(ex))
@@ -1151,6 +1211,7 @@ def main(argv):
     tpath = curDir()
     sengine = 'javbus'
     sproxy = ''
+    smthread = 0
     keywords = []
     textwords = []
     filewords = []
@@ -1159,11 +1220,11 @@ def main(argv):
 
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "hd:e:t:p:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "url=", "file=", "code="])
+            opts, args = getopt.getopt(argv, "hd:e:t:p:m:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "mthread=", "url=", "file=", "code="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
-                Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
+                '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
+                Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
             )
             exit(2)
 
@@ -1172,8 +1233,8 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
-                    Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
+                    '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
+                    Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
                 )
                 exit()
             elif opt in ("-d", "--dir"):
@@ -1187,6 +1248,8 @@ def main(argv):
                 if not re.match(r'^.+@.+:.+$', sproxy, flags=0):
                     print('proxy format is illegal!')
                     exit(2)
+            elif opt in ("-m", "--mthread"):
+                smthread = int(arg)
             elif opt in ("-u", "--url"):
                 surl = arg
             elif opt in ("-f", "--file"):
@@ -1208,7 +1271,8 @@ def main(argv):
             keywords.extend(textwords)
             keywords.extend(filewords)
             keywords.extend(urlwords)
-            avfullFetch(keywords, stype, tpath, sengine, sproxy)
+            # avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
+            avfullFetchWithDB(keywords, stype, tpath, smthread, sengine, sproxy)
         except Exception as ex:
             logging.error('main:' + str(ex))
 
@@ -1216,12 +1280,12 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'FSET-337'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-m', '0', '-s', 'ipz-137', 'FSET-337'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # print(avquickFetch('ipz-371'))
 
@@ -1229,6 +1293,7 @@ if __name__ == "__main__":
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
+'''
 avs = []
 for i in range(1, 2):
     url = 'https://www.javbus.com/page/' + str(i)
@@ -1236,6 +1301,28 @@ for i in range(1, 2):
         print(('Fetching Page ' + avpage['url']).center(100, '*'))
         avs.append(avinfoFetch(avpage['url'], 'javbus', ''))
 print(len(avs))
+'''
+
+'''
+with open(r'D:/Git/minicode/avfetch/avs.txt', 'r', encoding='utf-8') as f:
+    start = 6000
+    keywords = []
+    data = f.readlines()
+    end = len(data)
+    print(len(data))
+    print('#' * 100)
+    for i in range(start, end):
+        code = str(data[i].split('#')[0]).strip()
+        keywords.append(code)
+
+    tasks = []
+    pool = concurrent.futures.ThreadPoolExecutor(10)
+    for i in range(0, len(keywords), 10):
+        tasks.append(pool.submit(avfullFetch, *(keywords[i:i + 10], 'both', r'C:/Users/xshrim/Desktop/imgss', 'javbus', '')))
+    concurrent.futures.wait(tasks)
+    print('ALL OK')
+'''
+# avfullFetch(keywords, 'both', r'C:/Users/xshrim/Desktop/imgss', 'javbus', '')
 
 # 搜索引擎：
 # btso:https://btso.pw/search/ipz-137/
