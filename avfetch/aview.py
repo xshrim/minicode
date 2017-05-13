@@ -306,6 +306,8 @@ class Window(QWidget):
             self.picLabel.setPixmap(self.pixmap)
             # self.picLabel.setPixmap(self.pixmap.scaled(700, 400))
             self.setWindowTitle('浏览 - ' + '第' + str(self.avs.index((cav.code, cav.favor)) + 1) + '/' + str(len(self.avs)) + '条')
+            # self.setGeometry(300, 300, 1000, 600)
+            self.setFixedHeight(600)
             self.picLabel.setToolTip(cav.code)
             self.offset = self.avs.index((cav.code, cav.favor))
             if int(cav.favor) == 0:
