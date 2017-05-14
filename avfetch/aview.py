@@ -4,8 +4,9 @@ import sys
 import sqlite3
 from random import choice
 from collections import OrderedDict
-from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QComboBox, QCheckBox, QRadioButton, QFileDialog, QApplication)
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (QPixmap, QImage)
+from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QComboBox, QCheckBox, QRadioButton, QFileDialog, QApplication)
 
 
 class av(object):
@@ -238,12 +239,13 @@ class Window(QWidget):
         self.viewModeBox.setCurrentIndex(1)
         self.searchBox = QComboBox()
         self.searchBox.currentTextChanged.connect(self.showSelected)
+        # self.keyPressEvent = self.searchSelect
         # self.searchBox.setFixedWidth(300)
 
         self.dbEdit = QLineEdit()
         self.dbEdit.setFixedWidth(700)
         self.dbEdit.setReadOnly(True)
-        self.dbEdit.setAcceptDrops(True)
+        # self.dbEdit.setAcceptDrops(True)
         self.searchEdit = QLineEdit()
         self.searchEdit.setFixedWidth(700)
 
@@ -286,6 +288,13 @@ class Window(QWidget):
         self.setGeometry(300, 300, 1000, 600)
         self.setWindowTitle('浏览')
         self.show()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            if self.searchEdit.text() is not None and str(self.searchEdit.text()).strip() != '':
+                self.searchItem()
 
     def saveImg(self, event):
         try:
