@@ -5,7 +5,7 @@ import sqlite3
 from random import choice
 from collections import OrderedDict
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QComboBox, QCheckBox, QRadioButton, QFileDialog, QApplication)
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import (QPixmap, QImage)
 
 
 class av(object):
@@ -243,6 +243,7 @@ class Window(QWidget):
         self.dbEdit = QLineEdit()
         self.dbEdit.setFixedWidth(700)
         self.dbEdit.setReadOnly(True)
+        self.dbEdit.setAcceptDrops(True)
         self.searchEdit = QLineEdit()
         self.searchEdit.setFixedWidth(700)
 
@@ -254,6 +255,7 @@ class Window(QWidget):
         self.pixmap = QPixmap()
         self.picLabel = QLabel()
         self.picLabel.setPixmap(self.pixmap)
+        self.picLabel.mousePressEvent = self.saveImg
         # self.picLabel.setPixmap(self.pixmap.scaled(700, 400))
 
         self.hboxhead = QHBoxLayout()
@@ -285,6 +287,14 @@ class Window(QWidget):
         self.setWindowTitle('浏览')
         self.show()
 
+    def saveImg(self, event):
+        try:
+            if event.button() == 2 and self.picLabel.toolTip() is not None and str(self.picLabel.toolTip()).strip() != '':
+                fname = QFileDialog.getSaveFileName(self, self.tr('选择图片保存位置'), self.tr(str(self.picLabel.toolTip()).strip() + '.jpg'))[0]
+                self.pixmap.toImage().save(fname)
+        except Exception as ex:
+            print(str(ex))
+
     def showInfo(self, cav):
         if cav is not None:
             self.infoEdit.setText('')
@@ -308,7 +318,7 @@ class Window(QWidget):
             self.setWindowTitle('浏览 - ' + '第' + str(self.avs.index((cav.code, cav.favor)) + 1) + '/' + str(len(self.avs)) + '条')
             # self.setGeometry(300, 300, 1000, 600)
             self.setFixedHeight(600)
-            self.picLabel.setToolTip(cav.code)
+            self.picLabel.setToolTip(cav.code + ' ' + cav.title)
             self.offset = self.avs.index((cav.code, cav.favor))
             if int(cav.favor) == 0:
                 self.favorButton.setChecked(False)
@@ -381,7 +391,7 @@ class Window(QWidget):
 
     def flagItem(self):
         try:
-            code = str(self.picLabel.toolTip()).strip()
+            code = str(self.picLabel.toolTip()).split(' ')[0].strip()
             infoText = self.infoEdit.toPlainText()
             if self.favorButton.isChecked():
                 favorState = 1

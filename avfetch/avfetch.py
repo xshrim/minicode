@@ -1015,7 +1015,7 @@ def av2file(avs, dirpath):
     txtfs = None
     txtname = 'avinfos.txt'
     try:
-        print('Saving AV Infomation to Files'.center(100, '*'))
+        print('Saving {0} AV Infomation to Files'.format(len(avs)).center(100, '*'))
         txtpath = os.path.join(dirpath, txtname)
         txtfs = open(txtpath, 'a', encoding='utf8')
         for cav in avs:
@@ -1037,7 +1037,7 @@ def av2file(avs, dirpath):
                 txtfs.write('磁链:'.center(5) + cav.link + '\n')
                 txtfs.write('#' * 100 + '\n')
                 ext = cav.coverlink.split('.')[-1] if '.' in cav.coverlink else 'jpg'
-                imgname = cav.code + '_' + cav.title + '.' + ext
+                imgname = cav.code + ' ' + cav.title + '.' + ext
                 imgname = imgname.replace('<', '').replace('>', '').replace('/', '').replace('\\', '').replace('|', '').replace(':', '').replace('"', '').replace('*', '').replace('?', '')
                 imgpath = os.path.join(dirpath, imgname)
                 imgfs = open(imgpath, 'wb')
@@ -1061,7 +1061,7 @@ def av2db(avs, dirpath):
     data = []
     dbname = 'avinfos.db'
     try:
-        print('Saving AV Infomation to Database'.center(100, '*'))
+        print('Saving {0} AV Infomation to Database'.format(len(avs)).center(100, '*'))
         dbpath = os.path.join(dirpath, dbname)
         sql = '''CREATE TABLE  IF NOT EXISTS `av` (
               `code` varchar(100) NOT NULL,
@@ -1292,6 +1292,33 @@ main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m',
 # for cav in avlinkFetch('ipz-371', 'zhongziso'):
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
+
+'''
+def tmpFetch(url, codes):
+    print('Fetching ' + url)
+    for avpage in avpageFetch(url, 'javbus', ''):
+        codes.append(avpage['code'])
+
+
+codes = []
+
+threads = []
+for i in range(1, 37):
+    url = 'https://www.javbus.com/search/倶楽部/' + str(i)
+    t = threading.Thread(target=tmpFetch, args=(url, codes))
+    t.setDaemon(True)
+    threads.append(t)
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+
+with open('avpage.txt', 'w') as f:
+    for c in codes:
+        f.write(c + '\n')
+print(len(codes))
+'''
+
 
 '''
 avs = []
