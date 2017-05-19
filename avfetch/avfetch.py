@@ -572,7 +572,7 @@ def avkeywordParse(textargs, type):
 def avitemFetch(keyword, avs, engine='javbus', proxy='', dbfile=None):
     print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
     try:
-        if dbfile is None or not duplicateCheck(keyword.upper(), dbfile):
+        if dbfile is None or not os.path.exists(dbfile) or not duplicateCheck(keyword.upper(), dbfile):
             for avpage in avurlFetch(keyword, engine, proxy):
                 print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
                 cav = avinfoFetch(avpage['url'], engine, proxy)
@@ -1280,12 +1280,12 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-m', '0', '-s', 'ipz-137', 'FSET-337'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-137', 'FSET-337'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # print(avquickFetch('ipz-371'))
 
@@ -1319,16 +1319,16 @@ with open('avpage.txt', 'w') as f:
 print(len(codes))
 '''
 
+'''
+with open('C:/Users/xshrim/Desktop/av.txt', 'w') as f:
+    for i in range(1, 2):
+        url = 'https://www.javbus.com/page/' + str(i)
+        for avpage in avpageFetch(url, 'javbus', ''):
+            print(('Fetching Page ' + avpage['url']).center(100, '*'))
+            f.write(avpage['code'] + '\n')
+            # avs.append(avinfoFetch(avpage['url'], 'javbus', ''))
+'''
 
-'''
-avs = []
-for i in range(1, 2):
-    url = 'https://www.javbus.com/page/' + str(i)
-    for avpage in avpageFetch(url, 'javbus', ''):
-        print(('Fetching Page ' + avpage['url']).center(100, '*'))
-        avs.append(avinfoFetch(avpage['url'], 'javbus', ''))
-print(len(avs))
-'''
 
 '''
 with open(r'D:/Git/minicode/avfetch/avs.txt', 'r', encoding='utf-8') as f:
