@@ -328,7 +328,7 @@ def detectPage(url, timeout, retry, sleep, proxy=''):
     # ('Accept-Encoding','gzip,deflate,sdch'),
     # ('Connection','close'),
     # ('Referer',None )]#注意如果依然不能抓取的话，这里可以设置抓取网站的host
-    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'close'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
+    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'close'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh,en-US,en,*;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
 
     opener = request.build_opener()
     opener.addheaders = headers
@@ -347,7 +347,7 @@ def detectPage(url, timeout, retry, sleep, proxy=''):
     return False
 
 
-def getHTML(url, timeout, retry, sleep, proxy=''):
+def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
     proxyDict = {}
     if proxy is not None and re.match(r'^.+@.+:.+$', proxy, flags=0):
         proxyDict['type'] = proxy.split('@')[0]
@@ -1280,7 +1280,7 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-137', 'FSET-337'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-371', 'FSET-337'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
