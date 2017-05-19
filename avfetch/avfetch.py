@@ -1280,8 +1280,8 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-371', 'FSET-337'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgsss', '-e', 'javbus', '-t', 'both', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-371', 'FSET-337'])
+main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '8', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
@@ -1321,7 +1321,7 @@ print(len(codes))
 
 '''
 with open('C:/Users/xshrim/Desktop/av.txt', 'w') as f:
-    for i in range(1, 2):
+    for i in range(1, 10):
         url = 'https://www.javbus.com/page/' + str(i)
         for avpage in avpageFetch(url, 'javbus', ''):
             print(('Fetching Page ' + avpage['url']).center(100, '*'))

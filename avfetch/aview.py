@@ -1,5 +1,6 @@
 
 import os
+import re
 import sys
 import sqlite3
 from random import choice
@@ -217,8 +218,10 @@ class Window(QWidget):
         self.conn = None
 
         self.preButton = QPushButton('上一个')
+        self.preButton.setFixedWidth(50)
         self.preButton.clicked.connect(self.itemTurn)
         self.nextButton = QPushButton('下一个')
+        self.nextButton.setFixedWidth(50)
         self.nextButton.clicked.connect(self.itemTurn)
         self.dbButton = QPushButton('载入数据库')
         self.dbButton.setFixedWidth(100)
@@ -237,6 +240,9 @@ class Window(QWidget):
         self.viewModeBox.addItems(['顺序', '随机'])
         self.viewModeBox.setToolTip('浏览模式')
         self.viewModeBox.setCurrentIndex(1)
+        self.jumpBox = QComboBox()
+        self.jumpBox.setEditable(True)
+        self.jumpBox.currentTextChanged.connect(self.jumpSelected)
         self.searchBox = QComboBox()
         self.searchBox.currentTextChanged.connect(self.showSelected)
         # self.keyPressEvent = self.searchSelect
@@ -267,6 +273,7 @@ class Window(QWidget):
         self.hboxhead.addWidget(self.favorCheck)
         self.hboxhead.addWidget(self.viewModeBox)
         self.hboxhead.addWidget(self.preButton)
+        self.hboxhead.addWidget(self.jumpBox)
         self.hboxhead.addWidget(self.nextButton)
 
         self.hboxinfo = QHBoxLayout()
@@ -324,15 +331,19 @@ class Window(QWidget):
             self.pixmap.loadFromData(cav.cover)
             self.picLabel.setPixmap(self.pixmap)
             # self.picLabel.setPixmap(self.pixmap.scaled(700, 400))
-            self.setWindowTitle('浏览 - ' + '第' + str(self.avs.index((cav.code, cav.favor)) + 1) + '/' + str(len(self.avs)) + '条')
             # self.setGeometry(300, 300, 1000, 600)
             self.setFixedHeight(600)
             self.picLabel.setToolTip(cav.code + ' ' + cav.title)
+            if self.jumpBox.count() < 1:
+                for i in range(1, len(self.avs) + 1):
+                    self.jumpBox.addItem(str(i))
             self.offset = self.avs.index((cav.code, cav.favor))
+            self.jumpBox.setCurrentText(str(self.offset + 1))
             if int(cav.favor) == 0:
                 self.favorButton.setChecked(False)
             else:
                 self.favorButton.setChecked(True)
+            self.setWindowTitle('浏览 - ' + '第' + str(self.offset + 1) + '/' + str(len(self.avs)) + '条')
 
     def getreqCode(self):
         code = self.avs[self.offset][0]
@@ -340,17 +351,17 @@ class Window(QWidget):
             if self.favorCheck.isChecked():
                 if len([item[0] for item in self.avs if int(item[1]) > 0]) == 0:
                     if self.picLabel.toolTip() is not None and str(self.picLabel.toolTip()).strip() != '':
-                        code = str(self.picLabel.toolTip()).strip()
+                        code = str(self.picLabel.toolTip()).split(' ')[0].strip()
                 else:
                     code = choice([item[0] for item in self.avs if int(item[1]) > 0])
             else:
                 code = choice([item[0] for item in self.avs])
         else:
             if self.picLabel.toolTip() is not None and str(self.picLabel.toolTip()).strip() != '':
-                preindex = [item[0] for item in self.avs].index(str(self.picLabel.toolTip()))
+                preindex = [item[0] for item in self.avs].index(str(self.picLabel.toolTip()).split(' ')[0].strip())
                 if self.favorCheck.isChecked():
                     if len([item[0] for item in self.avs if int(item[1]) > 0]) == 0:
-                        code = str(self.picLabel.toolTip()).strip()
+                        code = str(self.picLabel.toolTip()).split(' ')[0].strip()
                     else:
                         if (len(self.avs) + self.offset - preindex) % len(self.avs) == 1:
                             for i in range(self.offset, len(self.avs) + self.offset):
@@ -388,11 +399,12 @@ class Window(QWidget):
         if fname[0]:
             self.dbEdit.setText(fname[0])
             try:
-                self.offset = 0
+                # self.offset = 0
                 self.conn = get_conn(fname[0])
                 sql = 'SELECT code, favor FROM av order by rowid'
                 res = fetchall(self.conn, sql)
                 self.avs = [(str(item[0]), str(item[1])) for item in res]
+                # self.offset = self.avs.index(choice(self.avs))
                 self.conn.row_factory = dict_factory
                 self.showInfo(self.fetchInfo())
             except Exception as ex:
@@ -446,6 +458,21 @@ class Window(QWidget):
                 self.showInfo(cav)
         except Exception as ex:
             print('showSelected:' + str(ex))
+
+    def jumpSelected(self):
+        try:
+            selectedIndex = str(self.jumpBox.currentText()).strip()
+            if selectedIndex != '' and int(selectedIndex) >= 0 and int(selectedIndex) <= len(self.avs) and int(selectedIndex) != self.offset + 1:
+                code = self.avs[int(selectedIndex) - 1][0]
+                if not self.favorCheck.isChecked() or (self.favorCheck.isChecked() and str(self.avs[int(selectedIndex) - 1][1]) == '1'):
+                    sql = 'SELECT * FROM av where code = ?'
+                    res = fetchone(self.conn, sql, code)
+                    if res is not None and len(res) > 0:
+                        item = res[0]
+                        cav = av(item['code'], item['title'], item['issuedate'], item['length'], item['mosaic'], item['director'], item['manufacturer'], item['publisher'], item['series'], item['category'], item['actors'], item['favor'], item['coverlink'], item['cover'], item['link'])
+                        self.showInfo(cav)
+        except Exception as ex:
+            print('jumpSelected:' + str(ex))
 
 
 if __name__ == '__main__':
