@@ -1301,7 +1301,10 @@ if __name__ == "__main__":
 import pyperclip
 clipdata = pyperclip.paste()
 if clipdata is not None and clipdata.strip() != '':
-    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-s', clipdata.strip()])
+    pattern = re.compile(r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}')
+    keywords = list(set(str(number.group()).upper() for number in pattern.finditer(clipdata.strip())))
+    print(keywords)
+    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-s', ' '.join(keywords)])
 '''
 
 
