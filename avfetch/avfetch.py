@@ -693,6 +693,7 @@ def avinfoFetch(url, engine='javbus', proxy=''):
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
+            print(url.center(100, '-'))
             print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink + '\n' + '磁链:'.center(5) + link)
 
             cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
@@ -746,6 +747,7 @@ def avinfoFetch(url, engine='javbus', proxy=''):
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
+            print(url.center(100, '-'))
             print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink + '\n' + '磁链:'.center(5) + link)
 
             cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
@@ -776,6 +778,7 @@ def avinfoFetch(url, engine='javbus', proxy=''):
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
+            print(url.center(100, '-'))
             print('番号:'.center(5) + code + '\n' + '标题:'.center(5) + title + '\n' + '日期:'.center(5) + issuedate + '\n' + '时长:'.center(5) + length + '\n' + '修正:'.center(5) + mosaic + '\n' + '导演:'.center(5) + director + '\n' + '制作:'.center(5) + manufacturer + '\n' + '发行:'.center(5) + publisher + '\n' + '系列:'.center(5) + series + '\n' + '类别:'.center(5) + category + '\n' + '女优:'.center(5) + actors + '\n' + '收藏:'.center(5) + favor + '\n' + '预览:'.center(5) + coverlink + '\n' + '磁链:'.center(5) + link)
 
             cav = av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
@@ -1281,7 +1284,7 @@ if __name__ == "__main__":
     main(sys.argv[1:])
 
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-371', 'FSET-337'])
-main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '8', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '8', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
@@ -1292,6 +1295,15 @@ main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m',
 # for cav in avlinkFetch('ipz-371', 'zhongziso'):
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
+
+
+'''
+import pyperclip
+clipdata = pyperclip.paste()
+if clipdata is not None and clipdata.strip() != '':
+    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-s', clipdata.strip()])
+'''
+
 
 '''
 def tmpFetch(url, codes):
@@ -1327,6 +1339,20 @@ with open('C:/Users/xshrim/Desktop/av.txt', 'w') as f:
             print(('Fetching Page ' + avpage['url']).center(100, '*'))
             f.write(avpage['code'] + '\n')
             # avs.append(avinfoFetch(avpage['url'], 'javbus', ''))
+'''
+
+'''
+avs = []
+with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    tasks = []
+    for i in range(1, 3):
+        url = 'https://www.javbus.com/page/' + str(i)
+        for avpage in avpageFetch(url, 'javbus', ''):
+            tasks.append(executor.submit(avinfoFetch, *(avpage['url'], 'javbus', '')))
+    concurrent.futures.wait(tasks)
+    for task in tasks:
+        avs.append(task.result())
+avsave(avs, 'both', 'C:/Users/xshrim/Desktop/imgss/')
 '''
 
 
