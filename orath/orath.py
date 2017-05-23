@@ -262,12 +262,12 @@ def collect(level, dbfile=os.path.join(curDir(), 'orath.db')):
                           `version` varchar(10) NOT NULL,
                           `qn` integer NOT NULL,
                           `link` varchar(100),
-                          `content` varchar(100000),
+                          `content` text,
                           `image` BLOB DEFAULT NULL,
-                          `options` varchar(100000),
-                          `parse` varchar(100000),
-                          `reference` varchar(100000),
-                          `answer` varchar(100000),
+                          `options` text,
+                          `parse` text,
+                          `reference` text,
+                          `answer` text,
                           `skill` integer DEFAULT 0,
                           `star` integer DEFAULT 0,
                           `tmp1` varchar(100),
@@ -373,4 +373,4 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-t', 'show', '-l', '1Z0-052', '-n', '15'])
+# main(['-t', 'fetch', '-l', '1Z0-052', '-n', '15'])
