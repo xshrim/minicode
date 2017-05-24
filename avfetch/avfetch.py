@@ -5,6 +5,7 @@ import io
 import os
 import re
 import sys
+import zlib
 import time
 import socks
 import getopt
@@ -204,11 +205,10 @@ def fetchall(conn, sql):
         # print('执行sql:[{}]'.format(sql))
         cu.execute(sql)
         r = cu.fetchall()
-        if len(r) > 0:
-            for e in range(len(r)):
-                print(r[e])
+        return r
     else:
         logging.error('the [{}] is empty or equal None!'.format(sql))
+    return None
 
 
 def fetchone(conn, sql, data):
@@ -383,9 +383,13 @@ def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
         try:
             time.sleep(sleep)
             data = opener.open(quote(url, safe='/:?=%-&'))
-            headertype = str(data.info()['Content-Type']).lower()
+            headerinfo = data.info()
+            headertype = str(headerinfo['Content-Type']).lower()
             contents = data.read()
+
             if 'text/' in headertype:
+                if str(headerinfo['Content-Encoding']).lower() == 'gzip':
+                    contents = zlib.decompress(contents, 16 + zlib.MAX_WBITS)
                 if 'charset' in headertype:
                     for item in ['utf-8', 'utf8', 'gbk', 'gb2312', 'gb18030', 'big5', 'latin-1', 'latin1']:
                         if item in headertype:
@@ -528,7 +532,7 @@ def avkeywordParse(textargs, type):
             for line in open(sfile, encoding=chartype):
                 lines.append(line)
         elif type == 'url':
-            lines.append(str(getHTML(textargs, 5, 5, 0)))
+            lines.append(str(getHTML(textargs, 5, 5, 0, 'socks5@127.0.0.1:1080')))
         else:
             for textarg in textargs.split(' '):
                 lines.append(textarg)
@@ -1014,6 +1018,30 @@ def avlinkFilter(avlinks):
     return sorted(avlinks, key=avlinkSort)[-1]
 
 
+def updateItemLink(code, dbfile):
+    try:
+        print(str('Updating ' + code).center(100, '*'))
+        link = avlinkFilter(avlinkFetch(code, 'btdb', '')).link
+        print(code.rjust(6) + ' <--> ' + link)
+        isql = 'UPDATE av set link=? where code=?'
+        update(get_conn(dbfile), isql, [(link, code)])
+    except Exception as ex:
+        logging.warning('updateItemLink:' + str(ex))
+
+
+def avlinkUpdate(dbfile):
+    if os.path.exists(dbfile):
+        sql = 'SELECT code, link FROM av where link like "page:%"'
+        res = fetchall(get_conn(dbfile), sql)
+        if res is not None and len(res) > 0:
+            print(str(len(res)).center(100, '+'))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                tasks = []
+                for r in res:
+                    tasks.append(executor.submit(updateItemLink, *(r[0], dbfile)))
+                concurrent.futures.wait(tasks)
+
+
 def av2file(avs, dirpath):
     txtfs = None
     txtname = 'avinfos.txt'
@@ -1296,7 +1324,6 @@ if __name__ == "__main__":
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
-
 '''
 import pyperclip
 clipdata = pyperclip.paste()
@@ -1305,6 +1332,35 @@ if clipdata is not None and clipdata.strip() != '':
     keywords = list(set(str(number.group()).upper() for number in pattern.finditer(clipdata.strip())))
     print(keywords)
     main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-s', ' '.join(keywords)])
+'''
+
+
+'''
+urls = []
+avs = []
+data = PyQuery(getHTML('https://www.javbus.com/genre'))
+content = data('div[class="row genre-box"]')
+avkinds = content('a')
+for item in avkinds.items():
+    urls.append(item.attr('href'))
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    tasks = []
+    for url in urls:
+        for avpage in avpageFetch(url, 'javbus', ''):
+            tasks.append(executor.submit(avinfoFetch, *(avpage['url'], 'javbus', '')))
+    concurrent.futures.wait(tasks)
+    for task in tasks:
+        avs.append(task.result())
+avsave(avs, 'both', 'C:/Users/xshrim/Desktop/imgss/')
+'''
+
+avlinkUpdate('C:/Users/xshrim/Desktop/imgss/avinfos.db')
+
+'''
+for i in range(1, 26):
+    url = 'http://www.javlibrary.com/tw/vl_newrelease.php?list&mode=&page=1' + str(i)
+    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-u', url])
 '''
 
 
