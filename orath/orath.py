@@ -297,28 +297,34 @@ def fetchTopic(level, idata):
             idata.append([None, '1Z0-051', 'Oracle 11g r2', 'v9.02', qn.strip(), link, None, None, None, None, None, None, None, None, None, None])
 
     if level == '1Z0-052':
-        data = PyQuery(getHTML('http://blog.csdn.net/rlhua/article/details/16961497'))
-        content = data('#article_content')
-        table = content('table')
-        items = table('tr:gt(1)')
-
-        i = 1001
-        tdata = []
-        for item in items.items():
-            qns = str(item('td:eq(1)').text()).replace('，', ',').strip()
-            if ':' in str(item('td:eq(0)').text()):
-                link = str(item('td:eq(0)').text()).split('：')[1].strip()
-            else:
-                link = str(qns.split('：')[1]).strip()
-                qns = str(qns.split('：')[0]).strip()
-            if qns == '无此题':
-                qns = str(i)
-                i = i + 1
-            for qn in qns.split(','):
-                tdata.append([None, '1Z0-052', 'Oracle 11g r2', 'v9.02', qn.strip(), link, None, None, None, None, None, None, None, None, None, None])
-        tdata = sorted(tdata, key=lambda x: int(x[4]))
-        for d in tdata:
-            idata.append(d)
+        with open('C:/Users/xshrim/Desktop/1Z0-052V10.02.new.txt', 'r') as rf:
+            tmpdata = []
+            for line in rf:
+                if line.strip() != '':
+                    if 'Answer:' not in line:
+                        tmpdata.append(line)
+                    else:
+                        answer = line.replace('Answer:', '').strip()
+                        qn = tmpdata[0].split('.')[0]
+                        if int(qn) < 213:
+                            link = t052[qn]
+                        else:
+                            link = ''
+                        idata.append([None, '1Z0-052', 'Oracle 11g r2', 'v10.02', qn.strip(), link, ''.join(tmpdata), None, None, None, None, answer, None, None, None, None])
+                        tmpdata.clear()
+    if level == '1Z0-053':
+        with open('C:/Users/xshrim/Desktop/1Z0-053V14.02.new.txt', 'r') as rf:
+            tmpdata = []
+            for line in rf:
+                if line.strip() != '':
+                    if 'Answer:' not in line:
+                        tmpdata.append(line)
+                    else:
+                        answer = line.replace('Answer:', '').strip()
+                        qn = tmpdata[0].split('.')[0]
+                        print(qn)
+                        idata.append([None, '1Z0-053', 'Oracle 11g r2', 'v14.02', qn.strip(), None, ''.join(tmpdata), None, None, None, None, answer, None, None, None, None])
+                        tmpdata.clear()
 
 
 def showTopic(level, qn, dbfile):
@@ -327,6 +333,7 @@ def showTopic(level, qn, dbfile):
     res = fetchone(iconn, isql, (level, qn))
     if res is not None:
         link = res[5]
+        print(link)
         webbrowser.open(link, new=0, autoraise=True)
 
 
@@ -435,10 +442,22 @@ for i in range(63, 64):
     updateTopic('1Z0-051', int(i), os.path.join(curDir(), 'orath.db'))
 '''
 
-
+'''
 for r in getAnswer('1Z0-051', pyperclip.paste(), os.path.join(curDir(), 'orath.db')):
     print('*' * 100)
     print('题号：' + str(r[0]))
     print('题目：' + str(r[1]))
     print('答案：' + str(r[2]))
-# main(['-t', 'show', '-l', '1Z0-052', '-n', '15'])
+'''
+
+main(['-t', 'show', '-l', '1Z0-052', '-n', '15'])
+
+'''
+with open('C:/Users/xshrim/Desktop/aaaaaa.txt', 'w') as wf:
+    iconn = get_conn(os.path.join(curDir(), 'orath.db'))
+    isql = 'select * from `orath` where `level`="1Z0-052"'
+    res = fetchall(iconn, isql)
+    for r in res:
+        print(str(r[4]) + ':' + str(r[5]))
+        wf.write(str(r[4]) + ':' + str(r[5]) + '\n')
+'''
