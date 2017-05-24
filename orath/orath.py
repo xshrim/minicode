@@ -7,6 +7,7 @@ import socket
 import getopt
 import chardet
 import sqlite3
+import pyperclip
 import webbrowser
 from pyquery import PyQuery
 from urllib import parse
@@ -107,6 +108,7 @@ def save(conn, sql, data):
 
 def fetchall(conn, sql):
     '''查询所有数据'''
+    res = []
     if sql is not None and sql != '':
         cu = get_cursor(conn)
         # print('执行sql:[{}]'.format(sql))
@@ -114,9 +116,10 @@ def fetchall(conn, sql):
         r = cu.fetchall()
         if len(r) > 0:
             for e in range(len(r)):
-                print(r[e])
+                res.append(r[e])
     else:
         print('the [{}] is empty or equal None!'.format(sql))
+    return res
 
 
 def fetchone(conn, sql, data):
@@ -262,12 +265,12 @@ def collect(level, dbfile=os.path.join(curDir(), 'orath.db')):
                           `version` varchar(10) NOT NULL,
                           `qn` integer NOT NULL,
                           `link` varchar(100),
-                          `content` text,
+                          `content` varchar(100000),
                           `image` BLOB DEFAULT NULL,
-                          `options` text,
-                          `parse` text,
-                          `reference` text,
-                          `answer` text,
+                          `options` varchar(100000),
+                          `parse` varchar(100000),
+                          `reference` varchar(100000),
+                          `answer` varchar(100000),
                           `skill` integer DEFAULT 0,
                           `star` integer DEFAULT 0,
                           `tmp1` varchar(100),
@@ -327,6 +330,60 @@ def showTopic(level, qn, dbfile):
         webbrowser.open(link, new=0, autoraise=True)
 
 
+def updateTopic(level, qn, dbfile):
+    iconn = get_conn(dbfile)
+    isql = 'select * from `orath` where `level`=? and `qn`=?'
+    res = fetchone(iconn, isql, (level, qn))
+    if res is not None:
+        link = res[5]
+        data = PyQuery(getHTML(link))
+        content = data('#article_content')
+        image = content('img').attr('src')
+        timage = getHTML(image)
+        if not isinstance(timage, bytes):
+            timage = b''
+        fulldata = ''
+        tcontent = ''
+        tanswer = ''
+        tparse = ''
+        for item in content.children()('div, span').items():
+            fulldata += item.text() + '\n'
+        if 'Answer:' in fulldata:
+            tcontent = fulldata.split('Answer:')[0]
+            tcont = fulldata.split('Answer:')[1]
+            if '答案解析' in tcont:
+                tanswer = tcont.split('答案解析')[0]
+                tparse = '\n'.join(str(tcont.split('答案解析')[1]).split('\n')[1:])
+            else:
+                tanswer = tcont.split('\n')[0]
+                tparse = '\n'.join(tcont.split('\n')[1:])
+        else:
+            if '此题答案' in fulldata:
+                for line in fulldata.split('\n'):
+                    if '此题答案' in line:
+                        tcontent = fulldata.replace(line, '')
+                        tparse = ''
+                        tanswer = line.replace('此题答案', '').replace('选', '').replace('为', '')
+        print(tcontent)
+        print(tanswer)
+        print(tparse)
+        isql = 'update `orath` set `content`=?, `image`=?, `parse`=?, `answer`=? where `level`=? and `qn`=?'
+        res = update(iconn, isql, [(tcontent, sqlite3.Binary(timage), tparse, tanswer, level, qn)])
+        # print(nltk.clean_html(content))
+
+
+def getAnswer(level, keywords, dbfile):
+    iconn = get_conn(dbfile)
+    pred = ''
+    for keyword in keywords.split(' '):
+        if keyword.strip() != '':
+            pred += '`content` like "%' + keyword.strip() + '%" and '
+    pred = pred[:-5]
+    isql = 'select qn, content, answer from `orath` where `level`="' + level + '" and ' + pred + ' order by qn'
+    res = fetchall(iconn, isql)
+    return res
+
+
 def main(argv):
     type = 'show'
     tpath = curDir()
@@ -373,4 +430,15 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-t', 'fetch', '-l', '1Z0-052', '-n', '15'])
+'''
+for i in range(63, 64):
+    updateTopic('1Z0-051', int(i), os.path.join(curDir(), 'orath.db'))
+'''
+
+
+for r in getAnswer('1Z0-051', pyperclip.paste(), os.path.join(curDir(), 'orath.db')):
+    print('*' * 100)
+    print('题号：' + str(r[0]))
+    print('题目：' + str(r[1]))
+    print('答案：' + str(r[2]))
+# main(['-t', 'show', '-l', '1Z0-052', '-n', '15'])
