@@ -20,6 +20,7 @@ psutil       --系统监控和资源管理库
 IPy			 --IP辅助管理库
 retrying     --函数重试库
 pysocks      --socks代理支持
+pyperclip    --剪切板调用
 pycurl       --curl的python封装
 scapy        --交互式数据包处理库
 numpy        --科学计算库
