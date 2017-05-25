@@ -7,8 +7,11 @@ import socket
 import getopt
 import chardet
 import sqlite3
+import random
+import colorama
 import pyperclip
 import webbrowser
+import subprocess
 from pyquery import PyQuery
 from urllib import parse
 from urllib import request
@@ -379,30 +382,120 @@ def updateTopic(level, qn, dbfile):
         # print(nltk.clean_html(content))
 
 
-def getAnswer(level, keywords, dbfile):
-    iconn = get_conn(dbfile)
-    pred = ''
-    for keyword in keywords.split(' '):
-        if keyword.strip() != '':
-            pred += '`content` like "%' + keyword.strip() + '%" and '
-    pred = pred[:-5]
-    isql = 'select qn, content, answer from `orath` where `level`="' + level + '" and ' + pred + ' order by qn'
-    res = fetchall(iconn, isql)
+def getAnswer(keywords, dbfile):
+    res = None
+    try:
+        iconn = get_conn(dbfile)
+        pred = ''
+        for keyword in keywords.split(' '):
+            if keyword.strip() != '':
+                pred += '`content` like "%' + keyword.strip() + '%" and '
+        pred = pred[:-5]
+        isql = 'select level, qn, content, answer from `orath` where ' + pred + ' order by qn'
+        res = fetchall(iconn, isql)
+    except Exception as ex:
+        print('getAnswer:' + str(ex))
     return res
+
+
+def refer(dbfile):
+    preclip = ''
+    mode = 'manual'
+    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.WHITE + '#' * 100)
+    print('1. Manual')
+    print('2. Automatic')
+    mode = input('Please select refer mode:')
+    if mode == '1' or mode.lower() == 'manual':
+        mode = 'manual'
+    if mode == '2' or mode.lower() == 'automatic':
+        mode = 'automatic'
+    while True:
+        try:
+            if mode == 'manual':
+                keyword = input(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.GREEN + 'Please input the keyword: ')
+            else:
+                keyword = pyperclip.paste()
+            if keyword is not None and keyword.strip() != '' and keyword != preclip:
+                preclip = keyword
+                print(colorama.Style.BRIGHT + colorama.Back.RED + colorama.Fore.YELLOW + keyword.strip().center(100, '='))
+                for r in getAnswer(keyword, dbfile):
+                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.YELLOW + (str(r[0]) + ' -> ' + str(r[1])).center(20, ' ').center(100, '#'))
+                    # print('题号：' + str(r[0]) + ' -> ' + str(r[1]))
+                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.CYAN + '题目：' + str(r[2]))
+                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.RESET + '答案：' + str(r[3]))
+
+                    # os.system('cmd /k echo ' + output)
+                    '''
+                    print('*' * 100)
+                    print('题号：' + str(r[0]) + ' -> ' + str(r[1]))
+                    print('题目：' + str(r[2]))
+                    print('答案：' + str(r[3]))
+                    '''
+        except Exception as ex:
+            print('refer' + str(ex))
+
+
+def practise(dbfile):
+    topics = []
+    iconn = get_conn(dbfile)
+    isql = 'select level, qn, content, answer from `orath`'
+    res = fetchall(iconn, isql)
+    for r in res:
+        topics.append((r[0], r[1], r[2], r[3]))
+    print(colorama.Style.BRIGHT + colorama.Fore.WHITE + '#' * 100)
+    print('1. 1Z0-051 (OCA)')
+    print('2. 1Z0-052 (OCP)')
+    print('3. 1Z0-053 (OCP)')
+    level = input('Please select level:')
+    if level == '1' or level == '051' or level.upper() == '1Z0-051':
+        level = '1Z0-051'
+    if level == '2' or level == '052' or level.upper() == '1Z0-052':
+        level = '1Z0-052'
+    if level == '3' or level == '053' or level.upper() == '1Z0-053':
+        level = '1Z0-053'
+    stopics = [topic for topic in topics if topic[0] == level]
+    print(level + ' Total: ' + str(len(stopics)))
+    print('1. Random')
+    print('2. Sequence')
+    mode = input('Please select mode:')
+    if mode == '1' or mode.lower() == 'random':
+        mode = 'random'
+    if mode == '2' or mode.lower() == 'sequence':
+        mode = 'sequence'
+    print(mode + ' mode')
+    print('#' * 100)
+
+    i = 0
+    while True:
+        if mode == 'random':
+            ctopic = random.choice(stopics)
+        else:
+            ctopic = stopics[i]
+            i += 1
+        print(colorama.Style.BRIGHT + colorama.Fore.GREEN + (str(ctopic[0]) + ' <--> ' + str(ctopic[1])).center(100, '='))
+        print(colorama.Fore.CYAN + ctopic[2])
+        ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit) => ')
+        if ipt.lower() == 'q' or ipt.lower() == 'quit' or ipt.lower() == 'exit':
+            break
+        else:
+            if ipt.strip().upper().replace(' ', '') == ctopic[3].strip().upper().replace(' ', ''):
+                print(colorama.Fore.MAGENTA + 'Bingo!')
+            else:
+                print(colorama.Fore.RED + 'Wrong: ' + ctopic[3])
 
 
 def main(argv):
     type = 'show'
-    tpath = curDir()
+    dbfile = ''
     level = '1Z0-051'
     qn = 1
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "ht:d:l:n:", ["type=", "dir=", "level=", "number="])
+            opts, args = getopt.getopt(argv, "hf:t:l:n:", ["file=", "type=", "level=", "number="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-t <type>] [-d <targetpath>] [-l <level>] [-n <number>]\n
-                Example: orath.py -t show -d D:/ -l 1Z0-051 -n 10'''
+                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>]\n
+                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10'''
             )
             exit(2)
 
@@ -411,14 +504,14 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-t <type>] [-d <targetpath>] [-l <level>] [-n <number>]\n
-                    Example: orath.py -t show -d D:/ -l 1Z0-051 -n 10'''
+                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>]\n
+                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10'''
                 )
                 exit()
             elif opt in ("-t", "--type"):
                 type = arg
-            elif opt in ("-d", "--dir"):
-                tpath = arg
+            elif opt in ("-f", "--file"):
+                dbfile = arg
             elif opt in ("-l", "--level"):
                 level = arg
             elif opt in ("-n", "--number"):
@@ -427,9 +520,13 @@ def main(argv):
                 pass
         try:
             if type == 'fetch':
-                collect(level, os.path.join(tpath, 'orath.db'))
+                collect(level, dbfile)
             if type == 'show':
-                showTopic(level, qn, os.path.join(tpath, 'orath.db'))
+                showTopic(level, qn, dbfile)
+            if type == 'practise':
+                practise(dbfile)
+            if type == 'refer':
+                refer(dbfile)
         except Exception as ex:
             print('main:' + str(ex))
 
@@ -443,14 +540,9 @@ for i in range(63, 64):
 '''
 
 '''
-for r in getAnswer('1Z0-051', pyperclip.paste(), os.path.join(curDir(), 'orath.db')):
-    print('*' * 100)
-    print('题号：' + str(r[0]))
-    print('题目：' + str(r[1]))
-    print('答案：' + str(r[2]))
-'''
 
-main(['-t', 'show', '-l', '1Z0-052', '-n', '15'])
+'''
+main(['-t', 'refer', '-l', '1Z0-052', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 
 '''
 with open('C:/Users/xshrim/Desktop/aaaaaa.txt', 'w') as wf:
