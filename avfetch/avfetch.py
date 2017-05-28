@@ -438,6 +438,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
         pidx = 1
         curl = 'https://www.javbus.com/search/' + keyword
         while True:
+            pagination = None
             try:
                 print(('Parsing Page (' + curl + ')').center(100, '-'))
                 urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
@@ -468,7 +469,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     break
             except Exception as ex:
                 logging.warning("avurlFetch:javbus:" + str(ex))
-                continue
+                break
     if engine == 'javhoo':
         surls = []
         try:
@@ -1361,8 +1362,8 @@ if __name__ == "__main__":
 
 
 # regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
-# regstr = r'\S+'
-# clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+regstr = r'\S+'
+clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 
 '''
