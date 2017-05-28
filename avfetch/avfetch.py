@@ -345,6 +345,8 @@ def detectPage(url, timeout, retry, sleep, proxy=''):
             opener.close()
             if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
                 return False
+            else:
+                continue
         i -= 1
     return False
 
@@ -406,6 +408,8 @@ def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
             logging.debug('getHTML:' + str(ex))
             if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
                 break
+            else:
+                continue
         i -= 1
     return contents
 
@@ -464,6 +468,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     break
             except Exception as ex:
                 logging.warning("avurlFetch:javbus:" + str(ex))
+                continue
     if engine == 'javhoo':
         surls = []
         try:
@@ -822,6 +827,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
                     logging.debug('avlinkFetch:btgongchang:' + str(ex))
+                    continue
         if engine == 'btso':
             data = PyQuery(getHTML('https://btso.pw/search/' + code + '/', 5, 5, 1, proxy))
             content = data('div.data-list')
@@ -849,6 +855,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
                     logging.debug('avlinkFetch:btso:' + str(ex))
+                    continue
         if engine == 'btdb':
             data = PyQuery(getHTML('https://btdb.in/q/' + code + '/?sort=popular', 5, 5, 1, proxy))
             content = data('ul.search-ret-list')
@@ -877,6 +884,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
                     logging.debug('avlinkFetch:btdb:' + str(ex))
+                    continue
         if engine == 'torrentant':
             data = PyQuery(getHTML('http://www.torrentant.com/cn/s/' + code + '?sort=hot', 5, 5, 1, proxy))
             content = data('ul[class="search-container"]')
@@ -905,6 +913,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
                     logging.debug('avlinkFetch:torrentant:' + str(ex))
+                    continue
         if engine == 'javhoo':
             data = PyQuery(getHTML('https://www.javhoo.com/av/' + code + '/', 5, 5, 1, proxy))
             content = data('table#magnet-table')
@@ -929,6 +938,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
                     logging.debug('avlinkFetch:javhoo:' + str(ex))
+                    continue
         if engine == 'zhongziso':
             data = PyQuery(getHTML('http://www.zhongziso.com/list/' + code + '/1', 5, 5, 1, proxy))
             content = data('div.inerTop')
@@ -953,6 +963,7 @@ def avlinkFetch(code, engine='btso', proxy=''):
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
                     logging.debug('avlinkFetch:zhongziso:' + str(ex))
+                    continue
         '''
         if engine == 'btago':
             data = PyQuery(getHTML('http://www.btago.com/e/' + code + '/', 5, 5, 1, proxy))
@@ -1060,6 +1071,7 @@ def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
                 preclip = clipdata
         except Exception as ex:
             logging.error('clipFetch' + str(ex))
+            continue
 
 
 def avquickFetch(code, proxy=''):
@@ -1130,6 +1142,7 @@ def avquickFetch(code, proxy=''):
                 links.append(avlinkinfo(code, head, time, hot, size, clink, 'javhoo'))
             except Exception as ex:
                 logging.debug('avlinkFetch:javhoo:' + str(ex))
+                continue
         try:
             link = avlinkFilter(links).link
         except Exception as ex:
@@ -1180,6 +1193,7 @@ def av2file(avs, dirpath):
             except Exception as ex:
                 logging.debug('av2file:' + str(ex))
                 print('FAILED')
+                continue
         txtfs.close()
         print(str(count) + '/' + str(len(avs)) + ' COMPLETE')
     except Exception as ex:
@@ -1228,6 +1242,7 @@ def av2db(avs, dirpath):
             except Exception as ex:
                 logging.debug('av2db:' + str(ex))
                 print('FAILED')
+                continue
         print(str(count) + '/' + str(len(avs)) + ' COMPLETE')
     except Exception as ex:
         if 'UNIQUE constraint failed' in str(ex):
