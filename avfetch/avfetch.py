@@ -1313,7 +1313,7 @@ def main(argv):
             keywords.extend(filewords)
             keywords.extend(urlwords)
             # avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
-            avfullFetchWithDB(keywords, stype, tpath, smthread, sengine, sproxy)
+            avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
         except Exception as ex:
             logging.error('main:' + str(ex))
 
@@ -1322,10 +1322,10 @@ if __name__ == "__main__":
     main(sys.argv[1:])
 
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-s', ' 敗戦国の女'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '8', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '10', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # print(avquickFetch('ipz-371'))
 
@@ -1334,9 +1334,9 @@ if __name__ == "__main__":
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
 
-regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+# regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
 # regstr = r'\S+'
-clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+# clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 '''
 codes = []
