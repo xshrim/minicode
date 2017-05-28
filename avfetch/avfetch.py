@@ -13,7 +13,9 @@ import socket
 import chardet
 import sqlite3
 import logging
+import pyperclip
 import threading
+import html2text
 import concurrent.futures
 from pyquery import PyQuery
 from urllib import parse
@@ -448,6 +450,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     urlitem('div.photo-info')('span')('date').remove()
                     title = str(urlitem('div.photo-info')('span').text().replace('/', '')).strip()
                     url = str(urlitem.attr('href')).strip()
+                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javbus:" + str(ex))
@@ -470,6 +473,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     code = str(urlitem('div.project-list-content')('date:first').text()).strip().split('/')[0].strip().upper()
                     title = str(urlitem('div.project-list-content')('a:first').text()).strip()
                     url = str(urlitem('div.project-list-media')('a:first').attr('href')).strip()
+                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
@@ -492,6 +496,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     code = str(urlitem('div.meta')('div.movie-tag').text()).split('/')[0].strip()
                     title = str(urlitem('a:first').attr('title')).strip()
                     url = parse.urljoin('http://m.torrentant.com/', str(urlitem('a:first').attr('href')).strip())
+                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
@@ -515,6 +520,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     urlitem('div.photo-info')('span')('date').remove()
                     title = str(urlitem('div.photo-info')('span').text().replace('/', '')).strip()
                     url = str(urlitem.attr('href')).strip()
+                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
@@ -532,7 +538,9 @@ def avkeywordParse(textargs, type):
             for line in open(sfile, encoding=chartype):
                 lines.append(line)
         elif type == 'url':
-            lines.append(str(getHTML(textargs, 5, 5, 0, 'socks5@127.0.0.1:1080')))
+            data = html2text.html2text(PyQuery(getHTML(textargs)).html())
+            for item in data.split(' '):
+                lines.append(item)
         else:
             for textarg in textargs.split(' '):
                 lines.append(textarg)
@@ -573,53 +581,33 @@ def avkeywordParse(textargs, type):
     return keywords
 
 
-def avitemFetch(keyword, avs, engine='javbus', proxy='', dbfile=None):
-    print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
-    try:
-        if dbfile is None or not os.path.exists(dbfile) or not duplicateCheck(keyword.upper(), dbfile):
-            for avpage in avurlFetch(keyword, engine, proxy):
-                print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
-                cav = avinfoFetch(avpage['url'], engine, proxy)
-                if cav:
-                    avs.append(cav)
-    except Exception as ex:
-        logging.debug("avitemFetch:" + str(ex))
-
-
-def avfullFetch(keywords, stype, tpath, mthread=5, engine='javbus', proxy=''):
+def avfullFetch(keywords, stype, tpath, mthread=10, engine='javbus', proxy='', dbfile=None):
     avs = []
     try:
         print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
-        if mthread > 0:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=mthread) as executor:
-                tasks = []
-                pool = concurrent.futures.ThreadPoolExecutor(10)
-                for i in range(0, len(keywords)):
-                    tasks.append(executor.submit(avitemFetch, *(keywords[i], avs, engine, proxy)))
-                concurrent.futures.wait(tasks)
-        else:
+        for keyword in keywords:
+            print('// ' + keyword)
+        print('/' * 100)
+        avs = []
+        avpages = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=mthread) as executor:
+            tasks = []
             for keyword in keywords:
-                avitemFetch(keyword, avs, engine, proxy)
-        print((' [ Saving Information to ' + tpath + ' ] ').center(100, '/'))
-        avsave(avs, stype, tpath)
-    except Exception as ex:
-        logging.error("avfullFetch:" + str(ex))
+                print('>' * 20 + ('Getting AV URLs For Keyword (' + keyword + ')').center(60) + '<' * 20)
+                tasks.append(executor.submit(avurlFetch, *(keyword, engine, proxy)))
+            concurrent.futures.wait(tasks)
+            for task in tasks:
+                avpages.extend(task.result())
 
-
-def avfullFetchWithDB(keywords, stype, tpath, mthread=5, engine='javbus', proxy=''):
-    avs = []
-    try:
-        print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
-        if mthread > 0:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=mthread) as executor:
-                tasks = []
-                pool = concurrent.futures.ThreadPoolExecutor(10)
-                for i in range(0, len(keywords)):
-                    tasks.append(executor.submit(avitemFetch, *(keywords[i], avs, engine, proxy, os.path.join(tpath, 'avinfos.db'))))
-                concurrent.futures.wait(tasks)
-        else:
-            for keyword in keywords:
-                avitemFetch(keyword, avs, engine, proxy, os.path.join(tpath, 'avinfos.db'))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=mthread) as executor:
+            tasks = []
+            for avpage in avpages:
+                if dbfile is None or not os.path.exists(dbfile) or not duplicateCheck(avpage['code'].upper(), dbfile):
+                    print((' -- Fetching ' + avpage['code'] + ' -- ').center(100, '#'))
+                    tasks.append(executor.submit(avinfoFetch, *(avpage['url'], engine, proxy)))
+            concurrent.futures.wait(tasks)
+            for task in tasks:
+                avs.append(task.result())
         print((' [ Saving Information to ' + tpath + ' ] ').center(100, '/'))
         avsave(avs, stype, tpath)
     except Exception as ex:
@@ -1042,6 +1030,107 @@ def avlinkUpdate(dbfile):
                 concurrent.futures.wait(tasks)
 
 
+def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
+    # regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+    # regstr = r'\S+'
+    # regstr = r'[^\n]+'
+
+    preclip = ''
+    while True:
+        try:
+            keywords = []
+            clipdata = pyperclip.paste()
+            if clipdata is not None and clipdata != preclip and clipdata.strip() != '':
+                pattern = re.compile(regstr)
+                keywords = list(set(number.group() for number in pattern.finditer(clipdata.strip())))
+                avfullFetch(keywords, stype, tpath, mthread, engine, proxy, dbfile)
+            if mode != 'loop':
+                break
+            else:
+                preclip = clipdata
+        except Exception as ex:
+            logging.error('clipFetch' + str(ex))
+
+
+def avquickFetch(code, proxy=''):
+    title = ''
+    issuedate = ''
+    length = ''
+    mosaic = ''
+    director = ''
+    manufacturer = ''
+    publisher = ''
+    series = ''
+    category = ''
+    actors = ''
+    favor = ''
+    coverlink = ''
+    links = []
+    link = ''
+    code = code.upper()
+    # curl = 'https://www.javhoo.com/av/' + avpage['code']
+    try:
+        data = PyQuery(getHTML('https://www.javhoo.com/av/' + code, 5, 5, 1, proxy))
+        content = data('div#content')('div.wf-container')
+        avinfo = content('div.project_info')
+        mosaic = str(avinfo('span.category-link').text()).strip()
+        mosaic = mosaic.replace('無', '无').replace('碼', '码').replace('修正', '码')
+        if mosaic == '码':
+            mosaic = '有码'
+        title = str(data('h1[class="h3-size entry-title"]').text().replace(code, '')).strip()
+        for item in avinfo('p').items():
+            if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
+                issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group())
+            if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
+                length = str(item.text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
+            if '監督' in item.text() or '導演' in item.text() or '监督' in item.text() or '导演' in item.text():
+                director = str(item('a').text()).strip()
+            if 'メーカー' in item.text() or '製作商' in item.text() or '制作商' in item.text():
+                manufacturer = str(item('a').text()).strip()
+            if 'レーベル' in item.text() or '發行商' in item.text() or '发行商' in item.text():
+                publisher = str(item('a').text()).strip()
+            if 'シリーズ' in item.text() or '系列' in item.text():
+                series = str(item('a').text()).strip()
+            if 'ジャンル' in item.text() or '類別' in item.text() or '类别' in item.text():
+                category = str(item.next().text()).strip()
+            if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
+                actors = str(item.next().text()).strip()
+        favor = '0'
+        coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
+        cover = getHTML(coverlink, 5, 5, 0, proxy)
+
+        linkcontent = data('table#magnet-table')
+        linkinfo = linkcontent('tr:gt(0)')
+        for linkitem in linkinfo.items():
+            try:
+                head = str(linkitem('td:eq(0)')('a').text()).strip()
+                size = str(linkitem('td:eq(1)')('a').text()).strip().lower()
+                time = str(linkitem('td:eq(2)')('a').text()).strip()
+                if 'g' in size:
+                    size = str(size.replace('gb', '').replace('g', '').strip())
+                elif 'm' in size:
+                    size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                elif 'k' in size:
+                    size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                else:
+                    size = str(size).strip()
+                size = str("%.2f" % float(size))
+                hot = '100'
+                clink = str(linkitem('td:eq(0)')('a').attr('href')).strip()
+                links.append(avlinkinfo(code, head, time, hot, size, clink, 'javhoo'))
+            except Exception as ex:
+                logging.debug('avlinkFetch:javhoo:' + str(ex))
+        try:
+            link = avlinkFilter(links).link
+        except Exception as ex:
+            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
+            link = 'page:' + 'https://www.javhoo.com/av/' + code
+        return av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
+    except Exception as ex:
+        logging.error('avquickFetch:' + str(ex))
+        return None
+
+
 def av2file(avs, dirpath):
     txtfs = None
     txtname = 'avinfos.txt'
@@ -1155,85 +1244,6 @@ def avsave(avs, savetype='file', tpath=curDir()):
         logging.error('No AV Infomation')
 
 
-def avquickFetch(code, proxy=''):
-    title = ''
-    issuedate = ''
-    length = ''
-    mosaic = ''
-    director = ''
-    manufacturer = ''
-    publisher = ''
-    series = ''
-    category = ''
-    actors = ''
-    favor = ''
-    coverlink = ''
-    links = []
-    link = ''
-    code = code.upper()
-    # curl = 'https://www.javhoo.com/av/' + avpage['code']
-    try:
-        data = PyQuery(getHTML('https://www.javhoo.com/av/' + code, 5, 5, 1, proxy))
-        content = data('div#content')('div.wf-container')
-        avinfo = content('div.project_info')
-        mosaic = str(avinfo('span.category-link').text()).strip()
-        mosaic = mosaic.replace('無', '无').replace('碼', '码').replace('修正', '码')
-        if mosaic == '码':
-            mosaic = '有码'
-        title = str(data('h1[class="h3-size entry-title"]').text().replace(code, '')).strip()
-        for item in avinfo('p').items():
-            if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
-                issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group())
-            if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
-                length = str(item.text().split(' ')[-1]).replace('分钟', '').replace('分鐘', '').replace('分', '').strip()
-            if '監督' in item.text() or '導演' in item.text() or '监督' in item.text() or '导演' in item.text():
-                director = str(item('a').text()).strip()
-            if 'メーカー' in item.text() or '製作商' in item.text() or '制作商' in item.text():
-                manufacturer = str(item('a').text()).strip()
-            if 'レーベル' in item.text() or '發行商' in item.text() or '发行商' in item.text():
-                publisher = str(item('a').text()).strip()
-            if 'シリーズ' in item.text() or '系列' in item.text():
-                series = str(item('a').text()).strip()
-            if 'ジャンル' in item.text() or '類別' in item.text() or '类别' in item.text():
-                category = str(item.next().text()).strip()
-            if '演員' in item.text() or '出演者' in item.text() or '演员' in item.text():
-                actors = str(item.next().text()).strip()
-        favor = '0'
-        coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
-        cover = getHTML(coverlink, 5, 5, 0, proxy)
-
-        linkcontent = data('table#magnet-table')
-        linkinfo = linkcontent('tr:gt(0)')
-        for linkitem in linkinfo.items():
-            try:
-                head = str(linkitem('td:eq(0)')('a').text()).strip()
-                size = str(linkitem('td:eq(1)')('a').text()).strip().lower()
-                time = str(linkitem('td:eq(2)')('a').text()).strip()
-                if 'g' in size:
-                    size = str(size.replace('gb', '').replace('g', '').strip())
-                elif 'm' in size:
-                    size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
-                elif 'k' in size:
-                    size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
-                else:
-                    size = str(size).strip()
-                size = str("%.2f" % float(size))
-                hot = '100'
-                clink = str(linkitem('td:eq(0)')('a').attr('href')).strip()
-                links.append(avlinkinfo(code, head, time, hot, size, clink, 'javhoo'))
-            except Exception as ex:
-                logging.debug('avlinkFetch:javhoo:' + str(ex))
-        try:
-            link = avlinkFilter(links).link
-        except Exception as ex:
-            logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
-            link = 'page:' + 'https://www.javhoo.com/av/' + code
-        return av(code, title, issuedate, length, mosaic, director, manufacturer, publisher, series, category, actors, favor, coverlink, cover, link)
-    except Exception as ex:
-        logging.error('avquickFetch:' + str(ex))
-        return None
-
-
 def main(argv):
     texts = []
     stype = 'file'
@@ -1311,12 +1321,11 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '2', '-s', 'ipz-371', 'FSET-337'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '8', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-s', ' 敗戦国の女'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '8', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
-# main(['-d', 'imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-u', 'http://btgongchang.org/'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '10', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # print(avquickFetch('ipz-371'))
 
@@ -1324,21 +1333,30 @@ if __name__ == "__main__":
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
+
+regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+# regstr = r'\S+'
+clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+
 '''
-import pyperclip
-clipdata = pyperclip.paste()
-if clipdata is not None and clipdata.strip() != '':
-    pattern = re.compile(r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}')
-    keywords = list(set(str(number.group()).upper() for number in pattern.finditer(clipdata.strip())))
-    print(keywords)
-    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-s', ' '.join(keywords)])
+codes = []
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    tasks = []
+    for i in range(1, 40):
+        url = 'http://www.javzoo.org/javmoo/index_' + str(i) + '.html'
+        tasks.append(executor.submit(avkeywordParse, *(url, 'url')))
+    concurrent.futures.wait(tasks)
+    for task in tasks:
+        codes.extend(task.result())
+print(codes)
+main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '30', '-s', ' '.join(codes)])
 '''
 
 
 '''
 urls = []
 avs = []
-data = PyQuery(getHTML('https://www.javbus.com/genre'))
+data = PyQuery(getHTML('https://www.javbus.com/uncensored/genre'))
 content = data('div[class="row genre-box"]')
 avkinds = content('a')
 for item in avkinds.items():
@@ -1352,15 +1370,14 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
     concurrent.futures.wait(tasks)
     for task in tasks:
         avs.append(task.result())
-avsave(avs, 'both', 'C:/Users/xshrim/Desktop/imgss/')
+avsave(avs, 'db', 'C:/Users/xshrim/Desktop/imgss/')
 '''
 
-avlinkUpdate('C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 '''
 for i in range(1, 26):
     url = 'http://www.javlibrary.com/tw/vl_newrelease.php?list&mode=&page=1' + str(i)
-    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'both', '-m', '10', '-u', url])
+    main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '10', '-u', url])
 '''
 
 
@@ -1374,7 +1391,7 @@ def tmpFetch(url, codes):
 codes = []
 
 threads = []
-for i in range(1, 37):
+for i in range(1, 40):
     url = 'https://www.javbus.com/search/倶楽部/' + str(i)
     t = threading.Thread(target=tmpFetch, args=(url, codes))
     t.setDaemon(True)
@@ -1400,18 +1417,19 @@ with open('C:/Users/xshrim/Desktop/av.txt', 'w') as f:
             # avs.append(avinfoFetch(avpage['url'], 'javbus', ''))
 '''
 
+
 '''
 avs = []
-with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
     tasks = []
-    for i in range(1, 3):
+    for i in range(1, 40):
         url = 'https://www.javbus.com/page/' + str(i)
         for avpage in avpageFetch(url, 'javbus', ''):
             tasks.append(executor.submit(avinfoFetch, *(avpage['url'], 'javbus', '')))
     concurrent.futures.wait(tasks)
     for task in tasks:
         avs.append(task.result())
-avsave(avs, 'both', 'C:/Users/xshrim/Desktop/imgss/')
+avsave(avs, 'db', 'C:/Users/xshrim/Desktop/imgss/')
 '''
 
 
@@ -1430,7 +1448,7 @@ with open(r'D:/Git/minicode/avfetch/avs.txt', 'r', encoding='utf-8') as f:
     tasks = []
     pool = concurrent.futures.ThreadPoolExecutor(10)
     for i in range(0, len(keywords), 10):
-        tasks.append(pool.submit(avfullFetch, *(keywords[i:i + 10], 'both', r'C:/Users/xshrim/Desktop/imgss', 'javbus', '')))
+        tasks.append(pool.submit(avfullFetch, *(keywords[i:i + 10], 'db', r'C:/Users/xshrim/Desktop/imgss', 'javbus', '')))
     concurrent.futures.wait(tasks)
     print('ALL OK')
 '''
