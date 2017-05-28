@@ -1055,20 +1055,17 @@ def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
     # regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
     # regstr = r'\S+'
     # regstr = r'[^\n]+'
-
-    preclip = ''
     while True:
         try:
             keywords = []
             clipdata = pyperclip.paste()
-            if clipdata is not None and clipdata != preclip and clipdata.strip() != '':
+            if clipdata is not None and clipdata.strip() != '':
+                pyperclip.copy('')
                 pattern = re.compile(regstr)
                 keywords = list(set(number.group() for number in pattern.finditer(clipdata.strip())))
                 avfullFetch(keywords, stype, tpath, mthread, engine, proxy, dbfile)
             if mode != 'loop':
                 break
-            else:
-                preclip = clipdata
         except Exception as ex:
             logging.error('clipFetch' + str(ex))
             continue
