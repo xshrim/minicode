@@ -431,19 +431,12 @@ def avpageFetch(url, engine='javbus', proxy=''):
 def avurlFetch(keyword, engine='javbus', proxy=''):
     avpages = []
     if engine == 'javbus':
-        surls = []
-        try:
-            urldata = PyQuery(getHTML('https://www.javbus.com/search/' + keyword, 5, 5, 1, proxy))
-            pagination = urldata('ul[class="pagination pagination-lg"]')
-            if pagination is not None and str(pagination).strip() != '':
-                for subpage in pagination('li').items():
-                    if re.match(r'^.*\d+.*$', str(subpage.text())):
-                        if subpage('a').attr('href') is not None and str(subpage('a').attr('href')).strip() != '':
-                            surls.append(parse.urljoin('https://www.javbus.com/', subpage('a').attr('href')))
-            else:
-                surls.append('https://www.javbus.com/search/' + keyword)
-            for surl in surls:
-                urldata = PyQuery(getHTML(surl, 5, 5, 1, proxy))
+        pidx = 1
+        curl = 'https://www.javbus.com/search/' + keyword
+        while True:
+            try:
+                print(('Parsing Page (' + curl + ')').center(100, '-'))
+                urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
                 urlcontent = urldata('div#waterfall')
                 for urlitem in urlcontent('a.movie-box').items():
                     code = str(urlitem('div.photo-info')('date:first').text()).strip().upper()
@@ -452,8 +445,25 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     url = str(urlitem.attr('href')).strip()
                     print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
-        except Exception as ex:
-            logging.warning("avurlFetch:javbus:" + str(ex))
+
+                pagination = urldata('ul[class="pagination pagination-lg"]')
+                if pagination is not None and str(pagination).strip() != '':
+                    pginfo = ''
+                    for item in pagination('li').items():
+                        if str(pidx) == item.text().strip():
+                            pginfo += '[' + str(pidx) + '] '
+                        else:
+                            pginfo += item.text().strip() + ' '
+                    print(pginfo)
+                    if '下一页' in pagination.text() or '下一頁' in pagination.text():
+                        pidx += 1
+                        curl = 'https://www.javbus.com/search/' + keyword + '/' + str(pidx)
+                    else:
+                        break
+                else:
+                    break
+            except Exception as ex:
+                logging.warning("avurlFetch:javbus:" + str(ex))
     if engine == 'javhoo':
         surls = []
         try:
@@ -1134,6 +1144,7 @@ def avquickFetch(code, proxy=''):
 def av2file(avs, dirpath):
     txtfs = None
     txtname = 'avinfos.txt'
+    count = 0
     try:
         print('Saving {0} AV Infomation to Files'.format(len(avs)).center(100, '*'))
         txtpath = os.path.join(dirpath, txtname)
@@ -1164,12 +1175,13 @@ def av2file(avs, dirpath):
                 # imgfs.write(getHTML(cav.coverlink, 5, 5, 0, proxy))
                 imgfs.write(cav.cover)
                 imgfs.close()
+                count += 1
                 print('READY')
             except Exception as ex:
                 logging.debug('av2file:' + str(ex))
                 print('FAILED')
         txtfs.close()
-        print('COMPLETE')
+        print(str(count) + '/' + str(len(avs)) + ' COMPLETE')
     except Exception as ex:
         if txtfs is not None:
             txtfs.close()
@@ -1180,6 +1192,7 @@ def av2file(avs, dirpath):
 def av2db(avs, dirpath):
     data = []
     dbname = 'avinfos.db'
+    count = 0
     try:
         print('Saving {0} AV Infomation to Database'.format(len(avs)).center(100, '*'))
         dbpath = os.path.join(dirpath, dbname)
@@ -1210,15 +1223,16 @@ def av2db(avs, dirpath):
                 print('Creating AV Information : ' + cav.title, end=' ...... ')
                 # data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(bytes(cav.cover)), cav.link))
                 save(get_conn(dbpath), sql, [(cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(cav.cover), cav.link)])
+                count += 1
                 print('READY')
             except Exception as ex:
                 logging.debug('av2db:' + str(ex))
                 print('FAILED')
-        print('COMPLETE')
+        print(str(count) + '/' + str(len(avs)) + ' COMPLETE')
     except Exception as ex:
         if 'UNIQUE constraint failed' in str(ex):
             logging.debug('av2db:' + str(ex))
-            print('COMPLETE')
+            print(str(count) + '/' + str(len(avs)) + ' COMPLETE')
         else:
             logging.error('av2db:' + str(ex))
             print('FAILED')
@@ -1334,9 +1348,10 @@ if __name__ == "__main__":
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
 
-regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+# regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
 # regstr = r'\S+'
-clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+# clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+
 
 '''
 codes = []
