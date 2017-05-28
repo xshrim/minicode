@@ -450,7 +450,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     urlitem('div.photo-info')('span')('date').remove()
                     title = str(urlitem('div.photo-info')('span').text().replace('/', '')).strip()
                     url = str(urlitem.attr('href')).strip()
-                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
+                    print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javbus:" + str(ex))
@@ -473,7 +473,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     code = str(urlitem('div.project-list-content')('date:first').text()).strip().split('/')[0].strip().upper()
                     title = str(urlitem('div.project-list-content')('a:first').text()).strip()
                     url = str(urlitem('div.project-list-media')('a:first').attr('href')).strip()
-                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
+                    print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
@@ -496,7 +496,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     code = str(urlitem('div.meta')('div.movie-tag').text()).split('/')[0].strip()
                     title = str(urlitem('a:first').attr('title')).strip()
                     url = parse.urljoin('http://m.torrentant.com/', str(urlitem('a:first').attr('href')).strip())
-                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
+                    print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
@@ -520,7 +520,7 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     urlitem('div.photo-info')('span')('date').remove()
                     title = str(urlitem('div.photo-info')('span').text().replace('/', '')).strip()
                     url = str(urlitem.attr('href')).strip()
-                    print(code.ljust(8) + ' -> ' + title + ' -> ' + url)
+                    print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
@@ -1334,9 +1334,9 @@ if __name__ == "__main__":
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
 
-# regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
 # regstr = r'\S+'
-# clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 '''
 codes = []
