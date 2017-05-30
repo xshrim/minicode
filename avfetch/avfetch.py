@@ -86,6 +86,42 @@ class av(object):
     __repr__ = __str__
 
 
+class actres(object):
+    '''
+    jname = ''
+    cname = ''
+    pname = ''
+    aname = ''
+    birthday = ''
+    birthplace = ''
+    cup = ''
+    stime = ''
+    status = ''
+    favorate = ''
+    codes = ''
+    ipage = ''
+    notes = ''
+    '''
+
+    def __init__(self, jname, cname, pname, aname, birthday, birthplace, cup, stime, status, favorate, codes, ipage, notes):
+        self.jname = jname
+        self.cname = cname
+        self.pname = pname
+        self.aname = aname
+        self.birthday = birthday
+        self.birthplace = birthplace
+        self.cup = cup
+        self.stime = stime
+        self.status = status
+        self.favorate = favorate
+        self.codes = codes
+        self.ipage = ipage
+        self.notes = notes
+
+    def __str__(self):
+        return '日文原名:'.center(7) + self.jname + '\n' + '中文译名:'.center(7) + self.jname + '\n' + '平片假名:'.center(7) + self.pname + '\n' + '曾用别名:'.center(7) + self.aname + '\n' + '出生日期:'.center(7) + self.birthday + '\n' + '出生地区:'.center(7) + self.birthplace + '\n' + '胸部罩杯:'.center(7) + self.cup + '\n' + '出道时间:'.center(7) + self.stime + '\n' + '当前状态:'.center(7) + self.status + '\n' + '兴趣爱好:'.center(7) + self.favorate + '\n' + '作品代码:'.center(7) + self.codes + '\n' + '简介主页:'.center(7) + self.ipage + '\n' + '备注信息:'.center(7) + self.notes
+
+
 class avlink(object):
     '''
     code = ''
@@ -351,6 +387,33 @@ def detectPage(url, timeout, retry, sleep, proxy=''):
     return False
 
 
+def render(curl):
+    """Fully render HTML, JavaScript and all."""
+    import sys
+    from PyQt5.QtCore import (QUrl, QEventLoop)
+    from PyQt5.QtWidgets import QApplication
+    from PyQt5.QtWebEngineWidgets import QWebEngineView
+
+    class Render(QWebEngineView):
+        def __init__(self, iurl):
+            self.html = None
+            self.app = QApplication(sys.argv)
+            QWebEngineView.__init__(self)
+            self.loadFinished.connect(self._loadFinished)
+            self.load(QUrl(iurl))
+            while self.html is None:
+                self.app.processEvents(QEventLoop.ExcludeUserInputEvents | QEventLoop.ExcludeSocketNotifiers | QEventLoop.WaitForMoreEvents)
+            self.app.quit()
+
+        def _callable(self, data):
+            self.html = data
+
+        def _loadFinished(self, result):
+            self.page().toHtml(self._callable)
+
+    return Render(curl).html
+
+
 def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
     proxyDict = {}
     if proxy is not None and re.match(r'^.+@.+:.+$', proxy, flags=0):
@@ -436,10 +499,10 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
     avpages = []
     if engine == 'javbus':
         pidx = 1
-        curl = 'https://www.javbus.com/search/' + keyword
+        baseurl = 'https://www.javbus.com/search/' + keyword + '/'
         while True:
-            pagination = None
             try:
+                curl = baseurl + str(pidx)
                 print(('Parsing Page (' + curl + ')').center(100, '-'))
                 urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
                 urlcontent = urldata('div#waterfall')
@@ -462,7 +525,6 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
                     print(pginfo)
                     if '下一页' in pagination.text() or '下一頁' in pagination.text():
                         pidx += 1
-                        curl = 'https://www.javbus.com/search/' + keyword + '/' + str(pidx)
                     else:
                         break
                 else:
@@ -541,6 +603,47 @@ def avurlFetch(keyword, engine='javbus', proxy=''):
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
     return avpages
+
+
+def avactresFetch(atype, engine='javbus', proxy=''):
+    avactress = []
+    pidx = 1
+    if engine == 'javbus':
+        if atype == '有码' or atype == '有碼' or atype == 'censored':
+            baseurl = 'https://www.javbus.com/actresses/'
+        else:
+            baseurl = 'https://www.javbus.com/uncensored/actresses/'
+        while True:
+            try:
+                curl = baseurl + str(pidx)
+                print(('Parsing Page (' + curl + ')').center(100, '-'))
+                urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
+                urlcontent = urldata('div#waterfall')
+                for urlitem in urlcontent('a[class="avatar-box text-center"]').items():
+                    name = urlitem.text().strip()
+                    link = urlitem.attr('href').strip()
+                    print(name.ljust(15) + ' -> ' + link)
+                    avactress.append((name, link))
+
+                pagination = urldata('ul[class="pagination pagination-lg"]')
+                if pagination is not None and str(pagination).strip() != '':
+                    pginfo = ''
+                    for item in pagination('li').items():
+                        if str(pidx) == item.text().strip():
+                            pginfo += '[' + str(pidx) + '] '
+                        else:
+                            pginfo += item.text().strip() + ' '
+                    print(pginfo)
+                    if '下一页' in pagination.text() or '下一頁' in pagination.text():
+                        pidx += 1
+                    else:
+                        break
+                else:
+                    break
+            except Exception as ex:
+                logging.warning("avactresFetch:" + str(ex))
+                break
+    return avactress
 
 
 def avkeywordParse(textargs, type):
@@ -1052,16 +1155,40 @@ def avlinkUpdate(dbfile):
                 concurrent.futures.wait(tasks)
 
 
+def clipthFetch(regstr, stype, tpath, mthread, engine, proxy, dbfile):
+    tasks = []
+
+    def consumer(regstr, stype, tpath, mthread, engine, proxy, dbfile):
+        r = ''
+        while True:
+            if len(tasks) > 0:
+                pattern = re.compile(regstr)
+                keywords = list(set(number.group() for number in pattern.finditer(tasks.pop(0).strip())))
+                avfullFetch(keywords, stype, tpath, mthread, engine, proxy, dbfile)
+
+    def produce():
+        preclip = ''
+        while True:
+            clipdata = pyperclip.paste()
+            if clipdata is not None and clipdata != preclip and clipdata.strip() != '':
+                preclip = clipdata
+                tasks.append(clipdata)
+
+    threading.Thread(target=produce).start()
+    threading.Thread(target=consumer, args=(regstr, stype, tpath, mthread, engine, proxy, dbfile)).start()
+
+
 def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
     # regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
     # regstr = r'\S+'
     # regstr = r'[^\n]+'
+    preclip = ''
     while True:
         try:
             keywords = []
             clipdata = pyperclip.paste()
-            if clipdata is not None and clipdata.strip() != '':
-                pyperclip.copy('')
+            if clipdata is not None and clipdata != preclip and clipdata.strip() != '':
+                preclip = clipdata
                 pattern = re.compile(regstr)
                 keywords = list(set(number.group() for number in pattern.finditer(clipdata.strip())))
                 avfullFetch(keywords, stype, tpath, mthread, engine, proxy, dbfile)
@@ -1070,6 +1197,24 @@ def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
         except Exception as ex:
             logging.error('clipFetch' + str(ex))
             continue
+
+
+def cliploopFetch():
+    print('Please Choose One ClipFetch Mode:')
+    print('A. 按番号提取')
+    print('B. 按空格分割')
+    print('C. 按换行分割')
+    mode = input('My Choice: ')
+    if mode.strip().lower() == 'a' or mode.strip() == '1':
+        regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+    elif mode.strip().lower() == 'b' or mode.strip() == '2':
+        regstr = r'\S+'
+    elif mode.strip().lower() == 'c' or mode.strip() == '3':
+        regstr = r'[^\n]+'
+    else:
+        regstr = mode.strip()
+    # clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+    clipthFetch(regstr, 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 
 def avquickFetch(code, proxy=''):
@@ -1201,13 +1346,10 @@ def av2file(avs, dirpath):
         print('FAILED')
 
 
-def av2db(avs, dirpath):
-    data = []
-    dbname = 'avinfos.db'
+def av2db(avs, dbfile):
     count = 0
     try:
         print('Saving {0} AV Infomation to Database'.format(len(avs)).center(100, '*'))
-        dbpath = os.path.join(dirpath, dbname)
         sql = '''CREATE TABLE  IF NOT EXISTS `av` (
               `code` varchar(100) NOT NULL,
               `title` varchar(500) NOT NULL,
@@ -1226,15 +1368,14 @@ def av2db(avs, dirpath):
               `link` varchar(10000) DEFAULT NUll,
                PRIMARY KEY (`code`)
             )'''
-        # conn = get_conn(dbpath)
-        create_table(get_conn(dbpath), sql)
+        # conn = get_conn(dbfile)
+        create_table(get_conn(dbfile), sql)
 
         sql = '''INSERT OR IGNORE INTO av values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
         for cav in avs:
             try:
                 print('Creating AV Information : ' + cav.title, end=' ...... ')
-                # data.append((cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(bytes(cav.cover)), cav.link))
-                save(get_conn(dbpath), sql, [(cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(cav.cover), cav.link)])
+                save(get_conn(dbfile), sql, [(cav.code, cav.title, cav.issuedate, cav.length, cav.mosaic, cav.director, cav.manufacturer, cav.publisher, cav.series, cav.category, cav.actors, cav.favor, cav.coverlink, sqlite3.Binary(cav.cover), cav.link)])
                 count += 1
                 print('READY')
             except Exception as ex:
@@ -1251,6 +1392,50 @@ def av2db(avs, dirpath):
             print('FAILED')
 
 
+def actres2db(actress, dbfile):
+    count = 0
+    try:
+        print('Saving {0} Actres Infomation to Database'.format(len(actress)).center(100, '*'))
+        sql = '''CREATE TABLE  IF NOT EXISTS `actres` (
+              `jname` varchar(50) NOT NULL,
+              `cname` varchar(50) DEFAULT NULL,
+              `pname` varchar(50) DEFAULT NULL,
+              `aname` varchar(50) DEFAULT NULL,
+              `birthday` varchar(50) DEFAULT NULL,
+              `birthplace` varchar(50) DEFAULT NULL,
+              `cup` varchar(50) DEFAULT NULL,
+              `stime` varchar(50) DEFAULT NULL,
+              `status` varchar(50) DEFAULT NULL,
+              `favorate` varchar(500) DEFAULT NULL,
+              `codes` varchar(10000) DEFAULT NULL,
+              `ipage` varchar(100) DEFAULT NULL,
+              `notes` varchar(10000) DEFAULT NULL,
+               PRIMARY KEY (`jname`)
+            )'''
+
+        create_table(get_conn(dbfile), sql)
+
+        sql = '''INSERT OR IGNORE INTO actres values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+        for actres in actress:
+            try:
+                print('Creating Actres Information : ' + actres.jname, end=' ...... ')
+                save(get_conn(dbfile), sql, [(actres.jname, actres.cname, actres.pname, actres.aname, actres.birthday, actres.birthplace, actres.cup, actres.stime, actres.status, actres.favorate, actres.codes, actres.ipage, actres.notes)])
+                count += 1
+                print('READY')
+            except Exception as ex:
+                logging.debug('actres2db:' + str(ex))
+                print('FAILED')
+                continue
+        print(str(count) + '/' + str(len(actress)) + ' COMPLETE')
+    except Exception as ex:
+        if 'UNIQUE constraint failed' in str(ex):
+            logging.debug('actres2db:' + str(ex))
+            print(str(count) + '/' + str(len(actress)) + ' COMPLETE')
+        else:
+            logging.error('actres2db:' + str(ex))
+            print('FAILED')
+
+
 def avsave(avs, savetype='file', tpath=curDir()):
     if avs is not None and len(avs) > 0:
         try:
@@ -1260,10 +1445,12 @@ def avsave(avs, savetype='file', tpath=curDir()):
             if savetype.lower() == 'file':
                 av2file(avs, dirpath)
             elif savetype.lower() == 'db':
-                av2db(avs, dirpath)
+                dbfile = os.path.join(dirpath, 'avinfos.db')
+                av2db(avs, dbfile)
             elif savetype.lower() == 'both':
+                dbfile = os.path.join(dirpath, 'avinfos.db')
                 av2file(avs, dirpath)
-                av2db(avs, dirpath)
+                av2db(avs, dbfile)
 
         except Exception as ex:
             logging.error('avsave:' + str(ex))
@@ -1348,7 +1535,7 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
-# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-s', ' 敗戦国の女'])
+# main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-t', 'db', '-m', '20', '-s', ' 敗戦国の女'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-s', 'ipz-137', 'ipz-371 midd-791 fset-337 sw-140'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javhoo', '-t', 'file', '-s', '天海つばさ'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
@@ -1361,9 +1548,79 @@ if __name__ == "__main__":
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
 
-# regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
-regstr = r'\S+'
-clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+cliploopFetch()
+
+'''
+actress = []
+with open('C:/Users/xshrim/Desktop/actres.txt', 'r', encoding='utf8') as rf:
+    for line in rf.readlines():
+        infos = line.split('*')
+        cname = infos[0].strip()
+        jname = infos[1].strip()
+        pname = infos[2].strip()
+        stime = infos[3].strip()
+        notes = infos[4].strip()
+        if '引退' in notes:
+            status = '引退'
+        else:
+            status = '现役'
+        actress.append(actres(jname, cname, pname, '', '', '', '', stime, status, '', '', '', notes))
+        print(actress[-1])
+
+with open('C:/Users/xshrim/Desktop/jb.txt', 'r', encoding='utf8') as rf:
+    for line in rf.readlines():
+        names = line.split('*')[0].strip()
+        if '（' in names:
+            jname = names.split('（')[0].strip()
+            aname = names.split('（')[1].replace('）', '').strip()
+        else:
+            jname = names
+            aname = ''
+        ipage = line.split('*')[1]
+
+        idx = -1
+        for i in range(0, len(actress)):
+            if actress[i].jname == jname:
+                idx = i
+                break
+        if idx == -1:
+            actress.append(actres(jname, '', '', aname, '', '', '', '', '', '', '', ipage, ''))
+        else:
+            actress[idx].aname = ''
+            actress[idx].ipage = ipage
+        print(actress[-1])
+
+actres2db(actress, 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+'''
+
+
+'''
+avactress = []
+with open('C:/Users/xshrim/Desktop/b.txt', 'r', encoding='utf8') as rf:
+    html = rf.read()
+    data = PyQuery(html)
+    items = data('table:gt(0)')('tr')
+    for item in items.items():
+        if item('td').length > 0:
+            cname = item('td:eq(0)').text().strip().replace(' ', '')
+            jnames = item('td:eq(1)').text().strip().replace(' ', '')
+            if '（' in jnames:
+                jname = jnames.split('（')[0].strip()
+                janame = jnames.split('（')[1].replace('）', '').strip()
+            else:
+                jname = jnames.replace(' ', '')
+                janame = ''
+            stime = item('td:eq(2)').text().strip()
+            if 'cup' in stime.lower():
+                stime = item('td:eq(3)').text().strip()
+                notes = item('td:eq(4)').text().strip()
+            else:
+                notes = item('td:eq(3)').text().strip()
+            avactress.append((cname, jname, janame, stime, notes))
+with open('C:/Users/xshrim/Desktop/actres.txt', 'w', encoding='utf8') as wf:
+    for actres in avactress:
+        wf.write(actres[0] + '*' + actres[1] + '*' + actres[2] + '*' + actres[3] + '*' + actres[4] + '\n')
+'''
 
 
 '''
