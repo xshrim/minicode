@@ -382,7 +382,7 @@ def updateTopic(level, qn, dbfile):
         # print(nltk.clean_html(content))
 
 
-def getAnswer(keywords, dbfile):
+def getAnswer(level, keywords, dbfile):
     res = None
     try:
         iconn = get_conn(dbfile)
@@ -391,14 +391,24 @@ def getAnswer(keywords, dbfile):
             if keyword.strip() != '':
                 pred += '`content` like "%' + keyword.strip() + '%" and '
         pred = pred[:-5]
-        isql = 'select level, qn, content, answer from `orath` where ' + pred + ' order by qn'
+        if level.strip() == '':
+            isql = 'select level, qn, content, answer from `orath` where ' + pred + ' order by qn'
+        else:
+            spred = ''
+            level = level.replace('，', ',')
+            for sl in level.split(','):
+                if sl.strip() != '':
+                    spred += '`level` = "' + sl.strip() + '" or '
+            spred = spred[:-4]
+            isql = 'select level, qn, content, answer from `orath` where ' + pred + ' and (' + spred + ') order by qn'
+        print(isql)
         res = fetchall(iconn, isql)
     except Exception as ex:
         print('getAnswer:' + str(ex))
     return res
 
 
-def refer(dbfile):
+def refer(level, dbfile):
     preclip = ''
     mode = 'manual'
     print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.WHITE + '#' * 100)
@@ -418,7 +428,7 @@ def refer(dbfile):
             if keyword is not None and keyword.strip() != '' and keyword != preclip:
                 preclip = keyword
                 print(colorama.Style.BRIGHT + colorama.Back.RED + colorama.Fore.YELLOW + keyword.strip().center(100, '='))
-                for r in getAnswer(keyword, dbfile):
+                for r in getAnswer(level, keyword, dbfile):
                     print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.YELLOW + (str(r[0]) + ' -> ' + str(r[1])).center(20, ' ').center(100, '#'))
                     # print('题号：' + str(r[0]) + ' -> ' + str(r[1]))
                     print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.CYAN + '题目：' + str(r[2]))
@@ -526,7 +536,7 @@ def main(argv):
             if type == 'practise':
                 practise(dbfile)
             if type == 'refer':
-                refer(dbfile)
+                refer(level, dbfile)
         except Exception as ex:
             print('main:' + str(ex))
 
@@ -542,7 +552,7 @@ for i in range(63, 64):
 '''
 
 '''
-main(['-t', 'refer', '-l', '1Z0-052', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
+main(['-t', 'refer', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 
 '''
 with open('C:/Users/xshrim/Desktop/aaaaaa.txt', 'w') as wf:
