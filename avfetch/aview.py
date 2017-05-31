@@ -223,9 +223,12 @@ class Window(QWidget):
         self.nextButton = QPushButton('下一个')
         self.nextButton.setFixedWidth(50)
         self.nextButton.clicked.connect(self.itemTurn)
-        self.dbButton = QPushButton('载入数据库')
-        self.dbButton.setFixedWidth(100)
+        self.dbButton = QPushButton('载入')
+        self.dbButton.setFixedWidth(45)
         self.dbButton.clicked.connect(self.showDialog)
+        self.refreshButton = QPushButton('刷新')
+        self.refreshButton.setFixedWidth(45)
+        self.refreshButton.clicked.connect(self.refreshDB)
         self.favorButton = QRadioButton('收藏')
         self.favorButton.setToolTip('收藏/取消收藏当前项')
         self.favorButton.clicked.connect(self.flagItem)
@@ -269,6 +272,7 @@ class Window(QWidget):
         self.hboxhead = QHBoxLayout()
         self.hboxhead.addWidget(self.dbEdit)
         self.hboxhead.addWidget(self.dbButton)
+        self.hboxhead.addWidget(self.refreshButton)
         self.hboxhead.addWidget(self.favorButton)
         self.hboxhead.addWidget(self.favorCheck)
         self.hboxhead.addWidget(self.viewModeBox)
@@ -399,7 +403,7 @@ class Window(QWidget):
         if fname[0]:
             self.dbEdit.setText(fname[0])
             try:
-                # self.offset = 0
+                self.offset = 0
                 self.conn = get_conn(fname[0])
                 sql = 'SELECT code, favor FROM av order by rowid'
                 res = fetchall(self.conn, sql)
@@ -409,6 +413,20 @@ class Window(QWidget):
                 self.showInfo(self.fetchInfo())
             except Exception as ex:
                 print('showDialog:' + str(ex))
+
+    def refreshDB(self):
+        try:
+            dbfile = self.dbEdit.text().strip()
+            self.offset = 0
+            self.conn = get_conn(dbfile)
+            sql = 'SELECT code, favor FROM av order by rowid'
+            res = fetchall(self.conn, sql)
+            self.avs = [(str(item[0]), str(item[1])) for item in res]
+            # self.offset = self.avs.index(choice(self.avs))
+            self.conn.row_factory = dict_factory
+            self.showInfo(self.fetchInfo())
+        except Exception as ex:
+            print('refreshDB:' + str(ex))
 
     def flagItem(self):
         try:
