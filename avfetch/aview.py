@@ -5,7 +5,7 @@ import sys
 import sqlite3
 from random import choice
 from collections import OrderedDict
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import (Qt, QThread, QTimer, pyqtSignal)
 from PyQt5.QtGui import (QPixmap, QImage)
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QComboBox, QCheckBox, QRadioButton, QFileDialog, QApplication)
 
@@ -202,6 +202,23 @@ def delete(conn, sql, data):
 ######################################### DB END#########################################
 
 
+class Worker(QThread):
+
+    item_changed_signal = pyqtSignal(str)
+
+    def __init__(self, total=0, parent=None):
+        super().__init__(parent)
+        self.total = total
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        for i in range(self.total):
+            self.item_changed_signal.emit(str(i))
+            self.sleep(1)
+
+
 class Window(QWidget):
 
     def __init__(self):
@@ -216,6 +233,9 @@ class Window(QWidget):
         # self.codes = []
         self.avs = []
         self.conn = None
+
+        self.thread = Worker()
+        self.thread.item_changed_signal.connect(self.update_item)
 
         self.preButton = QPushButton('上一个')
         self.preButton.setFixedWidth(50)
@@ -300,6 +320,9 @@ class Window(QWidget):
         self.setWindowTitle('浏览')
         self.show()
 
+    def update_item(self, data):
+        self.jumpBox.addItem(data)
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.close()
@@ -338,9 +361,18 @@ class Window(QWidget):
             # self.setGeometry(300, 300, 1000, 600)
             self.setFixedHeight(600)
             self.picLabel.setToolTip(cav.code + ' ' + cav.title)
+
             if self.jumpBox.count() < 1:
                 for i in range(1, len(self.avs) + 1):
                     self.jumpBox.addItem(str(i))
+
+            '''
+            if self.jumpBox.count() < 1:
+                self.thread = Worker(len(self.avs))
+                self.thread.item_changed_signal.connect(self.update_item)
+                self.thread.start()
+            '''
+
             self.offset = self.avs.index((cav.code, cav.favor))
             self.jumpBox.setCurrentText(str(self.offset + 1))
             if int(cav.favor) == 0:
