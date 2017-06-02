@@ -1174,8 +1174,9 @@ def clipthFetch(regstr, stype, tpath, mthread, engine, proxy, dbfile):
                 preclip = clipdata
                 tasks.append(clipdata)
 
-    threading.Thread(target=produce).start()
+    # threading.Thread(target=produce).start()
     threading.Thread(target=consumer, args=(regstr, stype, tpath, mthread, engine, proxy, dbfile)).start()
+    produce()
 
 
 def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
@@ -1199,17 +1200,19 @@ def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
             continue
 
 
-def cliploopFetch():
-    print('Please Choose One ClipFetch Mode:')
-    print('A. 按番号提取')
-    print('B. 按空格分割')
-    print('C. 按换行分割')
-    mode = input('My Choice: ')
-    if mode.strip().lower() == 'a' or mode.strip() == '1':
+def cliploopFetch(mode=None):
+    if mode is None or mode.strip() == '':
+        print('Please Choose One ClipFetch Mode:')
+        print('A. 按番号提取')
+        print('B. 按空格分割')
+        print('C. 按换行分割')
+        mode = input('My Choice: ')
+
+    if mode.strip().lower() == 'a' or mode.strip() == '1' or mode.strip() == 'code':
         regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
-    elif mode.strip().lower() == 'b' or mode.strip() == '2':
+    elif mode.strip().lower() == 'b' or mode.strip() == '2' or mode.strip() == 'blank':
         regstr = r'\S+'
-    elif mode.strip().lower() == 'c' or mode.strip() == '3':
+    elif mode.strip().lower() == 'c' or mode.strip() == '3' or mode.strip() == 'wrap':
         regstr = r'[^\n]+'
     else:
         regstr = mode.strip()
@@ -1547,7 +1550,19 @@ if __name__ == "__main__":
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
+'''
+for i in range(50, 100):
+    url = 'http://hk-pic.xyz/forum-2-' + str(i) + '.html'
+    print(url.center(100, '='))
+    data = PyQuery(getHTML(url))
+    content = html2text.html2text(data.html())
+    regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
+    pattern = re.compile(regstr)
+    keywords = list(set(number.group() for number in pattern.finditer(content.strip())))
+    avfullFetch(keywords, 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+'''
 
+# clipthFetch(regstr, 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 cliploopFetch()
 
 '''
