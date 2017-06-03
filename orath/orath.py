@@ -386,13 +386,20 @@ def getAnswer(level, keywords, dbfile):
     res = None
     try:
         iconn = get_conn(dbfile)
+        predc = ''
+        predo = ''
         pred = ''
         for keyword in keywords.split(' '):
             if keyword.strip() != '':
-                pred += '`content` like "%' + keyword.strip() + '%" and '
-        pred = pred[:-5]
+                predc += '`content` like "%' + keyword.strip() + '%" and '
+        predc = predc[:-5]
+        for keyword in keywords.split(' '):
+            if keyword.strip() != '':
+                predo += '`options` like "%' + keyword.strip() + '%" and '
+        predo = predo[:-5]
+        pred = predc + ' or ' + predo
         if level.strip() == '':
-            isql = 'select level, qn, content, answer from `orath` where ' + pred + ' order by qn'
+            isql = 'select level, qn, content, options, answer from `orath` where ' + pred + ' order by qn'
         else:
             spred = ''
             level = level.replace('，', ',')
@@ -400,8 +407,7 @@ def getAnswer(level, keywords, dbfile):
                 if sl.strip() != '':
                     spred += '`level` = "' + sl.strip() + '" or '
             spred = spred[:-4]
-            isql = 'select level, qn, content, answer from `orath` where ' + pred + ' and (' + spred + ') order by qn'
-        print(isql)
+            isql = 'select level, qn, content, options, answer from `orath` where ' + pred + ' and (' + spred + ') order by qn'
         res = fetchall(iconn, isql)
     except Exception as ex:
         print('getAnswer:' + str(ex))
@@ -431,8 +437,9 @@ def refer(level, dbfile):
                 for r in getAnswer(level, keyword, dbfile):
                     print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.YELLOW + (str(r[0]) + ' -> ' + str(r[1])).center(20, ' ').center(100, '#'))
                     # print('题号：' + str(r[0]) + ' -> ' + str(r[1]))
-                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.CYAN + '题目：' + str(r[2]))
-                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.RESET + '答案：' + str(r[3]))
+                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.CYAN + '题目：\n' + str(r[2]).strip())
+                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.CYAN + '选项：\n' + str(r[3]).strip())
+                    print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.MAGENTA + '答案：\n' + str(r[4]).strip())
 
                     # os.system('cmd /k echo ' + output)
                     '''
@@ -448,10 +455,10 @@ def refer(level, dbfile):
 def practise(dbfile):
     topics = []
     iconn = get_conn(dbfile)
-    isql = 'select level, qn, content, answer from `orath`'
+    isql = 'select level, qn, content, options, answer from `orath`'
     res = fetchall(iconn, isql)
     for r in res:
-        topics.append((r[0], r[1], r[2], r[3]))
+        topics.append((r[0], r[1], r[2], r[3], r[4]))
     print(colorama.Style.BRIGHT + colorama.Fore.WHITE + '#' * 100)
     print('1. 1Z0-051 (OCA)')
     print('2. 1Z0-052 (OCP)')
@@ -483,15 +490,16 @@ def practise(dbfile):
             ctopic = stopics[i]
             i += 1
         print(colorama.Style.BRIGHT + colorama.Fore.GREEN + (str(ctopic[0]) + ' <--> ' + str(ctopic[1])).center(100, '='))
-        print(colorama.Fore.CYAN + ctopic[2])
+        print(colorama.Fore.CYAN + ctopic[2] + '\n')
+        print(colorama.Fore.CYAN + ctopic[3])
         ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit) => ')
         if ipt.lower() == 'q' or ipt.lower() == 'quit' or ipt.lower() == 'exit':
             break
         else:
-            if ipt.strip().upper().replace(' ', '') == ctopic[3].strip().upper().replace(' ', ''):
+            if ipt.strip().upper().replace(' ', '') == ctopic[4].strip().upper().replace(' ', ''):
                 print(colorama.Fore.MAGENTA + 'Bingo!')
             else:
-                print(colorama.Fore.RED + 'Wrong: ' + ctopic[3])
+                print(colorama.Fore.RED + 'Wrong: ' + ctopic[4])
 
 
 def main(argv):
@@ -544,6 +552,30 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 
+
+# main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
+
+'''
+iconn = get_conn('D:/Git/minicode/orath/orath.db')
+isql = 'select level, qn, content from `orath`'
+
+res = fetchall(iconn, isql)
+for r in res:
+    level = r[0]
+    qn = r[1]
+    content = r[2]
+    pattern = re.compile(r'(.*)(A\..*)', re.S)
+    m = pattern.match(content)
+    rcontent = m.group(1).strip()
+    options = m.group(2).strip()
+    # print(options)
+    print(str(r[0]) + ':' + str(r[1]))
+    isql = 'update `orath` set `content` = ?, `options` = ? where `level` = ? and `qn` = ?'
+    update(get_conn('D:/Git/minicode/orath/orath.db'), isql, [(rcontent, options, level, qn)])
+    # break
+'''
+
+
 '''
 for i in range(63, 64):
     updateTopic('1Z0-051', int(i), os.path.join(curDir(), 'orath.db'))
@@ -552,7 +584,7 @@ for i in range(63, 64):
 '''
 
 '''
-main(['-t', 'refer', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
+
 
 '''
 with open('C:/Users/xshrim/Desktop/aaaaaa.txt', 'w') as wf:
