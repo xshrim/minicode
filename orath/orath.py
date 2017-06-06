@@ -1,21 +1,20 @@
+import getopt
 import os
+import random
 import re
+import socket
+import sqlite3
 import sys
 import time
-import socks
-import socket
-import getopt
+import webbrowser
+from urllib import parse, request
+from urllib.parse import quote
+
 import chardet
-import sqlite3
-import random
 import colorama
 import pyperclip
-import webbrowser
-import subprocess
+import socks
 from pyquery import PyQuery
-from urllib import parse
-from urllib import request
-from urllib.parse import quote
 
 
 def get_conn(path):
@@ -330,7 +329,7 @@ def fetchTopic(level, idata):
                         tmpdata.clear()
 
 
-def showTopic(level, qn, dbfile):
+def showTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
     iconn = get_conn(dbfile)
     isql = 'select * from `orath` where `level`=? and `qn`=?'
     res = fetchone(iconn, isql, (level, qn))
@@ -340,7 +339,7 @@ def showTopic(level, qn, dbfile):
         webbrowser.open(link, new=0, autoraise=True)
 
 
-def updateTopic(level, qn, dbfile):
+def updateTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
     iconn = get_conn(dbfile)
     isql = 'select * from `orath` where `level`=? and `qn`=?'
     res = fetchone(iconn, isql, (level, qn))
@@ -407,14 +406,15 @@ def getAnswer(level, keywords, dbfile):
                 if sl.strip() != '':
                     spred += '`level` = "' + sl.strip() + '" or '
             spred = spred[:-4]
-            isql = 'select level, qn, content, options, answer from `orath` where ' + pred + ' and (' + spred + ') order by qn'
+            isql = 'select level, qn, content, options, answer from `orath` where (' + pred + ') and (' + spred + ') order by qn'
+            print(isql)
         res = fetchall(iconn, isql)
     except Exception as ex:
         print('getAnswer:' + str(ex))
     return res
 
 
-def refer(level, dbfile):
+def refer(level, dbfile=os.path.join(curDir(), 'orath.db')):
     preclip = ''
     mode = 'manual'
     print(colorama.Style.BRIGHT + colorama.Back.RESET + colorama.Fore.WHITE + '#' * 100)
@@ -452,7 +452,7 @@ def refer(level, dbfile):
             print('refer' + str(ex))
 
 
-def practise(dbfile):
+def practise(level=None, dbfile=os.path.join(curDir(), 'orath.db')):
     topics = []
     iconn = get_conn(dbfile)
     isql = 'select level, qn, content, options, answer from `orath`'
@@ -460,10 +460,11 @@ def practise(dbfile):
     for r in res:
         topics.append((r[0], r[1], r[2], r[3], r[4]))
     print(colorama.Style.BRIGHT + colorama.Fore.WHITE + '#' * 100)
-    print('1. 1Z0-051 (OCA)')
-    print('2. 1Z0-052 (OCP)')
-    print('3. 1Z0-053 (OCP)')
-    level = input('Please select level:')
+    if level is None or level.strip() == '':
+        print('1. 1Z0-051 (OCA)')
+        print('2. 1Z0-052 (OCP)')
+        print('3. 1Z0-053 (OCP)')
+        level = input('Please select level:')
     if level == '1' or level == '051' or level.upper() == '1Z0-051':
         level = '1Z0-051'
     if level == '2' or level == '052' or level.upper() == '1Z0-052':
@@ -472,6 +473,7 @@ def practise(dbfile):
         level = '1Z0-053'
     stopics = [topic for topic in topics if topic[0] == level]
     print(level + ' Total: ' + str(len(stopics)))
+    print('-' * 100)
     print('1. Random')
     print('2. Sequence')
     mode = input('Please select mode:')
@@ -505,7 +507,7 @@ def practise(dbfile):
 def main(argv):
     type = 'show'
     dbfile = ''
-    level = '1Z0-051'
+    level = ''
     qn = 1
     if argv is not None and len(argv) > 0:
         try:
@@ -538,13 +540,25 @@ def main(argv):
                 pass
         try:
             if type == 'fetch':
-                collect(level, dbfile)
+                if dbfile is None or dbfile.strip() == '':
+                    collect(level)
+                else:
+                    collect(level, dbfile)
             if type == 'show':
-                showTopic(level, qn, dbfile)
+                if dbfile is None or dbfile.strip() == '':
+                    showTopic(level, qn)
+                else:
+                    showTopic(level, qn, dbfile)
             if type == 'practise':
-                practise(dbfile)
+                if dbfile is None or dbfile.strip() == '':
+                    practise(level)
+                else:
+                    practise(level, dbfile)
             if type == 'refer':
-                refer(level, dbfile)
+                if dbfile is None or dbfile.strip() == '':
+                    refer(level)
+                else:
+                    refer(level, dbfile)
         except Exception as ex:
             print('main:' + str(ex))
 
@@ -554,6 +568,7 @@ if __name__ == "__main__":
 
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
+# main(['-t', 'practise', '-l', '1Z0-052'])
 
 '''
 iconn = get_conn('D:/Git/minicode/orath/orath.db')
