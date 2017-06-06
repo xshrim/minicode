@@ -452,46 +452,71 @@ def refer(level, dbfile=os.path.join(curDir(), 'orath.db')):
             print('refer' + str(ex))
 
 
-def practise(level=None, dbfile=os.path.join(curDir(), 'orath.db')):
+def practise(level=None, count=None, mode=None, sr=None, dbfile=os.path.join(curDir(), 'orath.db')):
+    corlist = []
+    wrolist = []
     topics = []
     iconn = get_conn(dbfile)
     isql = 'select level, qn, content, options, answer from `orath`'
     res = fetchall(iconn, isql)
     for r in res:
         topics.append((r[0], r[1], r[2], r[3], r[4]))
+
     print(colorama.Style.BRIGHT + colorama.Fore.WHITE + '#' * 100)
-    if level is None or level.strip() == '':
+    if level is None or str(level).strip() == '':
         print('1. 1Z0-051 (OCA)')
         print('2. 1Z0-052 (OCP)')
         print('3. 1Z0-053 (OCP)')
         level = input('Please select level:')
-    if level == '1' or level == '051' or level.upper() == '1Z0-051':
+    if level == '1' or level == '051' or str(level).strip().upper() == '1Z0-051':
         level = '1Z0-051'
-    if level == '2' or level == '052' or level.upper() == '1Z0-052':
+    if level == '2' or level == '052' or str(level).strip().upper() == '1Z0-052':
         level = '1Z0-052'
-    if level == '3' or level == '053' or level.upper() == '1Z0-053':
+    if level == '3' or level == '053' or str(level).strip().upper() == '1Z0-053':
         level = '1Z0-053'
     stopics = [topic for topic in topics if topic[0] == level]
-    print(level + ' Total: ' + str(len(stopics)))
-    print('-' * 100)
-    print('1. Random')
-    print('2. Sequence')
-    mode = input('Please select mode:')
-    if mode == '1' or mode.lower() == 'random':
-        mode = 'random'
-    if mode == '2' or mode.lower() == 'sequence':
-        mode = 'sequence'
-    print(mode + ' mode')
-    print('#' * 100)
+    print(colorama.Fore.GREEN + str(level) + ' Total: ' + str(len(stopics)))
+    print(colorama.Fore.WHITE + '-' * 100)
 
-    i = 0
+    if count is None or str(count).strip() == '0':
+        count = input('Please input question quantity(-1 for unlimited):')
+    count = int(count)
+    if count == -1:
+        print(colorama.Fore.GREEN + 'Question Quantity: Unlimited')
+    else:
+        print(colorama.Fore.GREEN + 'Question Quantity: ' + str(count))
+    print(colorama.Fore.WHITE + '-' * 100)
+
+    if mode is None or str(mode).strip() == '':
+        mode = input('Please select answer mode(random or sequence):')
+    if str(mode).strip() == '1' or str(mode).strip().lower() == 'r' or str(mode).strip().lower() == 'random':
+        mode = 'random'
+    else:
+        mode = 'sequence'
+    print(colorama.Fore.GREEN + 'Mode: ' + mode)
+    print(colorama.Fore.WHITE + '-' * 100)
+
+    if sr is None or str(sr).strip() == '':
+        sr = input('Show the question answer(yes or no):')
+    if str(sr).strip() == '1' or str(sr).strip().lower() == 'y' or str(sr).strip().lower() == 'yes' or str(sr).strip().lower() == '是':
+        sr = 'yes'
+    else:
+        sr = 'no'
+    print(colorama.Fore.GREEN + 'Show Answer: ' + sr)
+    print(colorama.Fore.WHITE + '#' * 100)
+
+    idx = 1
     while True:
+        if count != -1 and idx > count:
+            break
         if mode == 'random':
             ctopic = random.choice(stopics)
         else:
-            ctopic = stopics[i]
-            i += 1
-        print(colorama.Style.BRIGHT + colorama.Fore.GREEN + (str(ctopic[0]) + ' <--> ' + str(ctopic[1])).center(100, '='))
+            if idx <= len(stopics):
+                ctopic = stopics[idx - 1]
+            else:
+                break
+        print(colorama.Fore.GREEN + (('[' + str(idx) + ']').center(8) + '=> ' + str(ctopic[0]) + ' <--> ' + str(ctopic[1]) + '  ').center(100, '='))
         print(colorama.Fore.CYAN + ctopic[2] + '\n')
         print(colorama.Fore.CYAN + ctopic[3])
         ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit) => ')
@@ -499,23 +524,33 @@ def practise(level=None, dbfile=os.path.join(curDir(), 'orath.db')):
             break
         else:
             if ipt.strip().upper().replace(' ', '') == ctopic[4].strip().upper().replace(' ', ''):
-                print(colorama.Fore.MAGENTA + 'Bingo!')
+                corlist.append((idx, ctopic[0], ctopic[1]))
+                if sr == 'yes':
+                    print(colorama.Fore.MAGENTA + 'Bingo!')
             else:
-                print(colorama.Fore.RED + 'Wrong: ' + ctopic[4])
+                wrolist.append((idx, ctopic[0], ctopic[1]))
+                if sr == 'yes':
+                    print(colorama.Fore.RED + 'Wrong: ' + ctopic[4])
+        idx += 1
+    print(colorama.Style.NORMAL + colorama.Fore.BLUE + 'ACCURACY: ' + str(len(corlist)) + '/' + str(idx - 1))
+    return (corlist, wrolist)
 
 
 def main(argv):
-    type = 'show'
+    type = 'practise'
     dbfile = ''
-    level = ''
-    qn = 1
+    level = None
+    qn = '1'
+    count = None
+    mode = None
+    sr = None
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "hf:t:l:n:", ["file=", "type=", "level=", "number="])
+            opts, args = getopt.getopt(argv, "hf:t:l:n:c:m:s:", ["file=", "type=", "level=", "number=", "count=", "mode=", "sr="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>]\n
-                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10'''
+                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-s <showres>]\n
+                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -s yes'''
             )
             exit(2)
 
@@ -524,8 +559,8 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>]\n
-                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10'''
+                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-s <showres>]\n
+                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -s yes'''
                 )
                 exit()
             elif opt in ("-t", "--type"):
@@ -536,6 +571,12 @@ def main(argv):
                 level = arg
             elif opt in ("-n", "--number"):
                 qn = arg
+            elif opt in ("-c", "--count"):
+                count = arg
+            elif opt in ("-m", "--mode"):
+                mode = arg
+            elif opt in ("-s", "--sr"):
+                sr = arg
             else:
                 pass
         try:
@@ -551,9 +592,9 @@ def main(argv):
                     showTopic(level, qn, dbfile)
             if type == 'practise':
                 if dbfile is None or dbfile.strip() == '':
-                    practise(level)
+                    res = practise(level, count, mode, sr)
                 else:
-                    practise(level, dbfile)
+                    res = practise(level, count, mode, sr, dbfile)
             if type == 'refer':
                 if dbfile is None or dbfile.strip() == '':
                     refer(level)
@@ -568,7 +609,8 @@ if __name__ == "__main__":
 
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
-# main(['-t', 'practise', '-l', '1Z0-052'])
+# main(['-t', 'practise', '-l', '1Z0-052', '-c', '2', '-s', 'y', '-m', 'random'])
+# main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1'])
 
 '''
 iconn = get_conn('D:/Git/minicode/orath/orath.db')
