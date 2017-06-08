@@ -340,48 +340,60 @@ def showTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
 
 
 def updateTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
-    iconn = get_conn(dbfile)
-    isql = 'select * from `orath` where `level`=? and `qn`=?'
-    res = fetchone(iconn, isql, (level, qn))
-    if res is not None:
-        link = res[5]
-        data = PyQuery(getHTML(link))
-        content = data('#article_content')
-        image = content('img').attr('src')
-        timage = getHTML(image)
-        if not isinstance(timage, bytes):
-            timage = b''
-        fulldata = ''
-        tcontent = ''
-        tanswer = ''
-        tparse = ''
-        for item in content.children()('div, span').items():
-            fulldata += item.text() + '\n'
-        if 'Answer:' in fulldata:
-            tcontent = fulldata.split('Answer:')[0]
-            tcont = fulldata.split('Answer:')[1]
-            if '答案解析' in tcont:
-                tanswer = tcont.split('答案解析')[0]
-                tparse = '\n'.join(str(tcont.split('答案解析')[1]).split('\n')[1:])
+    try:
+        iconn = get_conn(dbfile)
+        isql = 'select * from `orath` where `level`=? and `qn`=?'
+        res = fetchone(iconn, isql, (level, qn))
+        if res is not None:
+            link = res[5]
+            data = PyQuery(getHTML(link))
+            content = data('#article_content')
+            image = content('img').attr('src')
+            timage = getHTML(image)
+            if not isinstance(timage, bytes):
+                timage = b''
+            fulldata = ''
+            tcontent = ''
+            tanswer = ''
+            tparse = ''
+            for item in content.children()('div, span').items():
+                fulldata += item.text() + '\n'
+            if 'Answer:' in fulldata:
+                tcontent = fulldata.split('Answer:')[0]
+                tcont = fulldata.split('Answer:')[1]
+                if '答案解析' in tcont:
+                    tanswer = tcont.split('答案解析')[0]
+                    tparse = '\n'.join(str(tcont.split('答案解析')[1]).split('\n')[1:])
+                else:
+                    tanswer = tcont.split('\n')[0]
+                    tparse = '\n'.join(tcont.split('\n')[1:])
             else:
-                tanswer = tcont.split('\n')[0]
-                tparse = '\n'.join(tcont.split('\n')[1:])
-        else:
-            if '此题答案' in fulldata:
-                for line in fulldata.split('\n'):
-                    if '此题答案' in line:
-                        tcontent = fulldata.replace(line, '')
-                        tparse = ''
-                        tanswer = line.replace('此题答案', '').replace('选', '').replace('为', '')
-        print(tcontent)
-        print(tanswer)
-        print(tparse)
-        isql = 'update `orath` set `content`=?, `image`=?, `parse`=?, `answer`=? where `level`=? and `qn`=?'
-        res = update(iconn, isql, [(tcontent, sqlite3.Binary(timage), tparse, tanswer, level, qn)])
-        # print(nltk.clean_html(content))
+                if '此题答案' in fulldata:
+                    for line in fulldata.split('\n'):
+                        if '此题答案' in line:
+                            tcontent = fulldata.replace(line, '')
+                            tparse = ''
+                            tanswer = line.replace('此题答案', '').replace('选', '').replace('为', '')
+            print(tcontent)
+            print(tanswer)
+            print(tparse)
+            isql = 'update `orath` set `content`=?, `image`=?, `parse`=?, `answer`=? where `level`=? and `qn`=?'
+            res = update(iconn, isql, [(tcontent, sqlite3.Binary(timage), tparse, tanswer, level, qn)])
+            # print(nltk.clean_html(content))
+    except Exception as ex:
+        print('starTopic:' + str(ex))
 
 
-def getAnswer(level, keywords, dbfile):
+def starTopic(level, qn, star, dbfile=os.path.join(curDir(), 'orath.db')):
+    try:
+        iconn = get_conn(dbfile)
+        isql = 'update `orath` set `star`=? where `level`=? and `qn`=?'
+        res = update(iconn, isql, [(star.upper().strip(), level, qn)])
+    except Exception as ex:
+        print('starTopic:' + str(ex))
+
+
+def getAnswer(level, keywords, dbfile=os.path.join(curDir(), 'orath.db')):
     res = None
     try:
         iconn = get_conn(dbfile)
@@ -452,15 +464,15 @@ def refer(level, dbfile=os.path.join(curDir(), 'orath.db')):
             print('refer' + str(ex))
 
 
-def practise(level=None, count=None, mode=None, sr=None, dbfile=os.path.join(curDir(), 'orath.db')):
+def practise(level=None, count=None, mode=None, sr=None, star=None, dbfile=os.path.join(curDir(), 'orath.db')):
     corlist = []
     wrolist = []
     topics = []
     iconn = get_conn(dbfile)
-    isql = 'select level, qn, content, options, answer from `orath`'
+    isql = 'select level, qn, content, options, answer, star from `orath`'
     res = fetchall(iconn, isql)
     for r in res:
-        topics.append((r[0], r[1], r[2], r[3], r[4]))
+        topics.append((r[0], r[1], r[2], r[3], r[4], r[5]))
 
     print(colorama.Style.BRIGHT + colorama.Fore.WHITE + '#' * 100)
     if level is None or str(level).strip() == '':
@@ -503,6 +515,16 @@ def practise(level=None, count=None, mode=None, sr=None, dbfile=os.path.join(cur
     else:
         sr = 'no'
     print(colorama.Fore.GREEN + 'Show Answer: ' + sr)
+    print(colorama.Fore.WHITE + '-' * 100)
+
+    if star is None or str(star).strip() == '':
+        star = input('Only show star questions(yes or no):')
+    if str(star).strip() == '1' or str(star).strip().lower() == 'y' or str(star).strip().lower() == 'yes' or str(star).strip().lower() == '是':
+        star = 'yes'
+        stopics = [topic for topic in stopics if topic[5] == 'S']
+    else:
+        star = 'no'
+    print(colorama.Fore.GREEN + 'Only Show Star Questions: ' + star)
     print(colorama.Fore.WHITE + '#' * 100)
 
     idx = 1
@@ -519,10 +541,13 @@ def practise(level=None, count=None, mode=None, sr=None, dbfile=os.path.join(cur
         print(colorama.Fore.GREEN + (('[' + str(idx) + ']').center(8) + '=> ' + str(ctopic[0]) + ' <--> ' + str(ctopic[1]) + '  ').center(100, '='))
         print(colorama.Fore.CYAN + ctopic[2] + '\n')
         print(colorama.Fore.CYAN + ctopic[3])
-        ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit) => ')
+        ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit | s for star | u for unstar) => ')
         if ipt.lower() == 'q' or ipt.lower() == 'quit' or ipt.lower() == 'exit':
             break
         else:
+            if ipt.lower().strip() == 's' or ipt.lower().strip() == 'u':
+                starTopic(ctopic[0], ctopic[1], ipt, dbfile)
+                ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit | s for star | u for unstar) => ')
             if ipt.strip().upper().replace(' ', '') == ctopic[4].strip().upper().replace(' ', ''):
                 corlist.append((idx, ctopic[0], ctopic[1]))
                 if sr == 'yes':
@@ -544,13 +569,14 @@ def main(argv):
     count = None
     mode = None
     sr = None
+    star = None
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "hf:t:l:n:c:m:s:", ["file=", "type=", "level=", "number=", "count=", "mode=", "sr="])
+            opts, args = getopt.getopt(argv, "hf:t:l:n:c:m:r:s:", ["file=", "type=", "level=", "number=", "count=", "mode=", "sr=", "star="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-s <showres>]\n
-                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -s yes'''
+                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>]\n
+                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes'''
             )
             exit(2)
 
@@ -559,8 +585,8 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-s <showres>]\n
-                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -s yes'''
+                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>]\n
+                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes'''
                 )
                 exit()
             elif opt in ("-t", "--type"):
@@ -575,8 +601,10 @@ def main(argv):
                 count = arg
             elif opt in ("-m", "--mode"):
                 mode = arg
-            elif opt in ("-s", "--sr"):
+            elif opt in ("-r", "--sr"):
                 sr = arg
+            elif opt in ("-s", "--star"):
+                star = arg
             else:
                 pass
         try:
@@ -592,9 +620,9 @@ def main(argv):
                     showTopic(level, qn, dbfile)
             if type == 'practise':
                 if dbfile is None or dbfile.strip() == '':
-                    res = practise(level, count, mode, sr)
+                    res = practise(level, count, mode, sr, star)
                 else:
-                    res = practise(level, count, mode, sr, dbfile)
+                    res = practise(level, count, mode, sr, star, dbfile)
             if type == 'refer':
                 if dbfile is None or dbfile.strip() == '':
                     refer(level)
@@ -610,7 +638,7 @@ if __name__ == "__main__":
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 # main(['-t', 'practise', '-l', '1Z0-052', '-c', '2', '-s', 'y', '-m', 'random'])
-# main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1'])
+main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1'])
 
 '''
 iconn = get_conn('D:/Git/minicode/orath/orath.db')
