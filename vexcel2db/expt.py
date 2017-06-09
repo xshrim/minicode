@@ -1,7 +1,8 @@
-from openpyxl import *
-from openpyxl.cell import get_column_letter
-import pymysql
 import random
+
+import pymysql
+from openpyxl import *
+from openpyxl.utils import get_column_letter
 
 config = {
     'host': '110.1.1.30',
@@ -231,18 +232,20 @@ for item in vm6data:
                 print(desc.split(':')[1])
     print('================================')
 '''
-impData(expData('OA虚拟化虚拟机统计表2016.12.19.11.05.31.xlsx', '虚拟机统计表', 2, 'A', 'OA虚拟化', 'OA', '110.50.1.15', 'administrator/password'))
-impData(expData('VM6虚拟化虚拟机统计表2016.12.19.09.15.15.xlsx', '虚拟机统计表', 2, 'A', 'VM6虚拟化', '生产', '35.1.7.101', 'administrator@hrbbvm6.com/Admin@123'))
-impData(expData('村行虚拟化虚拟机统计表2016.10.08.15.44.53.xlsx', '虚拟机统计表', 2, 'A', '村行虚拟化', '生产', '116.1.7.6', 'administrator/password@01'))
-impData(expData('临时虚拟化虚拟机统计表2016.10.08.15.49.11.xlsx', '虚拟机统计表', 2, 'A', '临时虚拟化', 'OA', '168.1.10.43', 'administrator/password@01'))
-impData(expData('国库事中事后虚拟机统计表2016.12.19.09.09.11.xlsx', '虚拟机统计表', 2, 'A', '事中事后国库虚拟化', '生产', '118.63.1.53', 'administrator/P@ssw0rd'))
-impData(expData('网银虚拟化虚拟机统计表2016.12.19.09.00.53.xlsx', '虚拟机统计表', 2, 'A', '网银虚拟化', '生产', '35.8.0.12', 'administrator/root@123'))
-impData(expData('虚拟化一期虚拟机统计表2016.12.19.09.10.13.xlsx', '虚拟机统计表', 2, 'A', '一期虚拟化', '生产', '50.1.1.180', 'administrator/vmware123'))
-impData(expData('虚拟化二期虚拟机统计表2016.12.19.09.04.10.xlsx', '虚拟机统计表', 2, 'A', '二期虚拟化', '生产', '50.1.2.20', 'administrator/vmware123'))
-impData(expData('虚拟化三期虚拟机统计表2016.12.19.08.57.42.xlsx', '虚拟机统计表', 2, 'A', '三期虚拟化', '生产', '35.1.7.26', 'administrator/P@ssw0rd'))
-impData(expData('容灾一期虚拟机统计表2016.12.19.09.12.39.xlsx', '虚拟机统计表', 2, 'A', '容灾一期虚拟化', '生产', '118.63.254.26', 'administrator/password'))
-impData(expData('容灾二期虚拟机统计表2016.12.19.09.11.44.xlsx', '虚拟机统计表', 2, 'A', '容灾二期虚拟化', '生产', '118.63.254.214', 'administrator/vmware123'))
-impData(expData('准生产虚拟化虚拟机统计表2016.12.19.09.18.09.xlsx', '虚拟机统计表', 2, 'A', '准生产虚拟化', '准生产', '35.1.7.103', 'administrator@zscvm6.com/Root@123'))
+
+
+impData(expData('OA虚拟化.xlsx', '虚拟机统计表', 2, 'A', 'OA虚拟化', 'OA', '110.50.1.15', 'administrator/password'))
+impData(expData('VM6虚拟化.xlsx', '虚拟机统计表', 2, 'A', 'VM6虚拟化', '生产', '35.1.7.101', 'administrator@hrbbvm6.com/Admin@123'))
+#impData(expData('村行虚拟化.xlsx', '虚拟机统计表', 2, 'A', '村行虚拟化', '生产', '116.1.7.6', 'administrator/password@01'))
+impData(expData('临时虚拟化.xlsx', '虚拟机统计表', 2, 'A', '临时虚拟化', 'OA', '168.1.10.43', 'administrator/password@01'))
+impData(expData('事中事后国库虚拟化.xlsx', '虚拟机统计表', 2, 'A', '事中事后国库虚拟化', '生产', '118.63.1.53', 'administrator/P@ssw0rd'))
+impData(expData('网银虚拟化.xlsx', '虚拟机统计表', 2, 'A', '网银虚拟化', '生产', '35.8.0.12', 'administrator/root@123'))
+impData(expData('一期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '一期虚拟化', '生产', '50.1.1.180', 'administrator/vmware123'))
+impData(expData('二期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '二期虚拟化', '生产', '50.1.2.20', 'administrator/vmware123'))
+impData(expData('三期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '三期虚拟化', '生产', '35.1.7.26', 'administrator/P@ssw0rd'))
+impData(expData('容灾一期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '容灾一期虚拟化', '生产', '118.63.254.26', 'administrator/password'))
+impData(expData('容灾二期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '容灾二期虚拟化', '生产', '118.63.254.214', 'administrator/vmware123'))
+impData(expData('准生产虚拟化.xlsx', '虚拟机统计表', 2, 'A', '准生产虚拟化', '准生产', '35.1.7.103', 'administrator@zscvm6.com/Root@123'))
 
 
 
