@@ -143,7 +143,8 @@ class avlink(object):
         self.origin = origin
 
     def __str__(self):
-        return self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' + self.hot + ' -- ' + self.size + ' -- ' + self.link + ' -- ' + self.origin
+        return '来源:'.center(5) + self.origin + '\n' + '番号:'.center(5) + self.code + '\n' + '标题:'.center(5) + self.title + '\n' + '日期:'.center(5) + self.time + '\n' + '热度:'.center(5) + self.hot + '\n' + '大小:'.center(5) + self.size + ' GB\n' + '磁链:'.center(5) + self.link
+        # return self.code + ' -- ' + self.title + ' -- ' + self.time + ' -- ' + self.hot + ' -- ' + self.size + ' -- ' + self.link + ' -- ' + self.origin
 
     __repr__ = __str__
 
@@ -1300,6 +1301,237 @@ def avquickFetch(code, proxy=''):
         return None
 
 
+def keywordlinkFetch(keyword, engine='btso', proxy=''):
+    head = ''
+    time = ''
+    hot = ''
+    size = ''
+    clink = ''
+    klinks = []
+    try:
+        if engine == 'btgongchang':
+            data = PyQuery(getHTML('http://btgongchang.org/search/' + code + '-first-asc-1', 5, 5, 1, proxy))
+            content = data('table[class="data mb20"]')
+            items = content('tr:gt(0)')
+            for item in items.items():
+                try:
+                    head = str(item('td:eq(0)')('div.item-title')('a').text()).strip()
+                    head = re.sub(r'\/\*.*\*\/', '', head)
+                    time = str(item('td:eq(1)').text()).strip()
+                    hot = str(item('td:eq(2)').text()).strip()
+                    size = str(item('td:eq(3)').text()).strip().lower()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).replace('b', '').strip()
+                    size = str("%.2f" % float(size))
+                    clink = item('td:eq(4)')('a:first').attr('href')
+                    avlinks.append(avlink(code, head, time, hot, size, clink, engine))
+                except Exception as ex:
+                    logging.debug('avlinkFetch:btgongchang:' + str(ex))
+                    continue
+        if engine == 'btso':
+            pidx = 1
+            baseurl = 'https://btso.pw/search/' + keyword + '/page/'
+            while True:
+                try:
+                    curl = baseurl + str(pidx)
+                    print(('Parsing Page (' + curl + ')').center(100, '-'))
+                    data = PyQuery(getHTML(curl, 5, 5, 1, proxy))
+                    content = data('div.data-list')
+                    items = content('div[class="row"]')
+                    for item in items.items():
+                        try:
+                            head = str(item('a').attr('title')).strip()
+                            head = re.sub(r'\/\*.*\*\/', '', head)
+                            time = str(item('div[class="col-sm-2 col-lg-2 hidden-xs text-right date"]').text()).strip()
+                            size = str(item('div[class="col-sm-2 col-lg-1 hidden-xs text-right size"]').text()).strip().lower()
+                            hot = '100'
+                            if 'g' in size:
+                                size = str(size.replace('gb', '').replace('g', '').strip())
+                            elif 'm' in size:
+                                size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                            elif 'k' in size:
+                                size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                            else:
+                                size = str(size).replace('b', '').strip()
+                            size = str("%.2f" % float(size))
+                            tmplink = str(item('a').attr('href')).strip()
+                            tmplink = parse.urljoin('https://btso.pw/', tmplink)
+                            linkdata = PyQuery(getHTML(tmplink, 5, 5, 1, proxy))
+                            clink = str(linkdata('textarea#magnetLink').text()).strip()
+                            al = avlink(keyword, head, time, hot, size, clink, engine)
+                            klinks.append(al)
+                            print(al.title.center(100, '*'))
+                            print(al)
+                        except Exception as ex:
+                            logging.debug('keywordlinkFetch:btso:' + str(ex))
+                            continue
+
+                    pagination = data('ul[class="pagination pagination-lg"]')
+                    if pagination is not None and str(pagination).strip() != '':
+                        pginfo = ''
+                        for item in pagination('li').items():
+                            if str(pidx) == item.text().strip():
+                                pginfo += '[' + str(pidx) + '] '
+                            else:
+                                pginfo += item.text().strip() + ' '
+                        print(pginfo)
+                        if '下一页' in pagination.text() or '下一頁' in pagination.text() or 'next' in pagination.text().lower():
+                            pidx += 1
+                        else:
+                            break
+                    else:
+                        break
+                except Exception as ex:
+                    logging.warning("keywordlinkFetch:btso:" + str(ex))
+                    break
+        if engine == 'btdb':
+            data = PyQuery(getHTML('https://btdb.in/q/' + code + '/?sort=popular', 5, 5, 1, proxy))
+            content = data('ul.search-ret-list')
+            items = content('li.search-ret-item')
+            for item in items.items():
+                try:
+                    head = str(item('h2.item-title')('a').attr('title')).strip()
+                    head = re.sub(r'\/\*.*\*\/', '', head)
+                    # head = head.encode('latin-1').decode('utf-8')
+                    linkinfo = item('div.item-meta-info')
+                    clink = str(linkinfo('a.magnet').attr('href')).strip()
+                    linkinfodata = str(linkinfo.text()).lower()
+                    linkinfos = re.match(r'^.*size:(.*)files:(.*)addtime:(.*)popularity:(.*)$', linkinfodata).groups()
+                    size = str(linkinfos[0]).strip().replace('  ', ' ')
+                    time = str(linkinfos[2]).strip()
+                    hot = str(linkinfos[3]).strip()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).replace('b', '').strip()
+                    size = str("%.2f" % float(size))
+                    avlinks.append(avlink(code, head, time, hot, size, clink, engine))
+                except Exception as ex:
+                    logging.debug('avlinkFetch:btdb:' + str(ex))
+                    continue
+        if engine == 'torrentant':
+            data = PyQuery(getHTML('http://www.torrentant.com/cn/s/' + code + '?sort=hot', 5, 5, 1, proxy))
+            content = data('ul[class="search-container"]')
+            items = content('li[class="search-item clearfix"]')
+            for item in items.items():
+                try:
+                    head = str(item('div[class="search-content text-left"]')('h2')('a').attr('title')).strip()
+                    head = re.sub(r'\/\*.*\*\/', '', head)
+                    linkinfo = item('div[class="search-content text-left"]')('div[class="resultsContent"]')('p[class="resultsIntroduction"]')
+                    size = str(linkinfo('label').eq(1).text()).strip().lower()
+                    hot = str(linkinfo('label').eq(2).text()).strip()
+                    time = str(linkdata('table[class="table table-hover"]')('tbody')('tr').eq(0)('td').eq(0).text()).strip()
+                    clink = str(linkdata('a[class="btn btn-warning"]').attr('href')).strip()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).replace('b', '').strip()
+                    size = str("%.2f" % float(size))
+                    tmplink = str(item('div[class="search-content text-left"]')('h2')('a').attr('href')).strip()
+                    tmplink = parse.urljoin('http://www.torrentant.com/', tmplink)
+                    linkdata = PyQuery(getHTML(tmplink, 5, 5, 1, proxy))
+                    avlinks.append(avlink(code, head, time, hot, size, clink, engine))
+                except Exception as ex:
+                    logging.debug('avlinkFetch:torrentant:' + str(ex))
+                    continue
+        if engine == 'javhoo':
+            data = PyQuery(getHTML('https://www.javhoo.com/av/' + code + '/', 5, 5, 1, proxy))
+            content = data('table#magnet-table')
+            items = content('tr:gt(0)')
+            for item in items.items():
+                try:
+                    head = str(item('td:eq(0)')('a').text()).strip()
+                    head = re.sub(r'\/\*.*\*\/', '', head)
+                    size = str(item('td:eq(1)')('a').text()).strip().lower()
+                    time = str(item('td:eq(2)')('a').text()).strip()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).replace('b', '').strip()
+                    size = str("%.2f" % float(size))
+                    hot = '100'
+                    clink = str(item('td:eq(0)')('a').attr('href')).strip()
+                    avlinks.append(avlink(code, head, time, hot, size, clink, engine))
+                except Exception as ex:
+                    logging.debug('avlinkFetch:javhoo:' + str(ex))
+                    continue
+        if engine == 'zhongziso':
+            data = PyQuery(getHTML('http://www.zhongziso.com/list/' + code + '/1', 5, 5, 1, proxy))
+            content = data('div.inerTop')
+            items = content('table[class="table table-bordered table-striped"]')
+            for item in items.items():
+                try:
+                    head = str(item('tr:eq(0)')('div.text-left').text()).strip()
+                    head = re.sub(r'\/\*.*\*\/', '', head)
+                    time = str(item('tr:eq(1)')('td:eq(0)')('strong:first').text()).strip()
+                    size = str(item('tr:eq(1)')('td:eq(1)')('strong:first').text()).strip().lower()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).replace('b', '').strip()
+                    size = str("%.2f" % float(size))
+                    hot = str(item('tr:eq(1)')('td:eq(2)')('strong:first').text()).strip()
+                    clink = str(item('tr:eq(1)')('td:eq(3)')('a').attr('href')).strip()
+                    avlinks.append(avlink(code, head, time, hot, size, clink, engine))
+                except Exception as ex:
+                    logging.debug('avlinkFetch:zhongziso:' + str(ex))
+                    continue
+        '''
+        if engine == 'btago':
+            data = PyQuery(getHTML('http://www.btago.com/e/' + code + '/', 5, 5, 1, proxy))
+            content = data('div#container')('div.listLoader')
+            items = content('div.item')
+            for item in items.items():
+                try:
+                    head = str(item('div.t').text()).strip()
+                    linkinfo = str(item('div.info').text()).strip()
+                    print(linkinfo)
+                    tmplink = str(item('div.t')('a:first').attr('href')).strip()
+                    tmplink = parse.urljoin('http://www.btago.com/', tmplink)
+                    time = str(linkinfo.split('|')[2].split('：')[1]).strip()
+                    hot = '100'
+                    size = str(linkinfo.split('|')[0].split('：')[1]).strip().lower()
+                    if 'g' in size:
+                        size = str(size.replace('gb', '').replace('g', '').strip())
+                    elif 'm' in size:
+                        size = str(float(size.replace('mb', '').replace('m', '').strip()) / 1024)
+                    elif 'k' in size:
+                        size = str(float(size.replace('kb', '').replace('k', '').strip()) / 1024 / 1024)
+                    else:
+                        size = str(size).replace('b', '').strip()
+                    size = str("%.2f" % float(size))
+                    linkdata = PyQuery(getHTML(tmplink, 5, 5, 1, proxy))
+                    avlinks.append(avlink(code, head, time, hot, size, clink, engine))
+                except Exception as ex:
+                    logging.debug('avlinkFetch:btago:' + str(ex))
+        '''
+    except Exception as ex:
+        logging.warning('keywordlinkFetch:' + str(ex))
+    return klinks
+
+
 def av2file(avs, dirpath):
     txtfs = None
     txtname = 'avinfos.txt'
@@ -1551,7 +1783,7 @@ if __name__ == "__main__":
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 
 '''
-for i in range(50, 100):
+for i in range(250, 300):
     url = 'http://hk-pic.xyz/forum-2-' + str(i) + '.html'
     print(url.center(100, '='))
     data = PyQuery(getHTML(url))
@@ -1563,7 +1795,9 @@ for i in range(50, 100):
 '''
 
 # clipthFetch(regstr, 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
-cliploopFetch()
+# cliploopFetch()
+
+# links = keywordlinkFetch('ipz-123')
 
 '''
 actress = []
