@@ -6,6 +6,7 @@ import socket
 import sqlite3
 import sys
 import time
+import datetime
 import webbrowser
 from urllib import parse, request
 from urllib.parse import quote
@@ -329,14 +330,27 @@ def fetchTopic(level, idata):
                         tmpdata.clear()
 
 
-def showTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
+def showTopic(level, qn, wb=False, dbfile=os.path.join(curDir(), 'orath.db')):
     iconn = get_conn(dbfile)
     isql = 'select * from `orath` where `level`=? and `qn`=?'
     res = fetchone(iconn, isql, (level, qn))
     if res is not None:
+        level = res[1]
+        db = res[2]
+        version = res[3]
+        qn = res[4]
         link = res[5]
-        print(link)
-        webbrowser.open(link, new=0, autoraise=True)
+        content = res[6]
+        options = res[8]
+        answer = res[11]
+        star = res[13]
+        print(colorama.Style.BRIGHT + colorama.Fore.GREEN + (str(db) + ' <--> ' + str(version) + ' <--> ' + str(level) + ' <--> ' + str(qn)).center(100, '='))
+        print(colorama.Fore.CYAN + '题目:\n' + content)
+        print(colorama.Fore.CYAN + '选项:\n' + options)
+        print(colorama.Fore.MAGENTA + '答案:\n' + answer + colorama.Style.NORMAL + colorama.Fore.RESET)
+        if wb:
+            print(link)
+            webbrowser.open(link, new=0, autoraise=True)
 
 
 def updateTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
@@ -464,7 +478,7 @@ def refer(level, dbfile=os.path.join(curDir(), 'orath.db')):
             print('refer' + str(ex))
 
 
-def practise(level=None, count=None, mode=None, sr=None, star=None, dbfile=os.path.join(curDir(), 'orath.db')):
+def practise(level=None, count=None, mode=None, sr=None, star=None, ktime=None, dbfile=os.path.join(curDir(), 'orath.db')):
     corlist = []
     wrolist = []
     topics = []
@@ -525,9 +539,22 @@ def practise(level=None, count=None, mode=None, sr=None, star=None, dbfile=os.pa
     else:
         star = 'no'
     print(colorama.Fore.GREEN + 'Only Show Star Questions: ' + star)
+    print(colorama.Fore.WHITE + '-' * 100)
+
+    if ktime is None or str(ktime).strip() == '':
+        ktime = input('Please input time limit in minutes(-1 for unlimited):')
+    try:
+        ktime = int(ktime)
+    except Exception as ex:
+        ktime = -1
+    if ktime == -1:
+        print(colorama.Fore.GREEN + 'Time Limit: Unlimited')
+    else:
+        print(colorama.Fore.GREEN + 'Time Limit: ' + str(ktime) + ' Minutes')
     print(colorama.Fore.WHITE + '#' * 100)
 
     idx = 1
+    starttime = datetime.datetime.now()
     while True:
         if count != -1 and idx > count:
             break
@@ -538,17 +565,31 @@ def practise(level=None, count=None, mode=None, sr=None, star=None, dbfile=os.pa
                 ctopic = stopics[idx - 1]
             else:
                 break
-        print(colorama.Fore.GREEN + (('[' + str(idx) + ']').center(8) + '=> ' + str(ctopic[0]) + ' <--> ' + str(ctopic[1]) + '  ').center(100, '='))
+        if int(ktime) == -1:
+            currenttime = datetime.datetime.now()
+            print(colorama.Fore.GREEN + (starttime.strftime('%H:%M:%S').center(30, '=') + ('[' + str(idx) + ']').center(8) + '=> ' + str(ctopic[0]) + ' <--> ' + str(ctopic[1]) + '  ' + currenttime.strftime('%H:%M:%S').center(30, '=')).center(100, '='))
+        else:
+            currenttime = datetime.datetime.now()
+            ctime = int((currenttime - starttime).seconds)
+            mdelta = (int(ktime) * 60 - ctime) // 60
+            sdelta = (int(ktime) * 60 - ctime) % 60
+            if int(ktime) * 60 - ctime <= 0:
+                break
+            else:
+                tdelta = str(mdelta) + ':' + str(sdelta)
+                print(colorama.Fore.GREEN + (starttime.strftime('%H:%M:%S').center(30, '=') + ('[' + str(idx) + ']').center(8) + '=> ' + str(ctopic[0]) + ' <--> ' + str(ctopic[1]) + '  ' + (currenttime.strftime('%H:%M:%S') + ' (' + tdelta + ')').center(40, '=')).center(100, '='))
         print(colorama.Fore.CYAN + ctopic[2] + '\n')
         print(colorama.Fore.CYAN + ctopic[3])
         ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit | s for star | u for unstar) => ')
-        if ipt.lower() == 'q' or ipt.lower() == 'quit' or ipt.lower() == 'exit':
+        if ipt.strip().lower() == 'q' or ipt.strip().lower() == 'quit' or ipt.strip().lower() == 'exit':
             break
         else:
             if ipt.lower().strip() == 's' or ipt.lower().strip() == 'u':
                 starTopic(ctopic[0], ctopic[1], ipt, dbfile)
-                ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit | s for star | u for unstar) => ')
-            if ipt.strip().upper().replace(' ', '') == ctopic[4].strip().upper().replace(' ', ''):
+                ipt = input(colorama.Fore.YELLOW + 'Please input your answer (q for quit) => ')
+            if ipt.strip().lower() == 'q' or ipt.strip().lower() == 'quit' or ipt.strip().lower() == 'exit':
+                break
+            elif ipt.strip().upper().replace(' ', '') == ctopic[4].strip().upper().replace(' ', ''):
                 corlist.append((idx, ctopic[0], ctopic[1]))
                 if sr == 'yes':
                     print(colorama.Fore.MAGENTA + 'Bingo!')
@@ -557,7 +598,11 @@ def practise(level=None, count=None, mode=None, sr=None, star=None, dbfile=os.pa
                 if sr == 'yes':
                     print(colorama.Fore.RED + 'Wrong: ' + ctopic[4])
         idx += 1
-    print(colorama.Style.NORMAL + colorama.Fore.BLUE + 'ACCURACY: ' + str(len(corlist)) + '/' + str(idx - 1))
+    print(colorama.Style.NORMAL + colorama.Fore.BLUE + 'ACCURACY: ' + str(len(corlist)) + '/' + str(idx - 1) + colorama.Style.NORMAL + colorama.Fore.RESET)
+    if ipt is not None and (ipt.strip() == 'Q' or ipt.strip() == 'QUIT' or ipt.strip() == 'EXIT'):
+        print(colorama.Style.NORMAL + colorama.Fore.BLUE + 'Wrong List: ' + colorama.Style.NORMAL + colorama.Fore.RESET)
+        for item in wrolist:
+            showTopic(item[1], item[2])
     return (corlist, wrolist)
 
 
@@ -570,13 +615,14 @@ def main(argv):
     mode = None
     sr = None
     star = None
+    ktime = None
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "hf:t:l:n:c:m:r:s:", ["file=", "type=", "level=", "number=", "count=", "mode=", "sr=", "star="])
+            opts, args = getopt.getopt(argv, "hf:t:l:n:c:m:r:s:k:", ["file=", "type=", "level=", "number=", "count=", "mode=", "sr=", "star=", "ktime="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>]\n
-                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes'''
+                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
+                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes -k 120'''
             )
             exit(2)
 
@@ -585,8 +631,8 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>]\n
-                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes'''
+                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
+                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes -k 120'''
                 )
                 exit()
             elif opt in ("-t", "--type"):
@@ -605,6 +651,8 @@ def main(argv):
                 sr = arg
             elif opt in ("-s", "--star"):
                 star = arg
+            elif opt in ("-k", "--ktime"):
+                ktime = arg
             else:
                 pass
         try:
@@ -615,14 +663,14 @@ def main(argv):
                     collect(level, dbfile)
             if type == 'show':
                 if dbfile is None or dbfile.strip() == '':
-                    showTopic(level, qn)
+                    showTopic(level, qn, False)
                 else:
-                    showTopic(level, qn, dbfile)
+                    showTopic(level, qn, False, dbfile)
             if type == 'practise':
                 if dbfile is None or dbfile.strip() == '':
-                    res = practise(level, count, mode, sr, star)
+                    res = practise(level, count, mode, sr, star, ktime)
                 else:
-                    res = practise(level, count, mode, sr, star, dbfile)
+                    res = practise(level, count, mode, sr, star, ktime, dbfile)
             if type == 'refer':
                 if dbfile is None or dbfile.strip() == '':
                     refer(level)
@@ -638,7 +686,8 @@ if __name__ == "__main__":
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 # main(['-t', 'practise', '-l', '1Z0-052', '-c', '2', '-s', 'y', '-m', 'random'])
-main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1'])
+main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '-1'])
+# main(['-t', 'show', '-l', '1Z0-052', '-n', '12', '-f', os.path.join(curDir(), 'orath.db')])
 
 '''
 iconn = get_conn('D:/Git/minicode/orath/orath.db')
