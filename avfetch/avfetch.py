@@ -382,8 +382,6 @@ def detectPage(url, timeout, retry, sleep, proxy=''):
             opener.close()
             if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
                 return False
-            else:
-                continue
         i -= 1
     return False
 
@@ -472,8 +470,6 @@ def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
             logging.debug('getHTML:' + str(ex))
             if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
                 break
-            else:
-                continue
         i -= 1
     return contents
 
@@ -1156,7 +1152,7 @@ def avlinkUpdate(dbfile):
                 concurrent.futures.wait(tasks)
 
 
-def clipthFetch(regstr, stype, tpath, mthread, engine, proxy, dbfile):
+def clipthFetch(regstr, source, stype, tpath, mthread, engine, proxy, dbfile):
     tasks = []
 
     def consumer(regstr, stype, tpath, mthread, engine, proxy, dbfile):
@@ -1167,20 +1163,28 @@ def clipthFetch(regstr, stype, tpath, mthread, engine, proxy, dbfile):
                 keywords = list(set(number.group() for number in pattern.finditer(tasks.pop(0).strip())))
                 avfullFetch(keywords, stype, tpath, mthread, engine, proxy, dbfile)
 
-    def produce():
+    def produce(source, proxy):
         preclip = ''
         while True:
             clipdata = pyperclip.paste()
             if clipdata is not None and clipdata != preclip and clipdata.strip() != '':
                 preclip = clipdata
-                tasks.append(clipdata)
+                if source == 'url':
+                    hdata = getHTML(clipdata, 5, 3, 0, proxy)
+                    if hdata is not None and hdata.strip() != '':
+                        data = html2text.html2text(PyQuery(hdata).html())
+                    else:
+                        continue
+                else:
+                    data = clipdata
+                tasks.append(data)
 
     # threading.Thread(target=produce).start()
     threading.Thread(target=consumer, args=(regstr, stype, tpath, mthread, engine, proxy, dbfile)).start()
-    produce()
+    produce(source, proxy)
 
 
-def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
+def clipFetch(regstr, source, mode, stype, tpath, mthread, engine, proxy, dbfile):
     # regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
     # regstr = r'\S+'
     # regstr = r'[^\n]+'
@@ -1189,36 +1193,52 @@ def clipFetch(regstr, mode, stype, tpath, mthread, engine, proxy, dbfile):
         try:
             keywords = []
             clipdata = pyperclip.paste()
+            if source == 'url':
+                clipdata = html2text.html2text(PyQuery(getHTML(clipdata, 5, 3, 0, proxy)).html())
             if clipdata is not None and clipdata != preclip and clipdata.strip() != '':
+                if source == 'url':
+                    hdata = getHTML(clipdata, 5, 3, 0, proxy)
+                    if hdata is not None and hdata.strip() != '':
+                        data = html2text.html2text(PyQuery(hdata).html())
+                    else:
+                        continue
+                else:
+                    data = clipdata
                 preclip = clipdata
                 pattern = re.compile(regstr)
-                keywords = list(set(number.group() for number in pattern.finditer(clipdata.strip())))
+                keywords = list(set(number.group() for number in pattern.finditer(data.strip())))
                 avfullFetch(keywords, stype, tpath, mthread, engine, proxy, dbfile)
             if mode != 'loop':
                 break
         except Exception as ex:
-            logging.error('clipFetch' + str(ex))
+            logging.error('clipFetch:' + str(ex))
             continue
 
 
 def cliploopFetch(mode=None):
     if mode is None or mode.strip() == '':
         print('Please Choose One ClipFetch Mode:')
-        print('A. 按番号提取')
-        print('B. 按空格分割')
-        print('C. 按换行分割')
+        print('A. 按番号提取(剪切板)')
+        print('B. 按空格分割(剪切板)')
+        print('C. 按换行分割(剪切板)')
+        print('D. 按番号提取(网址正文)')
+        print('E. 按空格分割(网址正文)')
+        print('F. 按换行分割(网址正文)')
         mode = input('My Choice: ')
 
-    if mode.strip().lower() == 'a' or mode.strip() == '1' or mode.strip() == 'code':
+    if mode.strip().lower() == 'a' or mode.strip() == '1' or mode.strip().lower() == 'd' or mode.strip() == '4' or mode.strip() == 'code':
         regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
-    elif mode.strip().lower() == 'b' or mode.strip() == '2' or mode.strip() == 'blank':
+    elif mode.strip().lower() == 'b' or mode.strip() == '2' or mode.strip().lower() == 'e' or mode.strip() == '5' or mode.strip() == 'blank':
         regstr = r'\S+'
-    elif mode.strip().lower() == 'c' or mode.strip() == '3' or mode.strip() == 'wrap':
+    elif mode.strip().lower() == 'c' or mode.strip() == '3' or mode.strip().lower() == 'f' or mode.strip() == '6' or mode.strip() == 'wrap':
         regstr = r'[^\n]+'
     else:
         regstr = mode.strip()
-    # clipFetch(regstr, 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
-    clipthFetch(regstr, 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+    if mode.strip().lower() in 'abc' or mode.strip().lower() in '123':
+        # clipFetch(regstr, 'clip', 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+        clipthFetch(regstr, 'clip', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+    else:
+        clipthFetch(regstr, 'url', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 
 def avquickFetch(code, proxy=''):
@@ -1702,6 +1722,7 @@ def main(argv):
     sengine = 'javbus'
     sproxy = ''
     smthread = 0
+    autoloop = False
     keywords = []
     textwords = []
     filewords = []
@@ -1710,10 +1731,10 @@ def main(argv):
 
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "hd:e:t:p:m:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "mthread=", "url=", "file=", "code="])
+            opts, args = getopt.getopt(argv, "had:e:t:p:m:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "mthread=", "url=", "file=", "code="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
+                '''Usage: avfetch.py [-a] [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
                 Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
             )
             exit(2)
@@ -1723,10 +1744,13 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
+                    '''Usage: avfetch.py [-a] [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
                     Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
                 )
                 exit()
+            if opt == '-a':
+                autoloop = True
+                break
             elif opt in ("-d", "--dir"):
                 tpath = arg
             elif opt in ("-e", "--engine"):
@@ -1752,17 +1776,20 @@ def main(argv):
             else:
                 pass
         try:
-            if len(texts) > 0:
-                textwords = avkeywordParse(' '.join(texts), 'code')
-            if sfile != '':
-                filewords = avkeywordParse(sfile, 'file')
-            if surl != '':
-                urlwords = avkeywordParse(surl, 'url')
-            keywords.extend(textwords)
-            keywords.extend(filewords)
-            keywords.extend(urlwords)
-            # avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
-            avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
+            if autoloop:
+                cliploopFetch()
+            else:
+                if len(texts) > 0:
+                    textwords = avkeywordParse(' '.join(texts), 'code')
+                if sfile != '':
+                    filewords = avkeywordParse(sfile, 'file')
+                if surl != '':
+                    urlwords = avkeywordParse(surl, 'url')
+                keywords.extend(textwords)
+                keywords.extend(filewords)
+                keywords.extend(urlwords)
+                # avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
+                avfullFetch(keywords, stype, tpath, smthread, sengine, sproxy)
         except Exception as ex:
             logging.error('main:' + str(ex))
 
@@ -1795,6 +1822,7 @@ for i in range(250, 300):
 '''
 
 # clipthFetch(regstr, 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+
 # cliploopFetch()
 
 # links = keywordlinkFetch('ipz-123')
