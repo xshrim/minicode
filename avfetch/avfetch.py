@@ -1737,7 +1737,7 @@ def main(argv):
                 '''Usage: avfetch.py [-a] [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
                 Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
             )
-            exit(2)
+            sys.exit(2)
 
         if len(args) > 0:
             texts.extend(args)
@@ -1761,7 +1761,7 @@ def main(argv):
                 sproxy = arg
                 if not re.match(r'^.+@.+:.+$', sproxy, flags=0):
                     print('proxy format is illegal!')
-                    exit(2)
+                    sys.exit(2)
             elif opt in ("-m", "--mthread"):
                 smthread = int(arg)
             elif opt in ("-u", "--url"):
@@ -1770,7 +1770,7 @@ def main(argv):
                 sfile = os.path.join(curDir(), arg)
                 if not os.path.isfile(sfile):
                     print('file is not exist!')
-                    exit(2)
+                    sys.exit(2)
             elif opt in ("-s", "--code"):
                 texts.append(arg)
             else:

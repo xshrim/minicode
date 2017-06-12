@@ -2,20 +2,20 @@ import getopt
 import os
 import random
 import re
-import socket
+# import socket
 import sqlite3
 import sys
 import time
 import datetime
-import webbrowser
-from urllib import parse, request
-from urllib.parse import quote
+# import webbrowser
+# from urllib import parse, request
+# from urllib.parse import quote
 
-import chardet
+# import chardet
 import colorama
 import pyperclip
-import socks
-from pyquery import PyQuery
+# import socks
+# from pyquery import PyQuery
 
 
 def get_conn(path):
@@ -182,7 +182,7 @@ def curDir():
     except Exception as ex:
         return os.getcwd()
 
-
+'''
 def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
     proxyDict = {}
     if proxy is not None and re.match(r'^.+@.+:.+$', proxy, flags=0):
@@ -238,6 +238,7 @@ def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
                 break
         i -= 1
     return contents
+'''
 
 
 def collect(level, dbfile=os.path.join(curDir(), 'orath.db')):
@@ -288,6 +289,7 @@ def collect(level, dbfile=os.path.join(curDir(), 'orath.db')):
     save(iconn, isql, idata)
 
 
+'''
 def fetchTopic(level, idata):
     if level == '1Z0-051':
         data = PyQuery(getHTML('http://blog.csdn.net/rlhua/article/details/17101765'))
@@ -328,6 +330,7 @@ def fetchTopic(level, idata):
                         print(qn)
                         idata.append([None, '1Z0-053', 'Oracle 11g r2', 'v14.02', qn.strip(), None, ''.join(tmpdata), None, None, None, None, answer, None, None, None, None])
                         tmpdata.clear()
+'''
 
 
 def showTopic(level, qn, wb=False, dbfile=os.path.join(curDir(), 'orath.db')):
@@ -350,9 +353,10 @@ def showTopic(level, qn, wb=False, dbfile=os.path.join(curDir(), 'orath.db')):
         print(colorama.Fore.MAGENTA + '答案:\n' + answer + colorama.Style.NORMAL + colorama.Fore.RESET)
         if wb:
             print(link)
-            webbrowser.open(link, new=0, autoraise=True)
+            # webbrowser.open(link, new=0, autoraise=True)
 
 
+'''
 def updateTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
     try:
         iconn = get_conn(dbfile)
@@ -396,6 +400,7 @@ def updateTopic(level, qn, dbfile=os.path.join(curDir(), 'orath.db')):
             # print(nltk.clean_html(content))
     except Exception as ex:
         print('starTopic:' + str(ex))
+'''
 
 
 def starTopic(level, qn, star, dbfile=os.path.join(curDir(), 'orath.db')):
@@ -624,7 +629,7 @@ def main(argv):
                 '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
                 Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes -k 120'''
             )
-            exit(2)
+            sys.exit(2)
 
         if len(args) > 0:
             texts.extend(args)
@@ -634,7 +639,7 @@ def main(argv):
                     '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
                     Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes -k 120'''
                 )
-                exit()
+                sys.exit()
             elif opt in ("-t", "--type"):
                 type = arg
             elif opt in ("-f", "--file"):
