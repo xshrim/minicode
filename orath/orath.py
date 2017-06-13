@@ -1,3 +1,4 @@
+import datetime
 import getopt
 import os
 import random
@@ -6,14 +7,16 @@ import re
 import sqlite3
 import sys
 import time
-import datetime
-# import webbrowser
-# from urllib import parse, request
-# from urllib.parse import quote
 
 # import chardet
 import colorama
 import pyperclip
+
+
+# import webbrowser
+# from urllib import parse, request
+# from urllib.parse import quote
+
 # import socks
 # from pyquery import PyQuery
 
@@ -581,7 +584,7 @@ def practise(level=None, count=None, mode=None, sr=None, star=None, ktime=None, 
             if int(ktime) * 60 - ctime <= 0:
                 break
             else:
-                tdelta = str(mdelta) + ':' + str(sdelta)
+                tdelta = str(mdelta).rjust(2, '0') + ':' + str(sdelta).rjust(2, '0')
                 print(colorama.Fore.GREEN + (starttime.strftime('%H:%M:%S').center(30, '=') + ('[' + str(idx) + ']').center(8) + '=> ' + str(ctopic[0]) + ' <--> ' + str(ctopic[1]) + '  ' + (currenttime.strftime('%H:%M:%S') + ' (' + tdelta + ')').center(40, '=')).center(100, '='))
         print(colorama.Fore.CYAN + ctopic[2] + '\n')
         print(colorama.Fore.CYAN + ctopic[3])
@@ -691,7 +694,7 @@ if __name__ == "__main__":
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 # main(['-t', 'practise', '-l', '1Z0-052', '-c', '2', '-s', 'y', '-m', 'random'])
-main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '-1'])
+main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '10'])
 # main(['-t', 'show', '-l', '1Z0-052', '-n', '12', '-f', os.path.join(curDir(), 'orath.db')])
 
 '''
