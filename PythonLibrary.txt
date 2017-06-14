@@ -29,6 +29,7 @@ pyvmomi      --vmware虚拟化操作库
 selenium     --web浏览器自动化测试库
 Flask        --轻量级web框架
 lxml         --html和xml解析库
+requests     --基于urllib的http库
 pyquery      --jquery的python版
 html2text    --将html内容转换为易于阅读的Markdown格式txt
 pypandoc     --支持多种文件格式的互相转换
