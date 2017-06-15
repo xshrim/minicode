@@ -1,56 +1,30 @@
 #!/usr/bin/env python
 # coding=utf-8
-import json
+
 import os
-import os.path
 import re
 import ssl
 import sys
-import threading
 import time
-
+import json
 import requests
+import threading
 from PIL import Image
-from pyquery import PyQuery as pq
-
-
-def getInfos():
-    global uid, uidTime, sign, session_id
-    url = 'http://passport.115.com'
-    params = {
-        'ct': 'login',
-        'ac': 'qrcode_token',
-        'is_ssl': '1',
-    }
-
-    r = mySession.get(url=url, params=params)
-    r.encoding = 'utf-8'
-    data = r.text
-    try:
-        uid = json.loads(data)['uid']
-        uidTime = json.loads(data)['time']
-        sign = json.loads(data)['sign']
-    except Exception as e:
-        return False
-    url = 'http://msg.115.com/proapi/anonymous.php'
-    params = {
-        'ac': 'signin',
-        'user_id': uid,
-        'sign': sign,
-        'time': uidTime,
-        '_': str(int(time.time() * 1000)),
-    }
-    r = mySession.get(url=url, params=params)
-    session_id = json.loads(r.text)['session_id']
-    return True
 
 
 def showQrcode(QRImagePath):
-    img = Image.open(QRImagePath)
-    img.show()
+    '''
+    plt.ion()
+    plt.imshow(plt.imread(QRImagePath))
+    plt.axis('off')
+    plt.show()
+    plt.pause(10)
+    plt.close()
+    '''
+    Image.open(QRImagePath).show()
 
 
-def keepLogin():
+def keepLogin(mySession, session_id):
     while True:
         url = 'http://im37.115.com/chat/r'
         params = {
@@ -64,146 +38,201 @@ def keepLogin():
 
 
 def login():
-    # global QrcodeUrl
-    url = 'http://qrcode.115.com/api/qrcode.php'
-    params = {
-        'qrfrom': '1',
-        'uid': uid,
-        '_' + str(uidTime): '',
-        '_t': str(int(time.time() * 1000)),
-    }
+    try:
+        # 构建会话
+        ssl._create_default_https_context = ssl._create_unverified_context
+        headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2663.0 Safari/537.36'}
+        mySession = requests.Session()
+        mySession.headers.update(headers)
 
-    r = mySession.get(url=url, params=params)
-    # QrcodeUrl = r.url
-    r.encoding = 'utf-8'
-
-    QRImagePath = os.path.join(os.getcwd(), 'qrcode.jpg')
-    f = open(QRImagePath, 'wb')
-    f.write(r.content)
-    f.close()
-    threading.Thread(target=showQrcode, args=(QRImagePath,)).start()
-    # st.setDaemon(True)
-    # st.start()
-    print("使用115手机客户端扫码登录")
-    time.sleep(1)
-
-    while True:
-        url = 'http://im37.115.com/chat/r'
+        # 获取登陆信息
+        url = 'http://passport.115.com'
         params = {
-            'VER': '2',
-            'c': 'b0',
-            's': session_id,
-            '_t': str(int(time.time() * 1000)),
+            'ct': 'login',
+            'ac': 'qrcode_token',
+            'is_ssl': '1',
+        }
+
+        r = mySession.get(url=url, params=params)
+        r.encoding = 'utf-8'
+        data = r.text
+        try:
+            uid = json.loads(data)['uid']
+            uidTime = json.loads(data)['time']
+            sign = json.loads(data)['sign']
+        except Exception as e:
+            return None
+
+        url = 'http://msg.115.com/proapi/anonymous.php'
+        params = {
+            'ac': 'signin',
+            'user_id': uid,
+            'sign': sign,
+            'time': uidTime,
+            '_': str(int(time.time() * 1000)),
         }
         r = mySession.get(url=url, params=params)
-        try:
-            status = json.loads(r.text)[0]['p'][0]['status']
-            if status == 1001:
-                print("请点击登录")
-            elif status == 1002:
-                print("登录成功")
-                break
-            # else:
-                # print("使用115手机客户端扫码登录")
-                # return
-        except Exception as e:
-            pass
-            # print("使用115手机客户端扫码登录")
-            # print("超时，请重试")
-            # sys.exit(0)
+        session_id = json.loads(r.text)['session_id']
+        if session_id is None:
+            return None
 
-    url = 'http://passport.115.com/'
-    params = {
-        'ct': 'login',
-        'ac': 'qrcode',
-        'key': uid,
-        'v': 'android',
-        'goto': 'http%3A%2F%2Fwww.J3n5en.com'
-    }
-    r = mySession.get(url=url, params=params)
-
-    print('开启心跳线程')
-    threading.Thread(target=keepLogin).start()
-
-
-def getUserinfo():
-    global userid
-    url = 'http://passport.115.com/'
-    params = {
-        'ct': 'ajax',
-        'ac': 'islogin',
-        'is_ssl': '1',
-        '_' + str(int(time.time() * 1000)): '',
-    }
-    uinfos = json.loads(mySession.get(url=url, params=params).text)
-    userid = uinfos['data']['USER_ID']
-
-    print("====================")
-    print("用户ID：" + str(userid))
-    print("用户名：" + str(uinfos['data']['USER_NAME']))
-    if uinfos['data']['IS_VIP'] == 1:
-        print("身  份：" + "会员")
-        url = 'http://115.com/web/lixian/?ct=lixian&ac=task_lists'
-        data = {
-            'page': '1',
-            'uid': userid,
-            'sign': tsign,
-            'time': ttime,
+        # 获取登陆二维码
+        # global QrcodeUrl
+        url = 'http://qrcode.115.com/api/qrcode.php'
+        params = {
+            'qrfrom': '1',
+            'uid': uid,
+            '_' + str(uidTime): '',
+            '_t': str(int(time.time() * 1000)),
         }
-        quota = json.loads(mySession.post(url=url, data=data).text)['quota']
-        total = json.loads(mySession.post(url=url, data=data).text)['total']
-        print("本月离线配额：" + str(quota) + "个，总共" + str(total) + "个。")
-    else:
-        print("身  份：" + "非会员")
-    print("===================")
+
+        r = mySession.get(url=url, params=params)
+        # QrcodeUrl = r.url
+        r.encoding = 'utf-8'
+        QRImagePath = os.path.join(os.getcwd(), 'qrcode.jpg')
+        with open(QRImagePath, 'wb') as wbf:
+            wbf.write(r.content)
+        threading.Thread(target=showQrcode, args=(QRImagePath,)).start()
+
+        # 扫码登陆
+        print("使用115手机客户端扫码登录")
+        time.sleep(1)
+
+        while True:
+            url = 'http://im37.115.com/chat/r'
+            params = {
+                'VER': '2',
+                'c': 'b0',
+                's': session_id,
+                '_t': str(int(time.time() * 1000)),
+            }
+            r = mySession.get(url=url, params=params)
+            try:
+                status = json.loads(r.text)[0]['p'][0]['status']
+                if status == 1001:
+                    print("请点击登录")
+                elif status == 1002:
+                    print("登录成功")
+                    break
+                # else:
+                    # print("使用115手机客户端扫码登录")
+                    # return
+            except Exception as e:
+                pass
+                # print("使用115手机客户端扫码登录")
+                # print("超时，请重试")
+                # sys.exit(0)
+
+        # 触发登陆
+        url = 'http://passport.115.com/'
+        params = {
+            'ct': 'login',
+            'ac': 'qrcode',
+            'key': uid,
+            'v': 'android',
+            'goto': 'http%3A%2F%2Fwww.J3n5en.com'
+        }
+        if mySession.get(url=url, params=params) is None:
+            return None
+
+        # 心跳保持持续登陆状态
+        print('开启心跳线程')
+        threading.Thread(target=keepLogin, args=(mySession, session_id,)).start()
+
+        # 获取操作task所需信息
+        url = 'http://115.com/'
+        params = {
+            'ct': 'offline',
+            'ac': 'space',
+            '_': str(int(time.time() * 1000)),
+        }
+        r = mySession.get(url=url, params=params)
+        tsign = json.loads(r.text)['sign']
+        ttime = json.loads(r.text)['time']
+        if tsign is None or ttime is None:
+            return None
+
+        # 获取登陆用户信息
+        url = 'http://passport.115.com/'
+        params = {
+            'ct': 'ajax',
+            'ac': 'islogin',
+            'is_ssl': '1',
+            '_' + str(int(time.time() * 1000)): '',
+        }
+        uinfos = json.loads(mySession.get(url=url, params=params).text)
+        uname = uinfos['data']['USER_NAME']
+        userid = uinfos['data']['USER_ID']
+
+        print("====================")
+        print("用户ID：" + str(userid))
+        print("用户名：" + str(uinfos['data']['USER_NAME']))
+        if uinfos['data']['IS_VIP'] == 1:
+            itype = '会员'
+            print("身  份：" + "会员")
+            url = 'http://115.com/web/lixian/?ct=lixian&ac=task_lists'
+            data = {
+                'page': '1',
+                'uid': userid,
+                'sign': tsign,
+                'time': ttime,
+            }
+            quota = json.loads(mySession.post(url=url, data=data).text)['quota']
+            total = json.loads(mySession.post(url=url, data=data).text)['total']
+            print("月离线：" + str(quota) + "/" + str(total))
+        else:
+            itype = '非会员'
+            quota = 0
+            total = 0
+            print("身  份：" + "非会员")
+            print("月离线：" + str(quota) + "/" + str(total))
+        print("===================")
+
+        return {
+            'sid': str(session_id),
+            'session': mySession,
+            'uname': str(uname),
+            'uid': str(userid),
+            'sign': str(tsign),
+            'time': str(ttime),
+            'itype': str(itype),
+            'quota': str(quota),
+            'total': str(total)
+        }
+    except Exception as e:
+        return None
 
 
-
-
-
-def getTasksign():  # 获取登陆后的sign
-    global tsign, ttime
-    url = 'http://115.com/'
-    params = {
-        'ct': 'offline',
-        'ac': 'space',
-        '_': str(int(time.time() * 1000)),
-    }
-    r = mySession.get(url=url, params=params)
-    tsign = json.loads(r.text)['sign']
-    ttime = json.loads(r.text)['time']
-
-
-def addLinktask(link):
+def addLinktask(link, infos):
     url = "http://115.com/web/lixian/?ct=lixian&ac=add_task_url"
     data = {
         'url': link,
-        'uid': userid,
-        'sign': tsign,
-        'time': ttime
+        'uid': infos['uid'],
+        'sign': infos['sign'],
+        'time': infos['time']
     }
-    linkinfo = json.loads(mySession.post(url, data=data).content)
+    linkinfo = json.loads(infos['session'].post(url, data=data).content)
     try:
         print(linkinfo['error_msg'])
     except Exception as e:
         print(linkinfo['name'])
 
 
-def addLinktasks(linklist):
+def addLinktasks(linklist, infos):
     if len(linklist) > 15:
         for i in range(0, len(linklist), 15):
             newlist = linklist[i:i + 15]
-            addLinktasks(newlist)
+            addLinktasks(newlist, infos)
     else:
         url = "http://115.com/web/lixian/?ct=lixian&ac=add_task_urls"
         data = {
-            'uid': userid,
-            'sign': tsign,
-            'time': ttime
+            'uid': infos['uid'],
+            'sign': infos['sign'],
+            'time': infos['time']
         }
         for i in range(len(linklist)):
             data['url[' + str(i) + ']'] = linklist[i]
-        linksinfo = json.loads(mySession.post(url, data=data).text)
+        linksinfo = json.loads(infos['session'].post(url, data=data).text)
         # print linksinfo['result']
         for linkinfo in linksinfo['result']:
             try:
@@ -212,9 +241,8 @@ def addLinktasks(linklist):
                 print(linkinfo['name'])
 
 
-def get_bt_upload_info():
-    global cid, upload_url
-    # getTasksign()
+def upload_torrent(filename, filedir, infos):
+    # 获取种子上传信息
     url = 'http://115.com/'
     params = {
         'ct': 'lixian',
@@ -222,14 +250,13 @@ def get_bt_upload_info():
         'torrent': '1',
         '_': str(int(time.time() * 1000)),
     }
-    cid = json.loads(mySession.post(url, params=params).text)['cid']
-    req = mySession.get('http://115.com/?tab=offline&mode=wangpa').content
+    cid = json.loads(infos['session'].post(url, params=params).text)['cid']
+    req = infos['session'].get('http://115.com/?tab=offline&mode=wangpa').content
     reg = re.compile('upload\?(\S+?)"')
     ids = re.findall(reg, str(req))
     upload_url = ids[0]
 
-
-def upload_torrent(filename, filedir):
+    # 上传种子
     url = 'http://upload.115.com/upload?' + upload_url
     files = {
         'Filename': ('', 'torrent.torrent', ''),
@@ -237,8 +264,8 @@ def upload_torrent(filename, filedir):
         'Filedata': ('torrent.torrent', open(filedir, 'rb'), 'application/octet-stream'),
         'Upload': ('', 'Submit Query', ''),
     }
-    # mySession.get('http://upload.115.com/crossdomain.xml')
-    req = mySession.post(url=url, files=files)
+    # infos['session'].get('http://upload.115.com/crossdomain.xml')
+    req = infos['session'].post(url=url, files=files)
     req = json.loads(req.content)
     if req['state'] is False:
         print("上传种子出错了1")
@@ -248,11 +275,11 @@ def upload_torrent(filename, filedir):
     data = {
         'pickcode': req['data']['pick_code'],
         'sha1': req['data']['sha1'],
-        'uid': userid,
-        'sign': tsign,
-        'time': ttime,
+        'uid': infos['uid'],
+        'sign': infos['sign'],
+        'time': infos['time'],
     }
-    resp = mySession.post(url=post_url, data=data)
+    resp = infos['session'].post(url=post_url, data=data)
     resp = json.loads(resp.content)
     if resp['state'] is False:
         print("上传种子出错2")
@@ -271,52 +298,39 @@ def upload_torrent(filename, filedir):
         'info_hash': resp['info_hash'],
         'wanted': wanted,
         'savepath': resp['torrent_name'].replace('\'', ''),
-        'uid': userid,
-        'sign': tsign,
-        'time': ttime,
+        'uid': infos['uid'],
+        'sign': infos['sign'],
+        'time': infos['time'],
     }
-    resp = mySession.post(post_url, data).content
+    resp = infos['session'].post(post_url, data).content
     ret = json.loads(str(resp))
     print(ret['name'])
     if 'error_msg' in ret:
         print(ret['error_msg'])
 
 
-def add_many_bt():
-    get_bt_upload_info()
-    for parent, dirnames, filenames in os.walk("torrents"):
+def add_many_bt(fpath, infos):
+    for parent, dirnames, filenames in os.walk(fpath):
         for filename in filenames:
             filedir = os.path.join(parent, filename)
             # time.sleep(1)
-            upload_torrent(filename, filedir)
+            upload_torrent(filename, filedir, infos)
             # print open(qq,'rb')
 
 
 def main():
-    global mySession
-    ssl._create_default_https_context = ssl._create_unverified_context
-    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2663.0 Safari/537.36'}
-    mySession = requests.Session()
-    mySession.headers.update(headers)
-    if not getInfos():
-        print(u'获取信息失败')
-        return
-
-    login()  # 触发登陆
-
-    getTasksign()  # 获取操作task所需信息
-    getUserinfo()  # 获取登陆用户信息
-    addLinktask("magnet:?xt=urn:btih:690ba0361597ffb2007ad717bd805447f2acc624")
-    # addLinktasks([link]) 传入一个list
-    # print tsign
-    # print "fuck"
-    # get_bt_upload_info()
-    # upload_torrent()
-    # add_many_bt()
+    infos = login()
+    if infos is not None:
+        addLinktask("magnet:?xt=urn:btih:A63ABDC8972BA8746C6613549AC3BECB41AB2EC3&dn=MDS-807", infos)
+        # addLinktasks([link]) 传入一个list
+        # print tsign
+        # print "fuck"
+        # get_bt_upload_info()
+        # upload_torrent()
+        # add_many_bt()
 
 
 if __name__ == '__main__':
     main()
     # print cid
     # print requests.get("http://j3n5en.com", proxies=proxies).text
-# main()
