@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import concurrent.futures
+import getopt
 import io
+import logging
 import os
 import re
-import sys
-import zlib
-import time
-import socks
-import getopt
 import socket
-import chardet
 import sqlite3
-import logging
-import pyperclip
+import sys
 import threading
-import html2text
-import concurrent.futures
-from pyquery import PyQuery
-from urllib import parse
-from urllib import request
+import time
+import zlib
+from urllib import parse, request
 from urllib.parse import quote
+
+import chardet
+import html2text
+import pyperclip
+import socks
+from pyquery import PyQuery
+
 
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
