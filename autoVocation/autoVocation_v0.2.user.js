@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name 	自动报工
 // @namespace http://tampermonkey.net/
-// @version 0.1
+// @version 0.2
 // @description 	一键生成报工事项！
 // @author xshrim
 // @match *://130.1.12.49:9080/project/index.jsp
@@ -99,8 +99,8 @@ function yugi(year, index) {
 }
 
 //自动报工实现
-window.onload = function() {
-    'use strict';
+$(document).ready(function(){
+　　'use strict';
     var dates = getAll(getWeekStartDate(), getWeekEndDate());
     var $octd=$('<td class="x-toolbar-cell" id="ext-gen12"><table id="oneclickBtn" cellspacing="0" class="x-btn   x-btn-text-icon" style="width: auto;"><tbody class="x-btn-small x-btn-icon-small-left"><tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr><tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em class="" unselectable="on"><button type="button" id="ext-octd" class=" x-btn-text btn_icon_005">一键报工</button></em></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr><tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr></tbody></table></td>');
     document.getElementById("rightFrame").onload = function() {
@@ -148,4 +148,5 @@ window.onload = function() {
             window.location.reload();
         });
     };
-};
+});
+
