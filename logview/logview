@@ -1,0 +1,665 @@
+#!/bin/bash
+
+########################################################################
+# Copyright (c) Alex, 2013; All Rights Reserved                        #
+#                                                                      #
+# LICENSE                                                              #
+# GNU GPL, see the license file for details                            #
+#                                                                      # 
+# CONTACT                                                              #
+# lkong@redhat.com                                                     #
+#                                                                      #
+# For more information, please read README & man logview & logview -h   #
+######################################################################## 
+
+version="logview 0.0
+Copyright (C) 2013, Free Software Foundation, Inc.
+This is free software.  You may redistribute copies of it under the terms of
+the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.
+There is NO WARRANTY, to the extent permitted by law."
+
+
+# Global variables
+
+# Config file. Any settings "key=value" written there will override the 
+# global_variables defaults
+global_variables()
+{
+    # Can use this variable anywhere & anytime, so be careful to use this variable.
+    tmpfile=$(mktemp /tmp/logview.XXXXXX)
+
+    # Set the default values
+
+    # 0-Open debug mode, 1--Close debug mode
+    DEBUG=1
+
+    # "error" message container
+    MSGINC=""
+    MSGS=""
+
+    # Write message to your terminal
+    notice=no
+
+    # Set the scan frequency
+    delay=3
+
+    # Set mail the "error" messages or not
+    mail=no
+
+    # Set the mail frequency, when mail_time not inculde a value, logview will send
+    # you a mail when "error" occured.
+    mail_time=""
+
+    #Set the tty to current tty
+    TTY=$(tty)
+
+    #Set default colors
+    back_color=""
+    font_color=""
+    font=""
+
+    #logview will exit when there is no "error" message beyond total_end_time
+    total_timeout_end=0
+    total_timeout_start=0
+
+    declare -a MONFILES
+}
+
+#Define color variables
+def_colors()
+{
+	#Feature
+	normal='\033[0m';bold='\033[1m';dim='\033[2m';under='\033[4m';
+	italic='\033[3m';noitalic='\033[23m';blink='\033[5m';
+	reverse='\033[7m';conceal='\033[8m';nobold='\033[22m';
+	nounder='\033[24m';noblink='\033[25m';
+
+    #Front color
+	black='\033[30m';red='\033[31m';green='\033[32m';yellow='\033[33m';
+	blue='\033[34m';magenta='\033[35m';cyan='\033[36m';white='\033[37m';
+
+	#background color
+	bblack='\033[40m';bred='\033[41m';
+	bgreen='\033[42m';byellow='\033[43m';
+	bblue='\033[44m';bmagenta='\033[45m';
+	bcyan='\033[46m';bwhite='\033[47m';
+}
+
+
+#Print colors you can ues
+print_colors()
+{
+echo
+echo -e ${bmagenta}--back-color:${normal}
+echo "bblack; bgreen; bblue; bcyan; bred; byellow; bmagenta; bwhite"
+echo
+echo -e ${red}--font-color:${normal}
+echo "black; red; green; yellow; blue; magenta; cyan; white"
+echo
+echo -e ${bold}--font:${normal}
+echo "normal; italic; reverse; nounder; bold; noitalic; conceal; noblink; 
+dim; blink; nobold; under"
+echo
+}
+
+
+# Print message to standerr
+die() 
+{
+    echo "$@" >&2
+    exit 1
+}
+
+#Exit function
+EXIT()
+{
+    exit 0
+}
+
+# Just ignore this function (Unused)
+Exit()
+{
+    exitcode="$1"
+    shift
+    for arg
+    do
+        echo >&2 "logview: $1"
+        shift
+    done
+    exit ${exitcode}
+}
+
+
+# Check the argument associate with a option
+requiredarg() 
+{
+    [ -z "$2" -o "$(echo $2 | awk '$0~/^-/{print 1}')" == "1" ] && 
+    die "$0: option $1 requires an argument"
+	((args++))
+}
+
+
+# Get file names from COMMAND LINE arguments
+getfilenames() 
+{
+	for f in "$@"; do
+		#[[ -f $f ]] || die "$0: $f No such file found."
+		SOURCE="files"
+		FILES[${#FILES[*]}]="$f"
+	done
+}
+
+
+# Convert 5h/5m/5s to 18000s/300s/5s
+# conv2seconds 5h
+conv2seconds()
+{
+	TIME="$(echo $1 | tr '[A-Z]' '[a-z]')"
+	TAG="$(echo $TIME | tr -d '[0-9]')"
+	NUM="$(echo $TIME | tr -d '[a-z]')"
+
+	case "$TAG" in
+		h )
+			SECOND=$((NUM * 3600))	
+			;;
+		m )
+			SECOND=$((NUM * 60))
+			;;
+		s | "" )
+			SECOND=$NUM
+			;;
+		* )
+            SECOND=unknow
+			;;
+	esac
+
+	[ "$DEBUG" -eq 0 ] && echo "DEBUG: --timeout = $SECOND"
+    echo $SECOND
+}
+
+
+# Check the current time is start time or end time
+# Before time return 1, start time return 2, match end time return 3
+# Time format date +'%Y%m%d %T'
+# checktime starttime endtime
+# Current Unused
+checktime()
+{
+	# START_S=$(date +%s -d "$1")
+	END_S=$(date +%s -d "$1")
+	CURRENT_S=$(date +%s)
+
+	# [ "$DEBUG" -eq 0 ] && echo "START_S=$START_S END_S=$END_S CURRENT_S=$CURRENT_S"
+	[ "$DEBUG" -eq 0 ] && echo "DEBUG: END_S=$END_S CURRENT_S=$CURRENT_S"
+
+	#[ "$START_S" -ge "$END_S" ] && die "$0: --start-time is larger than --end-time"
+	
+	# [ "$CURRENT_S" -lt "$START_S" ] && {
+	# 	[ "$DEBUG" -eq 0 ] && echo "DEBUG: Current time is BEFORE"
+	# 	return 1
+	# }
+
+	# [ "$CURRENT_S" -ge "$START_S" -a "$CURRENT_S" -lt "$END_S" ] && {
+	#	[ "$DEBUG" -eq 0 ] && echo "DEBUG: Current time is START"
+	#	return 2
+	# }
+	[ "$CURRENT_S" -ge "$END_S" ] && {
+		[ "$DEBUG" -eq 0 ] && echo "DEBUG: Current time is END"
+		#return 3
+        echo 0
+	} || 
+    {
+		[ "$DEBUG" -eq 0 ] && echo "DEBUG: Current time is NOT END"
+        echo 1
+    }
+}
+
+#Generate a report from input file and awk file
+print()
+{
+       : 
+}
+
+# Print usage infomation
+Usage()
+{
+cat << EOF
+
+Usage: $0 [ OPTIONS ] FILE1 -f FILE2 [ OUTPUT ] ...
+Monitor log files and email error messages.
+  
+  FILE1                  awk file you used to filter message. You can provide this 
+                         file to specify your own filter string.You can use '-a' option 
+                         to get a example awk file (awk.example).
+  FILE2                  The file you need to monitor.
+                         You can add -f FILE3 to monitor more than one files.
+  OUTPUT	             This is a optional option, logview will output the "error" 
+                         message to this file or the standard output if you don't 
+                         provide a file.
+
+OPTIONS:
+  -h, --help             usage information.
+  -m, --mail-list        mail list, eg: ll@gmail.com,ff@gmail.com.
+      --max-record       Set the max record number for [OUTPUT] file.(default unlimited)
+                         --max-record=unlimited or --max-record=5000
+  -f                     The file you need to monitor.
+  -s, --scan-time        Set the frequency you monitor the log file(default 3s)
+  -n, --notice           Write message to your terminal.
+                         --notice=no: disable logview send "error" messages to your terminal
+                         If you don't provide a OUTPUT file, --notice will set to "no". Also
+                         this is the default value.
+                         --notice=one: only send the "error" messages to your current tty.
+                         --notice=all: send the "error" to all your tty.
+
+      --mail-time        Set the email frequency, 5h/5m/5s/5
+                         default: mail you when "error" messages occured.
+  -v, --version          Print the version message
+  -a                     Get the a example awk file: awk.example, you can build your own 
+                         awk file.
+
+      --timeout-start    Set the timeout ...(5h/5m/5s/5)
+      --timeout-end      Set the end timeout, (5h/5m/5s/5)
+      --end-time         Give a accurate time to stop logview script, eg: "20131101 14:49:03"
+      --debug            be *very* verbose (implies -v)
+  -c, --command-message  When the "error" occured, this script will execut the command you 
+                         specify, the command should be a executable file.
+      --back-color       background color, yellow & red & blue & ...
+      --font-color       font color, red & greep & cyan & ...
+      --font             font type, bold & italic & conceal & ...
+  -p, --print            Print background & font color you can use.
+  -r, --report           Make a simplay report --future feature
+      --format           Generate a PDF/excel or txt format file --future feature
+                         --format=pdf, --format=excel, --format=txt
+    
+With no OUTPUT, or when OUTPUT is -, output "error" messages to standout.
+
+Reprot bugs to <lkong@redhat.com>.
+EOF
+}
+
+
+#When the log file record number reach to the max number, this function will trancate it to
+function file_record()
+{
+    local str="'1,$(($1-$2))d'"
+    eval sed $str $errorfile > $tmpfile
+    cp -f $tmpfile $errorfile
+    rm -f $tmpfile
+}
+
+
+#Send the "error" message to your terminal in the following format
+function warncat()
+{
+    echo  $(date +'%Y%m%d %T')"|" $MSGINC
+}
+
+
+#This function is used to deal the "error" message.
+function deal()
+{
+    # Execute a command when there is a "error" message
+    [ -n "$command_message" ] && "$command_message"
+
+    monfile="$(basename $2)'|'"
+    [ $FILENUM -eq 1 ] && monfile=""
+    #Set total_timeout_ent=0
+    total_timeout_end=0
+
+    : << EOF
+    [ -n "$errorfile" ] &&	echo "$(date +'%T') $monfile $1" >> $errorfile || {
+        eval echo -n "$(date +'%T')|$monfile"
+        eval echo -ne "$back_color"
+        eval echo -ne "$font_color""$font"'$1'
+        echo -e "${normal}"
+    }
+EOF
+
+    [ -n "$errorfile" ] &&	{
+        echo "$(date +'%T')|$monfile""$1" >> $errorfile 
+        echo "$(date +'%T')'|'$monfile"'$1' >> /tmp/logview.txt
+    } || {
+        eval echo -n "$(date +'%T')'|'$monfile"
+        echo "$(date +'%T')'|'$monfile"'$1' >> /tmp/logview.txt
+        eval echo -ne "$back_color"
+        eval echo -ne "$font_color""$font"'$1'
+        echo -e "${normal}"
+    }
+
+    MSGINC="$1"
+
+    [ -z "$maillist" ] && return 0
+
+    #send email to you
+    cur_time="$(date)" 
+
+    [ -n "${mail_time}" ] && {
+        [ -s /tmp/logview.time ] && {
+            last_time="$(</tmp/logview.time)"
+            [ $(($(date +%s -d "$cur_time") - $(date +%s -d "$last_time"))) -ge $mail_time ] &&
+                {
+                    #echo "$1" | 
+                    cat /tmp/logview.txt |
+                    mail -s "$logfile have \"error\" messages, PLEASE CHECK IT!" $maillist
+                    date > /tmp/logview.time
+                    > /tmp/logview.txt
+                } || {
+                    return 0
+                }
+        } || {
+            echo "$1" | 
+            mail -s "$logfile have \"error\" messages, PLEASE CHECK IT!" $maillist
+            date > /tmp/logview.time
+            > /tmp/logview.txt
+       }
+    } || {
+        echo "$1" | 
+        mail -s "$logfile have \"error\" messages, PLEASE CHECK IT!" $maillist
+    }
+}
+
+
+
+#Send "error" messages to terminal
+tellb()
+{
+    [ "$notice" == "no" ] && return 0
+
+    [ "$notice" == "one" ] && {
+        warncat "$MSGINC" | write "$(whoami)" "$TTY"  &>/dev/null
+    }
+
+	[ "$notice" == "all" ] && {
+		warncat "$MSGINC" | wall $USERNAME
+	}
+}
+
+
+getawkfile()
+{
+   cat << EOF > awk.example
+#By default, this awk file will filter error and failed messages.
+#You can modify or add your own filter error string by
+# #If MATCH "error" or "failed", logview will filter the error message to you.
+# if (match(lower, /error|failed/))
+# {
+#   print \$0
+# }
+#
+# #This is what you add:
+# if (match(lower, /no such/))
+# {
+#   print \$0
+# }
+# if (!match(lower, /\/bin\/mv:/))
+# {
+#   print \$0
+# }
+#
+
+{
+    lower=tolower(\$0);
+    if (match(lower, /error|failed/))
+    {
+        print \$0
+    }
+}
+EOF
+}
+
+
+# load global variables
+global_variables
+def_colors
+
+### read cli options
+# separate groups of short options. replace --foo=bar with --foo bar
+while [[ -n $1 ]]; do
+	case "$1" in
+		-- )
+            for arg in "$@"; do
+                ARGS[${#ARGS[*]}]="$arg"
+            done
+            break
+            ;;
+        --debug )
+            set -v
+            DEBUG=0
+            ;;
+        --*=?* )
+            ARGS[${#ARGS[*]}]="${1%%=*}"
+            ARGS[${#ARGS[*]}]="${1#*=}"
+            ;;
+        --* )
+            #die "$0: option $1 requires a value"
+            ARGS[${#ARGS[*]}]="$1"
+            ;;
+        -* )
+            for shortarg in $(sed -e 's|.| -&|g' <<< "${1#-}"); do
+                ARGS[${#ARGS[*]}]="$shortarg"
+            done
+            ;;
+        * )
+            ARGS[${#ARGS[*]}]="$1"
+    esac
+    shift
+done
+
+# set the separated options as input options.
+set -- "${ARGS[@]}"
+
+[ "$DEBUG" -eq 0 ] && echo "DEBUG: ARGS[@]: ${ARGS[@]}"
+while [[ -n $1 ]]; do
+    ((args=1))
+    case "$1" in
+        -- )
+            shift && getfilenames "$@" && break
+            ;;
+        -h | --help )
+            Usage
+            exit 0
+            ;;
+        -a )
+            getawkfile
+            exit 0
+            ;;
+        -m | --mail-list )
+            requiredarg "$@"
+            maillist="$2"
+            ;;
+        --max-record )
+            requiredarg "$@"
+            maxrecord=$2
+            ;;
+        -s | --scan-time )
+            requiredarg "$@"
+            delay=$(conv2seconds "$2")
+            [ "$delay" == "unknow" ] && die "$0: Unavailable time format."
+            ;;
+        -n | --notice )
+            requiredarg "$@"
+            notice=$2
+            ;;
+        --mail-time )
+            requiredarg "$@"
+            mail_time=$(conv2seconds "$2")
+            [ "$mail_time" == "unknow" ] && die "$0: Unavailable time format."
+            ;;
+        --start-time )
+            requiredarg "$@"
+            start_time=$2
+            ;;
+        --end-time )
+            requiredarg "$@"
+            end_time=$2
+            ;;
+        -r | --report )
+            requiredarg "$@"
+            reprot=$2
+            ;;
+        --format )
+            requiredarg "$@"
+            format=$2
+            ;;
+        --parse )
+            requiredarg "$@"
+            parse="$2"
+            ;;
+        --timeout-start )
+            requiredarg "$@"
+            timeout_start=$(conv2seconds "$2")
+            [ "$timeout_start" == "unknow" ] && die "$0: Unavailable time format."
+            ;;
+        --timeout-end )
+            requiredarg "$@"
+            timeout_end=$(conv2seconds "$2")
+            [ "$timeout_end" == "unknow" ] && die "$0: Unavailable time format."
+            ;;
+        --back-color )
+            requiredarg "$@"
+            back_color=\${b$2}
+            ;;
+        --font-color )
+            requiredarg "$@"
+            font_color=\${$2}
+            ;;
+        --font )
+            requiredarg "$@"
+            font=\${$2}
+            ;;
+        -f )
+            requiredarg "$@"
+            [ "$2" == "" ] && die "$0: no input file for '-f' option."
+            MONFILES[${#MONFILES[*]}]="$2"
+            ;;
+        -c | --command-message )
+            requiredarg "$@"
+            command_message="$2"
+            ;;
+        -p | --print )
+            print_colors
+            exit 0
+            ;;
+        -v | --version )
+            echo "$version"
+            exit 0
+            ;;
+        -* )
+            die "$0: unrecognized option '$1'"
+            ;;
+        *)
+            getfilenames "$1"
+            ;;
+    esac
+    shift $args
+done
+
+
+[ ${#MONFILES[*]} -le 0 ] && die "No input file. Nothing need to be monitored. Aborting. 
+Try logview -h to get help."
+awkfile=${FILES[0]}
+
+[ ! -r "$awkfile" ] && die "No awk file or file can not read. Aborting."
+
+#monfile=${FILES[1]}
+errorfile=${FILES[1]}
+
+[ -z "$errorfile" ] && notice=no
+
+#Why set LOGCHK like this? It is for future use. Using this variable, the script can have some COOL feature
+LOGCHK="$monfile:ind:excstr:error"
+logfile=$(echo $LOGCHK | cut -d: -f1)
+
+#The following three variable are also for future use.
+notify=$(echo $LOGCHK | cut -d: -f4)
+suffix=$(echo $logfile | sed -e 's/\//_/g')
+suffix=$(echo $suffix | sed -e 's/\./_/g')
+
+
+[ $DEBUG -eq 0 ] && echo "DEBUG: MONFILES is: ${MONFILES[*]}"
+#logview will pending until the monitor file exist or be created
+while true
+do
+    FLAG=""
+    [ -n "$timeout_start" ] && [ "$total_timeout_start" -ge "$timeout_start" ] && EXIT
+
+    for F in ${MONFILES[*]}
+    do
+        [ -f "$F" ] && FLAG=1
+    done
+
+    [ "$FLAG" == "1" ] && break
+	sleep 5
+
+    [ -n "$timeout_start" ] && total_timeout_start=$((total_timeout_start+5))
+done
+
+GrepAwk="awk -f $awkfile"
+FILENUM=${#MONFILES[*]}
+
+#If $tell == on, logview will allow write to your terminal automatic.
+[ "$notice" == "one" ] && mesg y
+
+while true
+do
+    [ -n "$timeout_end" ] && 
+    [ "$total_timeout_end" -ge "$timeout_end" ] &&
+    EXIT
+    
+    [ -n "$end_time" ] &&
+    [ $(checktime "$end_time") -eq 0 ] && 
+    EXIT
+
+    entry_count=$((0+1))
+
+    if [ -f "$errorfile" -a -n "$maxrecord" ];then
+        size=$(wc -l $errorfile | awk '{print $1}')
+        if [[ $size -gt $maxrecord ]];then
+            file_record $size $maxrecord
+        fi
+    fi
+    
+    for ((i=0;i<FILENUM;i++))
+    do
+        if [ "$(eval echo '$COUNT'$i)" = "" ];then
+            [ -f "${MONFILES[i]}" ] && 
+            eval BASE$i=$(wc -l ${MONFILES[i]} 2>/dev/null| awk '{print $1}') ||
+                eval BASE$i=0
+        fi
+    done
+
+    sleep $delay
+
+    for ((i=0;i<FILENUM;i++))
+    do
+        [ -f "${MONFILES[i]}" ] && 
+        eval COUNT$i=$(wc -l ${MONFILES[i]} | awk '{print $1}') ||
+            eval COUNT$i=0
+
+        #eval declare -i comp$i=0
+        comp=$(($(eval echo '$COUNT'$i) - $(eval echo '$BASE'$i)))
+
+        if [ $comp -gt 0 ];then
+            LINES=$(eval expr '$COUNT'$i - '$BASE'$i)
+            eval  BASE$i='$COUNT'$i
+            IFS=$'\n'
+
+            for MSGS in $(tail -$LINES ${MONFILES[i]}| eval "$GrepAwk")
+            do
+                [ $DEBUG -eq 0 ] && echo "DEBUG: \"error\" message is: [$MSGS]"
+
+                [ -n "$MSGS" ] && {
+                deal "$MSGS" "${MONFILES[i]}"
+                tellb
+            }
+            done
+        fi
+    done
+    #else
+    #    [ $DEBUG -eq 0 ] && echo "DEBUG: No change in size of $logfile"
+    #fi
+
+    [ -n "$timeout_end" ] && total_timeout_end=$((total_timeout_end + delay))
+done
+
+EXIT
