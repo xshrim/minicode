@@ -140,7 +140,7 @@ $(document).ready(function(){
                         vremark = "^_^";
                     $.post("http://130.1.12.49:9080/project/vocation/timesheet/handle/outTimesheet.jsp?method=save&submitstate=0", { iid: viid, startDate: vstartDate, endDate: vendDate, taskid: vtaskid, ddate: vddate, stype: vstype, projectid: vprojectid, tasktype: vtasktype, taskidIn: vtaskidIn, tasknameIn: vtasknameIn, timetypeid: vtimetypeid, workname: vworkname, worknameyw2: vworknameyw2, product: vproduct, chanpinname: vchanpinname, manhour: vmanhour, manovertime: vmanovertime, remark: vremark },
                            function(data){
-                             consloe.log($.trim(data));
+                             console.log($.trim(data));
                           }
                     );
                 }
@@ -149,4 +149,3 @@ $(document).ready(function(){
         });
     };
 });
-
