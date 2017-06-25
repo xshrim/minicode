@@ -24,6 +24,7 @@ pyperclip    --剪切板调用
 pycurl       --curl的python封装
 scapy        --交互式数据包处理库
 numpy        --科学计算库
+bokeh		 --图表制作库
 pyshark      --wireshark的python接口
 pyvmomi      --vmware虚拟化操作库
 selenium     --web浏览器自动化测试库
