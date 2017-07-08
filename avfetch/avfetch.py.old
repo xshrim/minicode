@@ -23,9 +23,6 @@ import socks
 from pyquery import PyQuery
 
 
-global InfoEngine, BTEngine
-InfoEngine = None
-BTEngine = None
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
 
@@ -345,21 +342,7 @@ def charDetect(data):
     return ''
 
 
-def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('btso', 'https://btso.pw/')], proxy=''):
-    if type == 'ie':
-        for ie in ielist:
-            if detectPage(url=ie[1], proxy=proxy):
-                logging.info('Using ' + ie[0] + ' Info Engine: ' + ie[1])
-                return ie[0]
-    if type == 'be':
-        for be in belist:
-            if detectPage(url=be[1], proxy=proxy):
-                logging.info('Using ' + be[0] + ' BT Engine: ' + be[1])
-                return be[0]
-    return None
-
-
-def detectPage(url, timeout=2, retry=2, sleep=0, proxy=''):
+def detectPage(url, timeout, retry, sleep, proxy=''):
     proxyDict = {}
     if proxy is not None and re.match(r'^.+@.+:.+$', proxy, flags=0):
         proxyDict['type'] = proxy.split('@')[0]
@@ -492,8 +475,7 @@ def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
     return contents
 
 
-# def avpageFetch(url, engine='javbus', proxy=''):
-def avpageFetch(url, engine=InfoEngine, proxy=''):
+def avpageFetch(url, engine='javbus', proxy=''):
     avpage = []
     if engine == 'javbus':
         try:
@@ -507,25 +489,11 @@ def avpageFetch(url, engine=InfoEngine, proxy=''):
                 url = str(urlitem.attr('href')).strip()
                 avpage.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
-            logging.warning("avpageFetch:javbus:" + str(ex))
-    if engine == 'javhoo':
-        try:
-            curl = url
-            urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
-            urlcontent = urldata('div#content')
-            for urlitem in urlcontent('div[class="wf-cell iso-item"]').items():
-                code = str(urlitem('div.project-list-content')('date:first').text()).strip().split('/')[0].strip().upper()
-                title = str(urlitem('div.project-list-content')('a:first').text()).strip()
-                url = str(urlitem('div.project-list-media')('a:first').attr('href')).strip()
-                print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
-                avpages.append({'code': code, 'title': title, 'url': url})
-        except Exception as ex:
-            logging.warning("avpageFetch:javhoo:" + str(ex))
+            logging.warning("avurlFetch:javbus:" + str(ex))
     return avpage
 
 
-# def avurlFetch(keyword, engine='javbus', proxy=''):
-def avurlFetch(keyword, engine=InfoEngine, proxy=''):
+def avurlFetch(keyword, engine='javbus', proxy=''):
     avpages = []
     if engine == 'javbus':
         pidx = 1
@@ -563,40 +531,6 @@ def avurlFetch(keyword, engine=InfoEngine, proxy=''):
                 logging.warning("avurlFetch:javbus:" + str(ex))
                 break
     if engine == 'javhoo':
-        pidx = 1
-        baseurl = 'https://www.javhoo.com/search/' + keyword + '/page/'
-        while True:
-            try:
-                curl = baseurl + str(pidx)
-                print(('Parsing Page (' + curl + ')').center(100, '-'))
-                urldata = PyQuery(getHTML(curl, 5, 5, 1, proxy))
-                urlcontent = urldata('div#content')
-                for urlitem in urlcontent('div[class="wf-cell iso-item"]').items():
-                    code = str(urlitem('div.project-list-content')('date:first').text()).strip().split('/')[0].strip().upper()
-                    title = str(urlitem('div.project-list-content')('a:first').text()).strip()
-                    url = str(urlitem('div.project-list-media')('a:first').attr('href')).strip()
-                    print(code.ljust(12) + ' -> ' + title + ' -> ' + url)
-                    avpages.append({'code': code, 'title': title, 'url': url})
-
-                pagination = urldata('ul[class="pagination pagination-lg"]')
-                if pagination is not None and str(pagination).strip() != '':
-                    pginfo = ''
-                    for item in pagination('li').items():
-                        if str(pidx) == item.text().strip():
-                            pginfo += '[' + str(pidx) + '] '
-                        else:
-                            pginfo += item.text().strip() + ' '
-                    print(pginfo)
-                    if '下一页' in pagination.text() or '下一頁' in pagination.text():
-                        pidx += 1
-                    else:
-                        break
-                else:
-                    break
-            except Exception as ex:
-                logging.warning("avurlFetch:javbus:" + str(ex))
-                break
-    '''
         surls = []
         try:
             urldata = PyQuery(getHTML('https://www.javhoo.com/search/' + keyword, 5, 5, 1, proxy))
@@ -619,7 +553,6 @@ def avurlFetch(keyword, engine=InfoEngine, proxy=''):
                     avpages.append({'code': code, 'title': title, 'url': url})
         except Exception as ex:
             logging.warning("avurlFetch:javhoo:url:" + str(ex))
-    '''
     if engine == 'torrentant':
         surls = []
         try:
@@ -670,8 +603,7 @@ def avurlFetch(keyword, engine=InfoEngine, proxy=''):
     return avpages
 
 
-# def avactresFetch(atype, engine='javbus', proxy=''):
-def avactresFetch(atype, engine=InfoEngine, proxy=''):
+def avactresFetch(atype, engine='javbus', proxy=''):
     avactress = []
     pidx = 1
     if engine == 'javbus':
@@ -766,8 +698,7 @@ def avkeywordParse(textargs, type):
     return keywords
 
 
-# def avfullFetch(keywords, stype, tpath, mthread=10, engine='javbus', proxy='', dbfile=None):
-def avfullFetch(keywords, stype, tpath, mthread=10, engine=InfoEngine, proxy='', dbfile=None):
+def avfullFetch(keywords, stype, tpath, mthread=10, engine='javbus', proxy='', dbfile=None):
     avs = []
     try:
         print((' [ Collecting Information For ' + str(len(keywords)) + ' keywords ] ').center(100, '/'))
@@ -800,8 +731,7 @@ def avfullFetch(keywords, stype, tpath, mthread=10, engine=InfoEngine, proxy='',
         logging.error("avfullFetch:" + str(ex))
 
 
-# def avinfoFetch(url, engine='javbus', proxy=''):
-def avinfoFetch(url, engine=InfoEngine, proxy=''):
+def avinfoFetch(url, engine='javbus', proxy=''):
     cav = None
     code = ''
     title = ''
@@ -900,7 +830,7 @@ def avinfoFetch(url, engine=InfoEngine, proxy=''):
             '''
             for item in avinfo('p').items():
                 if '識別碼' in item.text() or '品番' in item.text() or '番號' in item.text()or '识别码' in item.text()or '番号' in item.text():
-                    code = str(item('span:eq(1)').text()).split('/')[0].strip()
+                    code = str(item('span:eq(1)').text()).strip()
                 if '發行日' in item.text() or '発売日' in item.text() or '发行日' in item.text():
                     issuedate = str(re.search(r'\d*-\d*-\d*', item.text()).group()).strip()
                 if '長度' in item.text() or '時間' in item.text() or '长度' in item.text() or '时间' in item.text() or '时长' in item.text():
@@ -966,7 +896,7 @@ def avinfoFetch(url, engine=InfoEngine, proxy=''):
     return cav
 
 
-def avlinkFetch(code, engine=BTEngine, proxy=''):
+def avlinkFetch(code, engine='btso', proxy=''):
     head = ''
     time = ''
     hot = ''
@@ -1223,7 +1153,7 @@ def avlinkUpdate(dbfile):
                 concurrent.futures.wait(tasks)
 
 
-def clipthFetch(regstr, source, stype, tpath, mthread, engine, proxy, dbfile=None):
+def clipthFetch(regstr, source, stype, tpath, mthread, engine, proxy, dbfile):
     tasks = []
 
     def consumer(regstr, stype, tpath, mthread, engine, proxy, dbfile):
@@ -1255,7 +1185,7 @@ def clipthFetch(regstr, source, stype, tpath, mthread, engine, proxy, dbfile=Non
     produce(source, proxy)
 
 
-def clipFetch(regstr, source, mode, stype, tpath, mthread, engine, proxy, dbfile=None):
+def clipFetch(regstr, source, mode, stype, tpath, mthread, engine, proxy, dbfile):
     # regstr = r'[A-Za-z]{1,7}-?[A-Za-z]?\d{2,4}-?\d{0,3}|\d{6}[-_]\d{4}[-_]\d{2}|\d{6}[-_]\d{2,3}|\d{6}-[A-Za-z]{3,6}|[A-Za-z]{1,3}\d[A-Za-z]{1,3}-\d{2,4}'
     # regstr = r'\S+'
     # regstr = r'[^\n]+'
@@ -1306,11 +1236,10 @@ def cliploopFetch(mode=None):
     else:
         regstr = mode.strip()
     if mode.strip().lower() in 'abc' or mode.strip().lower() in '123':
-        clipthFetch(regstr, 'clip', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, InfoEngine, '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
-        # clipthFetch(regstr, 'clip', 'file', 'C:/Users/xshrim/Desktop/imgss', 20, InfoEngine, '')
+        # clipFetch(regstr, 'clip', 'loop', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
+        clipthFetch(regstr, 'clip', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
     else:
-        clipthFetch(regstr, 'url', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, InfoEngine, '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
-        # clipthFetch(regstr, 'url', 'file', 'C:/Users/xshrim/Desktop/imgss', 20, InfoEngine, '')
+        clipthFetch(regstr, 'url', 'db', 'C:/Users/xshrim/Desktop/imgss', 20, 'javbus', '', 'C:/Users/xshrim/Desktop/imgss/avinfos.db')
 
 
 def avquickFetch(code, proxy=''):
@@ -1393,7 +1322,7 @@ def avquickFetch(code, proxy=''):
         return None
 
 
-def keywordlinkFetch(keyword, engine=BTEngine, proxy=''):
+def keywordlinkFetch(keyword, engine='btso', proxy=''):
     head = ''
     time = ''
     hot = ''
@@ -1867,8 +1796,6 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    InfoEngine = choseEngine('ie')
-    BTEngine = choseEngine('be')
     main(sys.argv[1:])
 
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-p', 'socks5@127.0.0.1:1080', '-t', 'db', '-m', '20', '-s', ' 敗戦国の女'])
@@ -1882,13 +1809,6 @@ if __name__ == "__main__":
 # for cav in avlinkFetch('ipz-371', 'zhongziso'):
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
-
-'''
-InfoEngine = choseEngine('ie')
-BTEngine = choseEngine('be')
-for item in avurlFetch('前田かおり', engine=InfoEngine, proxy=''):
-    print(item)
-'''
 
 '''
 for i in range(250, 300):
@@ -2097,7 +2017,6 @@ with open(r'D:/Git/minicode/avfetch/avs.txt', 'r', encoding='utf-8') as f:
 '''
 # avfullFetch(keywords, 'both', r'C:/Users/xshrim/Desktop/imgss', 'javbus', '')
 
-# cliploopFetch()
 # 搜索引擎：
 # btso:https://btso.pw/search/ipz-137/
 # javhoo:https://www.javhoo.com/av/ipz-137/

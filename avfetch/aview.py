@@ -254,7 +254,9 @@ class Window(QWidget):
         self.favorButton.clicked.connect(self.flagItem)
         self.searchButton = QPushButton('搜索')
         self.searchButton.setFixedWidth(100)
-        self.searchButton.clicked.connect(self.searchItem)
+        self.searchButton.setToolTip('右键保存搜索内容磁力链接')
+        # self.searchButton.clicked.connect(self.searchItem)
+        self.searchButton.mousePressEvent = self.searchEvent
 
         self.favorCheck = QCheckBox(self)
         self.favorCheck.setToolTip('是否只浏览已收藏项')
@@ -265,6 +267,7 @@ class Window(QWidget):
         self.viewModeBox.setCurrentIndex(1)
         self.jumpBox = QComboBox()
         self.jumpBox.setEditable(True)
+        self.jumpBox.mouseReleaseEvent = self.initJumpBox
         self.jumpBox.currentTextChanged.connect(self.jumpSelected)
         self.searchBox = QComboBox()
         self.searchBox.currentTextChanged.connect(self.showSelected)
@@ -338,6 +341,38 @@ class Window(QWidget):
         except Exception as ex:
             print(str(ex))
 
+    def searchEvent(self, event):
+        try:
+            if event.button() == 1 and self.searchEdit.text() is not None and str(self.searchEdit.text()).strip() != '':
+                self.searchItem()
+            if event.button() == 2 and self.searchEdit.text() is not None and str(self.searchEdit.text()).strip() != '':
+                keywords = str(self.searchEdit.text()).strip()
+                fname = QFileDialog.getSaveFileName(self, self.tr('选择文件保存位置'), self.tr(keywords + '.txt'))[0]
+                sql = 'SELECT link FROM av where code like "%' + keywords + '%" or title like "%' + keywords + '%" or issuedate like "%' + keywords + '%" or length like "%' + keywords + '%" or mosaic like "%' + keywords + '%" or director like "%' + keywords + '%" or manufacturer like "%' + keywords + '%" or publisher like "%' + keywords + '%" or series like "%' + keywords + '%" or category like "%' + keywords + '%" or actors like "%' + keywords + '%"'
+                res = fetchall(self.conn, sql)
+                with open(fname, 'w') as fw:
+                    for item in res:
+                        fw.write(item['link'] + '\n')
+        except Exception as ex:
+            print(str(ex))
+
+    def initJumpBox(self, event):
+        try:
+            '''
+            if self.jumpBox.count() < 1:
+                self.thread = Worker(len(self.avs))
+                self.thread.item_changed_signal.connect(self.update_item)
+                self.thread.start()
+            '''
+            preidx = self.jumpBox.currentText()
+            if self.jumpBox.count() < 1:
+                for i in range(1, len(self.avs) + 1):
+                    self.jumpBox.addItem(str(i))
+            if preidx is not None and preidx.strip() != '':
+                self.jumpBox.setCurrentIndex(int(preidx.strip()) - 1)
+        except Exception as ex:
+            print(str(ex))
+
     def showInfo(self, cav):
         if cav is not None:
             self.infoEdit.setText('')
@@ -361,17 +396,6 @@ class Window(QWidget):
             # self.setGeometry(300, 300, 1000, 600)
             self.setFixedHeight(600)
             self.picLabel.setToolTip(cav.code + ' ' + cav.title)
-
-            if self.jumpBox.count() < 1:
-                for i in range(1, len(self.avs) + 1):
-                    self.jumpBox.addItem(str(i))
-
-            '''
-            if self.jumpBox.count() < 1:
-                self.thread = Worker(len(self.avs))
-                self.thread.item_changed_signal.connect(self.update_item)
-                self.thread.start()
-            '''
 
             self.offset = self.avs.index((cav.code, cav.favor))
             self.jumpBox.setCurrentText(str(self.offset + 1))
