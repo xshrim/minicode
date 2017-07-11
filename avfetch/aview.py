@@ -1,13 +1,17 @@
 
 import os
 import re
-import sys
 import sqlite3
-from random import choice
+import sys
 from collections import OrderedDict
-from PyQt5.QtCore import (Qt, QThread, QTimer, pyqtSignal)
-from PyQt5.QtGui import (QPixmap, QImage)
-from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QComboBox, QCheckBox, QRadioButton, QFileDialog, QApplication)
+from random import choice
+
+from PyQt5.QtCore import Qt, QThread, QTimer, pyqtSignal
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog,
+                             QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                             QRadioButton, QTabWidget, QTextEdit, QVBoxLayout,
+                             QWidget)
 
 
 class av(object):
@@ -234,7 +238,7 @@ class Window(QWidget):
         self.avs = []
         self.conn = None
 
-        self.thread = Worker()
+        self.thread = Worker(10)
         self.thread.item_changed_signal.connect(self.update_item)
 
         self.preButton = QPushButton('上一个')
@@ -312,19 +316,41 @@ class Window(QWidget):
         self.hboxtail.addWidget(self.searchButton)
         self.hboxtail.addWidget(self.searchBox)
 
+        # first tab
         self.vbox = QVBoxLayout()
         self.vbox.addLayout(self.hboxhead)
         self.vbox.addLayout(self.hboxinfo)
         self.vbox.addLayout(self.hboxtail)
+        self.viewWidget = QWidget()
+        self.viewWidget.setLayout(self.vbox)
 
-        self.setLayout(self.vbox)
+        # second tab
+        self.obox = QVBoxLayout()
+        self.osearchWidget = QWidget()
+        self.osearchWidget.setLayout(self.obox)
+
+        # third tab
+        self.abox = QVBoxLayout()
+        self.aboutWidget = QWidget()
+        self.aboutWidget.setLayout(self.abox)
+
+        self.tabWidget = QTabWidget()
+        self.tabWidget.addTab(self.viewWidget, '本地浏览')
+        self.tabWidget.addTab(self.osearchWidget, '在线搜索')
+        self.tabWidget.addTab(self.aboutWidget, '关于')
+
+        self.gbox = QVBoxLayout()
+        self.gbox.addWidget(self.tabWidget)
+        self.setLayout(self.gbox)
 
         self.setGeometry(300, 300, 1000, 600)
         self.setWindowTitle('浏览')
         self.show()
+        # self.thread.start()
 
     def update_item(self, data):
-        self.jumpBox.addItem(data)
+        # self.jumpBox.addItem(data)
+        self.infoEdit.append('ss\n')
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
