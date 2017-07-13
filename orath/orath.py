@@ -486,7 +486,7 @@ def refer(level, dbfile=os.path.join(curDir(), 'orath.db')):
             print('refer' + str(ex))
 
 
-def practise(level=None, count=None, mode=None, sr=None, star=None, ktime=None, dbfile=os.path.join(curDir(), 'orath.db')):
+def practise(level=None, scope=None, count=None, mode=None, sr=None, star=None, ktime=None, dbfile=os.path.join(curDir(), 'orath.db')):
     corlist = []
     wrolist = []
     topics = []
@@ -510,6 +510,20 @@ def practise(level=None, count=None, mode=None, sr=None, star=None, ktime=None, 
         level = '1Z0-053'
     stopics = [topic for topic in topics if topic[0] == level]
     print(colorama.Fore.GREEN + str(level) + ' Total: ' + str(len(stopics)))
+    print(colorama.Fore.WHITE + '-' * 100)
+
+    if scope is None or str(scope).strip() == '0':
+        scope = input('Please input question scope(-1 for All):')
+    if scope == -1 or '-' not in str(scope):
+        print(colorama.Fore.GREEN + 'Question Scope: All')
+    else:
+        try:
+            qstart, qend = str(scope).split('-')
+            stopics = stopics[int(qstart) - 1:int(qend)]
+            print(colorama.Fore.GREEN + 'Question Scope: ' + str(scope))
+        except Exception as ex:
+            print(str(ex))
+            print(colorama.Fore.GREEN + 'Question Scope: All')
     print(colorama.Fore.WHITE + '-' * 100)
 
     if count is None or str(count).strip() == '0':
@@ -559,7 +573,7 @@ def practise(level=None, count=None, mode=None, sr=None, star=None, ktime=None, 
         print(colorama.Fore.GREEN + 'Time Limit: Unlimited')
     else:
         print(colorama.Fore.GREEN + 'Time Limit: ' + str(ktime) + ' Minutes')
-    print(colorama.Fore.WHITE + '#' * 100)
+    print(colorama.Fore.WHITE + '#' * 40 + ('SUM: ' + str(len(stopics))).center(20) + '#' * 40)
 
     idx = 1
     starttime = datetime.datetime.now()
@@ -619,6 +633,7 @@ def main(argv):
     dbfile = ''
     level = None
     qn = '1'
+    scope = None
     count = None
     mode = None
     sr = None
@@ -626,11 +641,11 @@ def main(argv):
     ktime = None
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "hf:t:l:n:c:m:r:s:k:", ["file=", "type=", "level=", "number=", "count=", "mode=", "sr=", "star=", "ktime="])
+            opts, args = getopt.getopt(argv, "hf:t:l:n:p:c:m:r:s:k:", ["file=", "type=", "level=", "number=", "scope=", "count=", "mode=", "sr=", "star=", "ktime="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
-                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes -k 120'''
+                '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-p <scope>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
+                Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -p 10-110 -c 100 -m random -r yes -s yes -k 120'''
             )
             sys.exit(2)
 
@@ -639,8 +654,8 @@ def main(argv):
         for opt, arg in opts:
             if opt == '-h':
                 print(
-                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
-                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -c 100 -m random -r yes -s yes -k 120'''
+                    '''Usage: avfetch.py [-f <dbfile>] [-t <type>] [-l <level>] [-n <number>] [-p <scope>] [-c <count>] [-m <mode>] [-r <showres>] [-s <star>] [-k <ktime>]\n
+                    Example: orath.py -f C:/orath.db -t show -l 1Z0-051 -n 10 -p 10-110 -c 100 -m random -r yes -s yes -k 120'''
                 )
                 sys.exit()
             elif opt in ("-t", "--type"):
@@ -651,6 +666,8 @@ def main(argv):
                 level = arg
             elif opt in ("-n", "--number"):
                 qn = arg
+            elif opt in ("-p", "--scope"):
+                scope = arg
             elif opt in ("-c", "--count"):
                 count = arg
             elif opt in ("-m", "--mode"):
@@ -676,9 +693,9 @@ def main(argv):
                     showTopic(level, qn, False, dbfile)
             if type == 'practise':
                 if dbfile is None or dbfile.strip() == '':
-                    res = practise(level, count, mode, sr, star, ktime)
+                    res = practise(level, scope, count, mode, sr, star, ktime)
                 else:
-                    res = practise(level, count, mode, sr, star, ktime, dbfile)
+                    res = practise(level, scope, count, mode, sr, star, ktime, dbfile)
             if type == 'refer':
                 if dbfile is None or dbfile.strip() == '':
                     refer(level)
@@ -694,7 +711,7 @@ if __name__ == "__main__":
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 # main(['-t', 'practise', '-l', '1Z0-052', '-c', '2', '-s', 'y', '-m', 'random'])
-main(['-t', 'practise', '-l', '1Z0-052', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '10'])
+main(['-t', 'practise', '-l', '1Z0-053', '-p', '3-50', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '10'])
 # main(['-t', 'show', '-l', '1Z0-052', '-n', '12', '-f', os.path.join(curDir(), 'orath.db')])
 
 '''
