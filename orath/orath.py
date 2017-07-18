@@ -536,8 +536,8 @@ def practise(level=None, scope=None, count=None, mode=None, sr=None, star=None, 
     print(colorama.Fore.WHITE + '-' * 100)
 
     if mode is None or str(mode).strip() == '':
-        mode = input('Please select answer mode(random or sequence):')
-    if str(mode).strip() == '1' or str(mode).strip().lower() == 'r' or str(mode).strip().lower() == 'random':
+        mode = input('Please select question mode(random or sequence):')
+    if str(mode).strip() == '1' or str(mode).strip().lower() == 'r' or str(mode).strip().lower() == 'y' or str(mode).strip().lower() == 'random':
         mode = 'random'
     else:
         mode = 'sequence'
