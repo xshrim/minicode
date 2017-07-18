@@ -185,6 +185,7 @@ def curDir():
     except Exception as ex:
         return os.getcwd()
 
+
 '''
 def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
     proxyDict = {}
@@ -711,7 +712,7 @@ if __name__ == "__main__":
 
 # main(['-t', 'practise', '-l', '1Z0-051', '-n', '15', '-f', os.path.join(curDir(), 'orath.db')])
 # main(['-t', 'practise', '-l', '1Z0-052', '-c', '2', '-s', 'y', '-m', 'random'])
-main(['-t', 'practise', '-l', '1Z0-053', '-p', '3-50', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '10'])
+# main(['-t', 'practise', '-l', '1Z0-053', '-p', '3-50', '-c', '-1', '-m', 'r', '-r', 'y', '-s', 'n', '-k', '10'])
 # main(['-t', 'show', '-l', '1Z0-052', '-n', '12', '-f', os.path.join(curDir(), 'orath.db')])
 
 '''
