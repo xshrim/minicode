@@ -10,6 +10,7 @@ class scrollTextLabel(QLabel):
         self.t = QTimer()
         self.font = QFont('微软雅黑, verdana', 10)
         self.t.timeout.connect(self.changeTxtPosition)
+        
 
     def changeTxtPosition(self):
         if not self.parent().isVisible():
@@ -73,6 +74,10 @@ class Window(QWidget):
         self.gbox = QVBoxLayout()
         self.gbox.addWidget(self.scrollLabel)
         self.setLayout(self.gbox)
+        
+        #使主窗体透明
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowFlags(Qt.FramelessWindowHint)
 
         self.setGeometry(300, 300, 800,100)
         self.setWindowTitle('浏览')
