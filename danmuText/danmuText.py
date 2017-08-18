@@ -5,70 +5,29 @@ from PyQt5.QtWidgets import *
 
 
 class scrollTextLabel(QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, s, parent=None):
         super(scrollTextLabel, self).__init__(parent)
-        # self.txt = s
-        self.setAlignment(Qt.AlignRight)
-        self.newX = -1
+        self.txt = s
+        self.setFixedWidth(100)
         self.t = QTimer()
         self.font = QFont('微软雅黑, verdana', 10)
         self.t.timeout.connect(self.changeTxtPosition)
+        self.t.start(100)
 
     def changeTxtPosition(self):
-        if not self.parent().isVisible():
-            # 如果parent不可见，则停止滚动，复位
+        print(self.pos().x())
+        if self.pos().x() <= 0:
+            self.hide()
             self.t.stop()
-            self.newX = self.width()
-            return
-        if self.textRect.width() + self.newX > 0:
-            # 每次向前滚动5像素
-            self.newX -= 5
         else:
-            self.newX = self.width()
+            self.move(self.pos().x() - 5, self.pos().y())
         self.update()
-
-    # 用drawText来绘制文字，不再需要setText，重写
-    def setText(self, s):
-        self.txt = s
-        if self.newX == -1:
-            self.newX = self.width()
-
-        # 滚动起始位置设置为10,留下视觉缓冲
-        # 以免出现 “没注意到第一个字是什么” 的情况
-        # self.newX = self.width()
-        self.update()
-
-    def getText(self):
-        return self.txt
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setFont(self.font)
-        # 设置透明颜色
-        # painter.setPen(QColor('Red'));
-        painter.setPen(QColor('transparent'))
-
-        # 以透明色绘制文字，来取得绘制后的文字宽度
+        painter.setPen(QColor('red'))
         self.textRect = painter.drawText(QRect(0, -7, self.width(), 25), Qt.AlignRight | Qt.AlignVCenter, self.txt)
-        print(self.textRect.width())
-        '''
-        while self.textRect.width() > self.width():
-            print(self.textRect.width())
-            self.textRect = painter.drawText(QRect(0, -7, self.width(), 25), Qt.AlignHCenter | Qt.AlignVCenter, self.txt[1:])
-        '''
-        if self.width() != 1:
-
-            # 如果绘制文本宽度大于控件显示宽度，准备滚动：
-            painter.setPen(QColor('Green'))
-            painter.drawText(QRect(self.newX, -7, self.textRect.width(), 25), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
-            # 每150ms毫秒滚动一次
-            self.t.start(100)
-        else:
-
-            # 如果绘制文本宽度小于控件宽度，不需要滚动，文本居中对齐
-            painter.setPen(QColor('Green'))
-            self.textRect = painter.drawText(QRect(0, -7, self.width(), 25), Qt.AlignHCenter | Qt.AlignVCenter, self.txt)
-            self.t.stop()
 
 
 class Window(QWidget):
@@ -79,31 +38,29 @@ class Window(QWidget):
         self.initUI()
 
     def initUI(self):
-        desktop = QApplication.desktop()
+        self.desktop = QApplication.desktop()
         self.w = QTimer()
         self.w.timeout.connect(self.changeTxt)
-
+        '''
         self.scrollLabel = scrollTextLabel()
         # self.scrollLabel.setAlignment(Qt.AlignRight)
         self.scrollLabel.setFixedWidth(desktop.width() / 2 - 10)
         self.scrollLabel.setText('这')
+        '''
 
-        self.gbox = QVBoxLayout()
-        self.gbox.addWidget(self.scrollLabel)
-        self.setLayout(self.gbox)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        tl = scrollTextLabel('这个好', self)
+        tl.move(self.desktop.width() / 2 - 50, 10)
 
-        # self.setAttribute(Qt.WA_TranslucentBackground, True)
-        # self.setWindowFlags(Qt.FramelessWindowHint)
-
-        self.setGeometry(0, 0, desktop.width() / 2, 100)
+        self.setGeometry(0, 0, self.desktop.width() / 2, 100)
         self.setWindowTitle('浏览')
-        self.w.start(1000)
+
         self.show()
+        self.w.start(1000)
 
     def changeTxt(self):
-        print(self.scrollLabel.getText())
-        self.scrollLabel.setText(self.scrollLabel.getText() + '这')
-
+        pass
 
 
 if __name__ == '__main__':
