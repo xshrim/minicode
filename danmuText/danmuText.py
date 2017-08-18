@@ -7,27 +7,38 @@ from PyQt5.QtWidgets import *
 class scrollTextLabel(QLabel):
     def __init__(self, s, parent=None):
         super(scrollTextLabel, self).__init__(parent)
+        self.setAlignment(Qt.AlignLeft)
         self.txt = s
         self.setFixedWidth(100)
         self.t = QTimer()
         self.font = QFont('微软雅黑, verdana', 10)
         self.t.timeout.connect(self.changeTxtPosition)
-        self.t.start(100)
+        self.update()
+
+    def getText(self):
+        return self.txt
+
+    def setText(self, s):
+        if s is not None and s.strip() != '':
+            self.txt = s
+            self.t.start(30)
 
     def changeTxtPosition(self):
-        print(self.pos().x())
-        if self.pos().x() <= 0:
-            self.hide()
-            self.t.stop()
-        else:
-            self.move(self.pos().x() - 5, self.pos().y())
+        if self.txt is not None and self.txt.strip() != '':
+            if self.pos().x() <= 0:
+                # self.hide()
+                self.txt = ''
+                self.t.stop()
+                # self.move(self.desktop.width() / 2 - 50, self.pos().y())
+            else:
+                self.move(self.pos().x() - 5, self.pos().y())
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setFont(self.font)
         painter.setPen(QColor('red'))
-        self.textRect = painter.drawText(QRect(0, -7, self.width(), 25), Qt.AlignRight | Qt.AlignVCenter, self.txt)
+        self.textRect = painter.drawText(QRect(0, -7, self.width(), 25), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
 
 
 class Window(QWidget):
@@ -50,16 +61,19 @@ class Window(QWidget):
 
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint)
-        tl = scrollTextLabel('这个好', self)
-        tl.move(self.desktop.width() / 2 - 50, 10)
+
+        self.tl = scrollTextLabel('', self)
+        # tl.setText('这是什么鬼')
+        self.tl.move(self.desktop.width() / 2 - 50, 10)
 
         self.setGeometry(0, 0, self.desktop.width() / 2, 100)
         self.setWindowTitle('浏览')
 
         self.show()
-        self.w.start(1000)
+        self.w.start(100)
 
     def changeTxt(self):
+        self.tl.setText('这是什么鬼')
         pass
 
 
