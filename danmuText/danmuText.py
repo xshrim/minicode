@@ -1,6 +1,7 @@
 import sys
 import time
 import random
+import win32gui
 from danmu import DanMuClient
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -71,7 +72,7 @@ class Worker(QThread):
             # self.item_changed_signal.emit(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
             # print(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
 
-        dmc = DanMuClient('https://www.douyu.com/493462')
+        dmc = DanMuClient('https://www.douyu.com/418666')
         if not dmc.isValid():
             print('Url not valid')
 
@@ -130,9 +131,9 @@ class Window(QWidget):
 
         while len(self.items) < 100:
             self.items.append(scrollTextLabel('', self))
-            self.items[-1].move(self.desktop.width() / 2 - 50, random.choice([10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340, 370, 400, 430, 460, 490]))
+            self.items[-1].move(self.desktop.width() - 50, random.choice([10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340, 370, 400, 430, 460, 490]))
 
-        self.setGeometry(0, 0, self.desktop.width() / 2, 550)
+        self.setGeometry(0, 0, self.desktop.width(), 550)
         self.setWindowTitle('浏览')
 
         self.show()
@@ -145,7 +146,7 @@ class Window(QWidget):
         # self.addItem('hhh')
         eitem = [item for item in self.items if item.getText() == '']
         for titem in eitem:
-            titem.move(self.desktop.width() / 2 - 50, titem.pos().y())
+            titem.move(self.desktop.width() - 50, titem.pos().y())
         if len(eitem) > 0:
             citem = random.choice(eitem)
             citem.setText(text)
@@ -154,16 +155,29 @@ class Window(QWidget):
         # self.addItem('hhh')
         eitem = [item for item in self.items if item.getText() == '']
         for titem in eitem:
-            titem.move(self.desktop.width() / 2 - 50, titem.pos().y())
+            titem.move(self.desktop.width() - 50, titem.pos().y())
         if len(eitem) > 0:
             citem = random.choice(eitem)
             citem.setText('这是什么鬼')
 
-
+def windowEnumerationHandler(hwnd, top_windows):
+    top_windows.append((hwnd, win32gui.GetWindowText(hwnd)))
+ 
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     window = Window()
+
+    top_windows = []
+    win32gui.EnumWindows(windowEnumerationHandler, top_windows)
+    for i in top_windows:
+        print(i)
+        if "浏览" in i[1].lower():
+            print(i)
+            win32gui.ShowWindow(i[0],5)
+            win32gui.SetForegroundWindow(i[0])
+            win32gui.SetWindowPos(i[0], -1, 0, 0, 0, 0, 3)
+            break
     sys.exit(app.exec_())
 '''
 from PyQt5.QtGui import *
