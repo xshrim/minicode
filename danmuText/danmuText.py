@@ -1,5 +1,7 @@
 import sys
+import time
 import random
+from danmu import DanMuClient
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -10,9 +12,10 @@ class scrollTextLabel(QLabel):
         super(scrollTextLabel, self).__init__(parent)
         self.setAlignment(Qt.AlignLeft)
         self.txt = s
+        self.setFixedHeight(30)
         self.setFixedWidth(100)
         self.t = QTimer()
-        self.font = QFont('微软雅黑, verdana', 10)
+        self.font = QFont('微软雅黑, verdana', 15, QFont.Bold)
         self.t.timeout.connect(self.changeTxtPosition)
         self.update()
 
@@ -22,7 +25,15 @@ class scrollTextLabel(QLabel):
     def setText(self, s):
         if s is not None and s.strip() != '':
             self.txt = s
-            self.t.start(30)
+            if len(s) < 10:
+                self.setFixedWidth(200)
+            elif len(s) < 20:
+                self.setFixedWidth(400)
+            elif len(s) < 30:
+                self.setFixedWidth(600)
+            else:
+                self.setFixedWidth(800)
+            self.t.start(50)
 
     def changeTxtPosition(self):
         if self.txt is not None and self.txt.strip() != '':
@@ -38,8 +49,51 @@ class scrollTextLabel(QLabel):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setFont(self.font)
-        painter.setPen(QColor('red'))
-        self.textRect = painter.drawText(QRect(0, -7, self.width(), 25), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
+        painter.setPen(QColor('green'))
+        self.textRect = painter.drawText(QRect(0, -7, self.width(), 30), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
+
+
+class Worker(QThread):
+
+    item_changed_signal = pyqtSignal(str)
+
+    def __init__(self, total=0, parent=None):
+        super().__init__(parent)
+        self.total = total
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        def pp(msg):
+            self.item_changed_signal.emit(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
+            self.sleep(1)
+            # self.item_changed_signal.emit(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
+            # print(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
+
+        dmc = DanMuClient('https://www.douyu.com/493462')
+        if not dmc.isValid():
+            print('Url not valid')
+
+        @dmc.danmu
+        def danmu_fn(msg):
+            pp(msg['Content'])
+            # pp('[%s] %s' % (msg['NickName'], msg['Content']))
+
+        @dmc.gift
+        def gift_fn(msg):
+            pass
+            # pp('[%s] sent a gift!' % msg['NickName'])
+
+        @dmc.other
+        def other_fn(msg):
+            pass
+            # pp('Other message received')
+
+        dmc.start(blockThread=True)
+        # for i in range(self.total):
+        #    self.item_changed_signal.emit(str(i))
+        #    self.sleep(1)
 
 
 class Window(QWidget):
@@ -52,8 +106,8 @@ class Window(QWidget):
     def initUI(self):
         self.desktop = QApplication.desktop()
         self.items = []
-        self.w = QTimer()
-        self.w.timeout.connect(self.changeTxt)
+        # self.w = QTimer()
+        # self.w.timeout.connect(self.changeTxt)
         '''
         self.scrollLabel = scrollTextLabel()
         # self.scrollLabel.setAlignment(Qt.AlignRight)
@@ -76,13 +130,25 @@ class Window(QWidget):
 
         while len(self.items) < 100:
             self.items.append(scrollTextLabel('', self))
-            self.items[-1].move(self.desktop.width() / 2 - 50, random.choice([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]))
+            self.items[-1].move(self.desktop.width() / 2 - 50, random.choice([10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340, 370, 400, 430, 460, 490]))
 
-        self.setGeometry(0, 0, self.desktop.width() / 2, 200)
+        self.setGeometry(0, 0, self.desktop.width() / 2, 550)
         self.setWindowTitle('浏览')
 
         self.show()
-        self.w.start(1000)
+        self.thread = Worker(10)
+        self.thread.item_changed_signal.connect(self.showDanmu)
+        self.thread.start()
+        # self.w.start(1000)
+
+    def showDanmu(self, text):
+        # self.addItem('hhh')
+        eitem = [item for item in self.items if item.getText() == '']
+        for titem in eitem:
+            titem.move(self.desktop.width() / 2 - 50, titem.pos().y())
+        if len(eitem) > 0:
+            citem = random.choice(eitem)
+            citem.setText(text)
 
     def changeTxt(self):
         # self.addItem('hhh')
