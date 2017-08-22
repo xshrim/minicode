@@ -1,4 +1,5 @@
 import sys
+import random
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -50,6 +51,7 @@ class Window(QWidget):
 
     def initUI(self):
         self.desktop = QApplication.desktop()
+        self.items = []
         self.w = QTimer()
         self.w.timeout.connect(self.changeTxt)
         '''
@@ -62,19 +64,34 @@ class Window(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
-        self.tl = scrollTextLabel('', self)
+        '''
+        self.tl0 = scrollTextLabel('', self)
         # tl.setText('这是什么鬼')
-        self.tl.move(self.desktop.width() / 2 - 50, 10)
+        self.tl0.move(self.desktop.width() / 2 - 50, 10)
 
-        self.setGeometry(0, 0, self.desktop.width() / 2, 100)
+        self.tl1 = scrollTextLabel('', self)
+        # tl.setText('这是什么鬼')
+        self.tl1.move(self.desktop.width() / 2 - 50, 20)
+        '''
+
+        while len(self.items) < 100:
+            self.items.append(scrollTextLabel('', self))
+            self.items[-1].move(self.desktop.width() / 2 - 50, random.choice([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]))
+
+        self.setGeometry(0, 0, self.desktop.width() / 2, 200)
         self.setWindowTitle('浏览')
 
         self.show()
-        self.w.start(100)
+        self.w.start(1000)
 
     def changeTxt(self):
-        self.tl.setText('这是什么鬼')
-        pass
+        # self.addItem('hhh')
+        eitem = [item for item in self.items if item.getText() == '']
+        for titem in eitem:
+            titem.move(self.desktop.width() / 2 - 50, titem.pos().y())
+        if len(eitem) > 0:
+            citem = random.choice(eitem)
+            citem.setText('这是什么鬼')
 
 
 if __name__ == '__main__':
