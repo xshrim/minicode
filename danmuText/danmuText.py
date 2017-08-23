@@ -13,7 +13,7 @@ class scrollTextLabel(QLabel):
         super(scrollTextLabel, self).__init__(parent)
         self.setAlignment(Qt.AlignLeft)
         self.txt = s
-        self.setFixedHeight(30)
+        self.setFixedHeight(35)
         self.setFixedWidth(100)
         self.t = QTimer()
         self.font = QFont('微软雅黑, verdana', 15, QFont.Bold)
@@ -51,16 +51,16 @@ class scrollTextLabel(QLabel):
         painter = QPainter(self)
         painter.setFont(self.font)
         painter.setPen(QColor('green'))
-        self.textRect = painter.drawText(QRect(0, -7, self.width(), 30), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
+        self.textRect = painter.drawText(QRect(0, -7, self.width(), 35), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
 
 
 class Worker(QThread):
 
     item_changed_signal = pyqtSignal(str)
 
-    def __init__(self, total=0, parent=None):
+    def __init__(self, url='', parent=None):
         super().__init__(parent)
-        self.total = total
+        self.url = url
 
     def __del__(self):
         self.wait()
@@ -72,7 +72,7 @@ class Worker(QThread):
             # self.item_changed_signal.emit(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
             # print(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
 
-        dmc = DanMuClient('https://www.douyu.com/418666')
+        dmc = DanMuClient(self.url)
         if not dmc.isValid():
             print('Url not valid')
 
@@ -105,14 +105,18 @@ class Window(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.desktop = QApplication.desktop()
         self.items = []
+        self.desktop = QApplication.desktop()
+        if self.desktop.screenCount() > 1:
+            self.screenWidth = self.desktop.width() / 2
+        else:
+            self.screenWidth = self.desktop.width()
         # self.w = QTimer()
         # self.w.timeout.connect(self.changeTxt)
         '''
         self.scrollLabel = scrollTextLabel()
         # self.scrollLabel.setAlignment(Qt.AlignRight)
-        self.scrollLabel.setFixedWidth(desktop.width() / 2 - 10)
+        self.scrollLabel.setFixedWidth(self.screenWidth - 10)
         self.scrollLabel.setText('这')
         '''
 
@@ -122,22 +126,22 @@ class Window(QWidget):
         '''
         self.tl0 = scrollTextLabel('', self)
         # tl.setText('这是什么鬼')
-        self.tl0.move(self.desktop.width() / 2 - 50, 10)
+        self.tl0.move(self.screenWidth - 50, 10)
 
         self.tl1 = scrollTextLabel('', self)
         # tl.setText('这是什么鬼')
-        self.tl1.move(self.desktop.width() / 2 - 50, 20)
+        self.tl1.move(self.screenWidth - 50, 20)
         '''
 
         while len(self.items) < 100:
             self.items.append(scrollTextLabel('', self))
-            self.items[-1].move(self.desktop.width() - 50, random.choice([10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340, 370, 400, 430, 460, 490]))
+            self.items[-1].move(self.screenWidth, random.choice([10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340, 370, 400, 430, 460, 490]))
 
-        self.setGeometry(0, 0, self.desktop.width(), 550)
+        self.setGeometry(0, 0, self.screenWidth, 550)
         self.setWindowTitle('浏览')
 
         self.show()
-        self.thread = Worker(10)
+        self.thread = Worker('https://www.douyu.com/748396')
         self.thread.item_changed_signal.connect(self.showDanmu)
         self.thread.start()
         # self.w.start(1000)
@@ -146,7 +150,7 @@ class Window(QWidget):
         # self.addItem('hhh')
         eitem = [item for item in self.items if item.getText() == '']
         for titem in eitem:
-            titem.move(self.desktop.width() - 50, titem.pos().y())
+            titem.move(self.screenWidth, titem.pos().y())
         if len(eitem) > 0:
             citem = random.choice(eitem)
             citem.setText(text)
@@ -155,14 +159,16 @@ class Window(QWidget):
         # self.addItem('hhh')
         eitem = [item for item in self.items if item.getText() == '']
         for titem in eitem:
-            titem.move(self.desktop.width() - 50, titem.pos().y())
+            titem.move(self.screenWidth, titem.pos().y())
         if len(eitem) > 0:
             citem = random.choice(eitem)
             citem.setText('这是什么鬼')
 
+
 def windowEnumerationHandler(hwnd, top_windows):
     top_windows.append((hwnd, win32gui.GetWindowText(hwnd)))
- 
+
+
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
@@ -171,10 +177,8 @@ if __name__ == '__main__':
     top_windows = []
     win32gui.EnumWindows(windowEnumerationHandler, top_windows)
     for i in top_windows:
-        print(i)
         if "浏览" in i[1].lower():
-            print(i)
-            win32gui.ShowWindow(i[0],5)
+            win32gui.ShowWindow(i[0], 5)
             win32gui.SetForegroundWindow(i[0])
             win32gui.SetWindowPos(i[0], -1, 0, 0, 0, 0, 3)
             break
