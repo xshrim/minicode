@@ -1,5 +1,4 @@
 import sys
-import time
 import random
 import win32gui
 from danmu import DanMuClient
@@ -9,39 +8,42 @@ from PyQt5.QtWidgets import *
 
 
 class scrollTextLabel(QLabel):
-    def __init__(self, s, parent=None):
+    def __init__(self, txt, txtsize, txtcolor, rate, parent=None):
         super(scrollTextLabel, self).__init__(parent)
         self.setAlignment(Qt.AlignLeft)
-        self.txt = s
-        self.setFixedHeight(35)
+        self.txt = txt
+        self.txtsize = int(txtsize)
+        self.txtcolor = txtcolor
+        self.rate = int(rate)
+        self.setFixedHeight(20)
         self.setFixedWidth(100)
         self.t = QTimer()
-        self.font = QFont('微软雅黑, verdana', 15, QFont.Bold)
+        self.font = QFont('微软雅黑, verdana', self.txtsize, QFont.Bold)
         self.t.timeout.connect(self.changeTxtPosition)
         self.update()
 
     def getText(self):
         return self.txt
 
-    def setText(self, s):
-        if s is not None and s.strip() != '':
-            self.txt = s
-            if len(s) < 10:
-                self.setFixedWidth(200)
-            elif len(s) < 20:
-                self.setFixedWidth(400)
-            elif len(s) < 30:
-                self.setFixedWidth(600)
-            else:
-                self.setFixedWidth(800)
-            self.t.start(50)
+    def setText(self, txt):
+        if txt is not None and txt.strip() != '':
+            self.txt = txt
+            self.setFixedWidth(self.getTextPixel()[0])
+            print(str(self.pos().x()) + ':' + str(self.pos().y()) + '->' + self.txt)
+            self.t.start(self.rate)
+
+    def getTextPixel(self):
+        metrics = QFontMetrics(self.font)
+        return (metrics.width(self.txt), metrics.height())
 
     def changeTxtPosition(self):
         if self.txt is not None and self.txt.strip() != '':
             if self.pos().x() <= 0:
                 # self.hide()
-                self.txt = ''
-                self.t.stop()
+                if len(self.txt) > 0:
+                    self.txt = self.txt[1:]
+                else:
+                    self.t.stop()
                 # self.move(self.desktop.width() / 2 - 50, self.pos().y())
             else:
                 self.move(self.pos().x() - 5, self.pos().y())
@@ -50,8 +52,8 @@ class scrollTextLabel(QLabel):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setFont(self.font)
-        painter.setPen(QColor('green'))
-        self.textRect = painter.drawText(QRect(0, -7, self.width(), 35), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
+        painter.setPen(QColor(self.txtcolor))
+        self.textRect = painter.drawText(QRect(0, -7, self.width(), self.getTextPixel()[1] + 5), Qt.AlignLeft | Qt.AlignVCenter, self.txt)
 
 
 class Worker(QThread):
@@ -68,7 +70,7 @@ class Worker(QThread):
     def run(self):
         def pp(msg):
             self.item_changed_signal.emit(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
-            self.sleep(1)
+            # self.sleep(1)
             # self.item_changed_signal.emit(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
             # print(msg.encode(sys.stdin.encoding, 'ignore').decode(sys.stdin.encoding))
 
@@ -101,16 +103,74 @@ class Window(QWidget):
 
     def __init__(self):
         super().__init__()
-
+        self.initArgs()
         self.initUI()
 
-    def initUI(self):
+    def initArgs(self):
+        self.url = 'https://www.douyu.com/2124270'
+        self.mode = 'danmu'
+        self.fromv = 0
+        self.tov = 300
+        self.color = 'yellow'
+        self.size = 15
+        self.rate = 40
         self.items = []
         self.desktop = QApplication.desktop()
         if self.desktop.screenCount() > 1:
             self.screenWidth = self.desktop.width() / 2
         else:
             self.screenWidth = self.desktop.width()
+        argv = sys.argv[1:]
+        if argv is not None and len(argv) > 0:
+            try:
+                opts, args = getopt.getopt(argv, "hu:m:f:t:c:s:r:", ["url=", "mode=", "from=", "to=", "color=", "size=", "rate="])
+            except getopt.GetoptError:
+                print(
+                    '''Usage: danmuText.py [-u <liveurl>] [-m <danmumode>] [-f <showfrom>] [-t <showto>] [-c <danmucolor>] [-s <danmusize>] [-r <danmurate>]\n
+                    Example: danmuText.py -u https://www.douyu.com/748396 -m danmu -f 0 -t 400 -c green -s 15 -r 50'''
+                )
+                sys.exit(2)
+
+            if len(args) > 0:
+                texts.extend(args)
+            for opt, arg in opts:
+                if opt == '-h':
+                    print(
+                        '''Usage: danmuText.py [-u <liveurl>] [-m <danmumode>] [-f <showfrom>] [-t <showto>] [-c <danmucolor>] [-s <danmusize>] [-r <danmurate>]\n
+                        Example: danmuText.py -u https://www.douyu.com/748396 -m danmu -f 0 -t 400 -c green -s 15 -r 50'''
+                    )
+                    sys.exit(2)
+                if opt in ("-u", "--url"):
+                    self.url = str(arg).replace('\'', '').replace('\"', '').strip()
+                elif opt in ("-m", "--mode"):
+                    self.mode = str(arg).replace('\'', '').replace('\"', '').strip()
+                elif opt in ("-f", "--from"):
+                    self.fromv = int(str(arg).replace('\'', '').replace('\"', '').strip())
+                    if self.fromv < 0:
+                        self.fromv = 0
+                elif opt in ("-t", "--to"):
+                    self.tov = int(str(arg).replace('\'', '').replace('\"', '').strip())
+                    if self.tov > self.screenWidth:
+                        self.tov = self.screenWidth
+                    if self.fromv > self.tov:
+                        self.fromv, self.tov = self.tov, self.fromv
+                    if self.tov - self.fromv < 100:
+                        self.tov = self.fromv + 100
+                elif opt in ("-c", "--color"):
+                    self.color = str(arg).replace('\'', '').replace('\"', '').strip()
+                elif opt in ("-s", "--size"):
+                    self.size = int(str(arg).replace('\'', '').replace('\"', '').strip())
+                    if self.size < 5:
+                        self.size = 5
+                elif opt in ("-r", "--rate"):
+                    self.rate = int(str(arg).replace('\'', '').replace('\"', '').strip())
+                    if self.rate < 1:
+                        self.rate = 1
+                else:
+                    pass
+
+    def initUI(self):
+
         # self.w = QTimer()
         # self.w.timeout.connect(self.changeTxt)
         '''
@@ -133,28 +193,67 @@ class Window(QWidget):
         self.tl1.move(self.screenWidth - 50, 20)
         '''
 
+        fslabel = scrollTextLabel('', self.size, self.color, self.rate, self)
+        fslabel.move(self.screenWidth, 10)
+        self.items.append(fslabel)
+        loc = [10]
+        while loc[-1] < self.tov - self.fromv - fslabel.getTextPixel()[1] - 30:
+            loc.append(loc[-1] + fslabel.getTextPixel()[1] + 10)
         while len(self.items) < 100:
-            self.items.append(scrollTextLabel('', self))
-            self.items[-1].move(self.screenWidth, random.choice([10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340, 370, 400, 430, 460, 490]))
+            self.items.append(scrollTextLabel('', self.size, self.color, self.rate, self))
+            self.items[-1].move(self.screenWidth, random.choice(loc))
 
-        self.setGeometry(0, 0, self.screenWidth, 550)
-        self.setWindowTitle('浏览')
+        self.setGeometry(0, self.fromv, self.screenWidth, self.tov - self.fromv)
+        self.setWindowTitle('爱弹幕')
 
         self.show()
-        self.thread = Worker('https://www.douyu.com/748396')
+        self.thread = Worker(self.url)
         self.thread.item_changed_signal.connect(self.showDanmu)
         self.thread.start()
         # self.w.start(1000)
 
     def showDanmu(self, text):
-        # self.addItem('hhh')
+        sitem = None
         eitem = [item for item in self.items if item.getText() == '']
         for titem in eitem:
             titem.move(self.screenWidth, titem.pos().y())
         if len(eitem) > 0:
-            citem = random.choice(eitem)
-            citem.setText(text)
+            for h in sorted(set([item.pos().y() for item in eitem])):
+                citem = random.choice([item for item in eitem if item.pos().y() == h])
+                tmpitem = [item for item in self.items if item.pos().y() == citem.pos().y() and item.getText() != '']
+                if len(tmpitem) > 0:
+                    mitem = max(tmpitem, key=lambda x: x.pos().x())
+                    if mitem.pos().x() + mitem.getTextPixel()[0] < self.screenWidth:
+                        sitem = citem
+                        break
+                else:
+                    sitem = citem
+                    break
+            '''
+            while True:
+                try:
+                    citem = random.choice(eitem)
+                    tmpitem = [item for item in self.items if item.pos().y() == citem.pos().y() and item.getText() != '']
+                    if len(tmpitem) > 0:
+                        mitem = max(tmpitem, key=lambda x: x.pos().x())
+                        if mitem.pos().x() + mitem.getTextPixel()[0] < self.screenWidth:
+                            break
+                    else:
+                        break
+                except Exception as ex:
+                    print(str(ex))
+            '''
+            if sitem is None:
+                sitem = random.choice([item for item in self.items if item.getText() == ''])
+            sitem.setText(text)
+            '''
+            if sitem is not None:
+                sitem.setText(text)
+            else:
+                print('miss:' + text)
+            '''
 
+    '''
     def changeTxt(self):
         # self.addItem('hhh')
         eitem = [item for item in self.items if item.getText() == '']
@@ -163,6 +262,7 @@ class Window(QWidget):
         if len(eitem) > 0:
             citem = random.choice(eitem)
             citem.setText('这是什么鬼')
+    '''
 
 
 def windowEnumerationHandler(hwnd, top_windows):
@@ -173,11 +273,10 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     window = Window()
-
     top_windows = []
     win32gui.EnumWindows(windowEnumerationHandler, top_windows)
     for i in top_windows:
-        if "浏览" in i[1].lower():
+        if "爱弹幕" in i[1].lower():
             win32gui.ShowWindow(i[0], 5)
             win32gui.SetForegroundWindow(i[0])
             win32gui.SetWindowPos(i[0], -1, 0, 0, 0, 0, 3)
