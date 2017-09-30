@@ -1868,6 +1868,8 @@ def main(argv):
     sproxy = ''
     smthread = 0
     autoloop = False
+    keyword = ''
+    count = -1
     keywords = []
     textwords = []
     filewords = []
@@ -1876,11 +1878,11 @@ def main(argv):
 
     if argv is not None and len(argv) > 0:
         try:
-            opts, args = getopt.getopt(argv, "had:e:t:p:m:u:f:s:", ["dir=", "engine=", "type=", "proxy=", "mthread=", "url=", "file=", "code="])
+            opts, args = getopt.getopt(argv, "had:e:t:p:m:u:f:s:k:c:", ["dir=", "engine=", "type=", "proxy=", "mthread=", "url=", "file=", "code=", "keyword=", "count="])
         except getopt.GetoptError:
             print(
-                '''Usage: avfetch.py [-a] [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>]\n
-                Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862'''
+                '''Usage: avfetch.py [-a] [-d <targetpath>] [-e <engine>] [-t <savetype>] [-p <proxy>] [-m <mthread>] [-u <url>] [-f <filename>] [-s <codes>] [<codes>] [<keyword>] [<count>]\n
+                Example: avfetch.py -d D:/ -e javbus -t file -p socks5@127.0.0.1:1080 -m 5 -u http://www.baidu.com -f a.txt -s ABP-563 SRS-064 SNIS-862 -k 天海つばさ -c -1'''
             )
             sys.exit(2)
 
@@ -1918,11 +1920,21 @@ def main(argv):
                     sys.exit(2)
             elif opt in ("-s", "--code"):
                 texts.append(arg)
+            elif opt in ("-k", "--keyword"):
+                keyword = arg
+            elif opt in ("-c", "--count"):
+                count = arg
             else:
                 pass
         try:
             if autoloop:
                 cliploopFetch()
+            elif keyword != '':
+                if sengine == '' or sengine == 'javbus':
+                    sengine = BTEngine
+                with open(os.path.join(tpath, 'avlist.txt'), 'w') as wf:
+                    for item in keywordlinkFetch(keyword, sengine, count, sproxy):
+                        wf.write(item.link + '\n')
             else:
                 if len(texts) > 0:
                     textwords = avkeywordParse(' '.join(texts), 'code')
