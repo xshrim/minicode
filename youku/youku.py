@@ -118,6 +118,7 @@ class Youku():
                 videos = self.parse_res(res_json)
                 self.video_download(videos)
         except Exception as ex:
+            # print(str(ex))
             print('cookie被禁，现重新获取cookie')
             self.get_cna()
             return self.get_video_info(video_url)
@@ -140,8 +141,12 @@ class Youku():
         这个只是尝试解析，应根据项目需要定制自己要的视频源
         '''
         videos = []
-        head = res_json.get('data').get('show').get('title')
         video = res_json.get('data').get('video')
+        try:
+            head = res_json.get('data').get('show').get('title')
+        except Exception as ex:
+            head = res_json.get('data').get('video').get('title')
+
         # video_title = video.get('title')
         '''
         print('\n''视频标题：', video_title)
