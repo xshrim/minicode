@@ -1932,7 +1932,7 @@ def main(argv):
             elif keyword != '':
                 if sengine == '' or sengine == 'javbus':
                     sengine = BTEngine
-                with open(os.path.join(tpath, 'avlist.txt'), 'w') as wf:
+                with open(os.path.join(tpath, keyword + '.txt'), 'w') as wf:
                     for item in keywordlinkFetch(keyword, sengine, count, sproxy):
                         wf.write(item.link + '\n')
             else:
