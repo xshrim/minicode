@@ -1962,7 +1962,37 @@ if __name__ == "__main__":
 # main(['-d', 'C:/Users/xshrim/Desktop/imgs', '-e', 'javbus', '-t', 'db', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'db', '-m', '20', '-f', 'C:/Users/xshrim/Desktop/av.txt'])
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
-# print(avquickFetch('ipz-371'))
+
+'''
+# 搜索引擎：
+▶btso:https://btso.pw/search/ipz-137/
+javhoo:https://www.javhoo.com/av/ipz-137/
+▶btdb:https://btdb.in/q/ipz-137/
+sukebei:https://sukebei.nyaa.se/?page=search&term=ipz-137&sort=4 (only torrent)
+▶torrentant:http://www.torrentant.com/cn/s/ipz-137?sort=hot (inaccuracy)
+▶btgongchang:http://btgongchang.org/search/MDS-825-first-asc-1
+▶zhongziso:http://www.zhongziso.com/list/ipz-137/1
+btago:http://www.btago.com/e/ipz-371/
+btbook http://www.btwhat.org/
+▶磁力搜 http://www.cilisou.cn/s.php?q=i~p~z~-~3~7~1~&encode_=1
+▶bt蚂蚁 http://www.btanv.com/search/ipz-371-first-asc-1
+▶屌丝懂 http://www.diaosisou.org/list/ipz-371/1
+蜘蛛磁力 http://www.zzcili.org/so/ipz-371-first-asc-1?f=h
+▶bt樱桃 http://www.btcerise.net/search?keyword=ipz-371
+磁力吧 https://www.ciliba.org/s/ipz-371.html
+bt磁力链 http://www.btcar.net/search/ipz-371_ctime_1.html
+▶磁力链接 http://cililiana.com/list/ipz-371/1.html
+▶BTKitty http://btkitty.pet/
+▶btKitty http://www.bttit.com/torrent/ipz-371.html
+▶磁力猪 http://www.cilizhuzhu.org/torrent/ipz-371.html
+bt海 http://www.bthai.net/list/ipz-371-s1d-1.html
+遨游搜 http://www.aoyoso.com/search/ipz-371_ctime_1.html
+▶磁力屋 http://www.ciliwu.top/search-kw-ipz-371-p-1.html
+▶bt兔子 http://www.btrabbit.cc/search/ipz-371.html
+磁力之家 http://www.cilihome.net/word/ipz-371.html
+bt快搜 http://www.btkuai.cc/word/ipz-371.html
+▶阿狸磁力 http://alicili.net/list/ipz-371/1-0-0/
+'''
 
 # for cav in avlinkFetch('ipz-371', 'zhongziso'):
 #    print(cav)
@@ -2183,12 +2213,3 @@ with open(r'D:/Git/minicode/avfetch/avs.txt', 'r', encoding='utf-8') as f:
 # avfullFetch(keywords, 'both', r'C:/Users/xshrim/Desktop/imgss', 'javbus', '')
 
 # cliploopFetch()
-# 搜索引擎：
-# btso:https://btso.pw/search/ipz-137/
-# javhoo:https://www.javhoo.com/av/ipz-137/
-# btdb:https://btdb.in/q/ipz-137/
-# sukebei:https://sukebei.nyaa.se/?page=search&term=ipz-137&sort=4 (only torrent)
-# torrentant:http://www.torrentant.com/cn/s/ipz-137?sort=hot (inaccuracy)
-# btgongchang:http://btgongchang.org/search/MDS-825-first-asc-1
-# zhongziso:http://www.zhongziso.com/list/ipz-137/1
-# btago:http://www.btago.com/e/ipz-371/
