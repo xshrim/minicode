@@ -15,6 +15,8 @@ Pillow       --图像操作库
 openpyxl     --excel读写库
 pexpect      --交互式终端expect的python版
 paramiko     --基于SSH远程登陆库，pexpect之上的封装
+pydictor	 --密码字典生成工具
+cupp		 --密码字典生成工具
 invoke       --基于SSH的应用部署和系统管理库，paramiko之上的封装，fabric的后续版
 psutil       --系统监控和资源管理库
 IPy			 --IP辅助管理库
@@ -37,6 +39,8 @@ pypandoc     --支持多种文件格式的互相转换
 pywin32      --windows的api库
 pyHook       --鼠标键盘监听库
 PyUserInput  --鼠标键盘模拟库
+PyAutoGui    --非常强大的跨平台键鼠模拟库，比PyUserInput更好用
+PyWinAuto    --t提供应用交互控制的跨平台键鼠模拟库，比PyAutoGui更强大
 PyMySQL      --mysql连接库
 cx-Oracle    --oracle连接库
 pysql        --友好的sqlplus替代品

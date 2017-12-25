@@ -235,17 +235,18 @@ for item in vm6data:
 
 
 impData(expData('OA虚拟化.xlsx', '虚拟机统计表', 2, 'A', 'OA虚拟化', 'OA', '110.50.1.15', 'administrator/password'))
-impData(expData('VM6虚拟化.xlsx', '虚拟机统计表', 2, 'A', 'VM6虚拟化', '生产', '35.1.7.101', 'administrator@hrbbvm6.com/Admin@123'))
-#impData(expData('村行虚拟化.xlsx', '虚拟机统计表', 2, 'A', '村行虚拟化', '生产', '116.1.7.6', 'administrator/password@01'))
+impData(expData('北京容灾.xlsx', '虚拟机统计表', 2, 'A', '北京容灾虚拟化', '生产', '118.128.3.110', 'administrator@vsphere.local/P@ssw0rd'))
+impData(expData('村行虚拟化.xlsx', '虚拟机统计表', 2, 'A', '村行虚拟化', '生产', '35.1.7.7', 'administrator@vsphere.local/Admin@123'))
 impData(expData('临时虚拟化.xlsx', '虚拟机统计表', 2, 'A', '临时虚拟化', 'OA', '168.1.10.43', 'administrator/password@01'))
 impData(expData('事中事后国库虚拟化.xlsx', '虚拟机统计表', 2, 'A', '事中事后国库虚拟化', '生产', '118.63.1.53', 'administrator/P@ssw0rd'))
 impData(expData('网银虚拟化.xlsx', '虚拟机统计表', 2, 'A', '网银虚拟化', '生产', '35.8.0.12', 'administrator/root@123'))
-impData(expData('一期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '一期虚拟化', '生产', '50.1.1.180', 'administrator/vmware123'))
-impData(expData('二期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '二期虚拟化', '生产', '50.1.2.20', 'administrator/vmware123'))
-impData(expData('三期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '三期虚拟化', '生产', '35.1.7.26', 'administrator/P@ssw0rd'))
-impData(expData('容灾一期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '容灾一期虚拟化', '生产', '118.63.254.26', 'administrator/password'))
-impData(expData('容灾二期虚拟化.xlsx', '虚拟机统计表', 2, 'A', '容灾二期虚拟化', '生产', '118.63.254.214', 'administrator/vmware123'))
+impData(expData('虚拟化一期.xlsx', '虚拟机统计表', 2, 'A', '一期虚拟化', '生产', '50.1.1.180', 'administrator/vmware123'))
+impData(expData('虚拟化二期.xlsx', '虚拟机统计表', 2, 'A', '二期虚拟化', '生产', '50.1.2.20', 'administrator/vmware123'))
+impData(expData('虚拟化三期.xlsx', '虚拟机统计表', 2, 'A', '三期虚拟化', '生产', '35.1.7.26', 'administrator/P@ssw0rd'))
+impData(expData('容灾一期.xlsx', '虚拟机统计表', 2, 'A', '容灾一期虚拟化', '生产', '118.63.254.26', 'administrator/password'))
+impData(expData('容灾二期.xlsx', '虚拟机统计表', 2, 'A', '容灾二期虚拟化', '生产', '118.63.254.214', 'administrator/vmware123'))
 impData(expData('准生产虚拟化.xlsx', '虚拟机统计表', 2, 'A', '准生产虚拟化', '准生产', '35.1.7.103', 'administrator@zscvm6.com/Root@123'))
+impData(expData('万兆虚拟化.xlsx', '虚拟机统计表', 2, 'A', '万兆虚拟化', '生产', '35.1.7.101', 'administrator@hrbbvm6.com/Admin@123'))
 
 
 

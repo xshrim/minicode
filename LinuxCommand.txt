@@ -1,0 +1,228 @@
+源配置：RPMForge、elrepo、EPEL
+
+
+<命令>
+hydra
+[说明] 多情景登录密码暴力破解
+[示例] hydra -l root -P ans.txt ssh://110.1.1.249
+
+frp
+[说明] 多情景内网穿透工具
+[示例] frps和frpc配合使用
+
+qalc
+[说明] 简单的科学计算器，支持命令行和GUI,全称qalculate
+[示例] qalc -t 1/2
+
+nc
+[说明] 网络界的瑞士军刀，简单可靠的网络工具
+[示例] nc -l 9999
+
+ss
+[说明] 比netstat更强更高效的网络套接字信息显示
+[示例] ss -lt
+
+nmap
+[说明] 强大的网络扫描和嗅探工具
+[示例] nmap -sP 110.1.1.*
+
+ip
+[说明] 比ifconfig更强大的网络状态设置与获取
+[示例] ip a ✧ ip r
+
+mtr
+[说明] 可代替traceroute的增强路由跟踪工具
+[示例] mtr 110.1.1.30
+
+arping
+[说明] 比ping更强的网络连通性测试，支持回显MAC地址
+[示例] arping 110.1.1.1
+
+watch
+[说明] 每隔一段时间监视命令的输出
+[示例] watch ls
+
+time
+[说明] 显示命令执行时间
+[示例] time ps aux
+
+tailf
+[说明] 跟踪显示文件内容更新，等同tail -f
+[示例] tail a.txt
+
+screen
+[说明] 增强终端多窗口切换
+[示例] screen -S wind1
+
+kibitz
+[说明] 终端交互工具，让A用户授权B用户观看自己的操作过程
+[示例] kibitz B
+
+nohup
+[说明] 将任务转入后台并不受当前terminal中断的影响
+[示例] nohup copy a.tar.gz b.tar.gz
+
+stat ✧ file
+[说明] 显示文件和文件系统详细信息
+[示例] stat a.txt ✧ file -s /dev/dm-2
+
+findmnt
+[说明] 可代替mount树状显示mount信息
+[示例] findmnt
+
+sshfs
+[说明] 直接通过ssh将远程目录挂载到本地，无需像nfs一样配置服务端
+[示例] sshfs root@110.1.1.215:/root/ test
+
+jobs
+[说明] 显示后台任务，配合fg、bg、kill命令
+[示例] jobs
+
+pv
+[说明] 监控命令执行进度 ✧ 真人打字般回显
+[示例] pv a.iso > b.iso ✧ echo "Tecmint[dot]com is a community of Linux Nerds and Geeks"|pv -qL 10
+
+progress
+[说明] 为不显示进度的系统命令(cp, mv, tar ...)增加进度显示
+[示例] progress -w
+
+figlet
+[说明] 将文本转化为ascii字符banner
+[示例] figlet HELLO
+
+toilet
+[说明] 将文本转化为更多彩的ascii字符banner
+[示例] toilet HELLO
+
+aview
+[说明] 依托强大的aalib将图片转化为ascii字符显示
+[示例] aview
+
+screenfetch
+[说明] 显示炫酷的带linux标志的系统信息
+[示例] screenfetch
+
+ccze
+[说明] 美化日志的输出结果
+[示例] tailf /var/log/syslog | ccze
+wall
+[说明] 向所有shell会话发送消息
+[示例] wall 'aa'
+
+ascii
+[说明] 显示ascii码表
+[示例] ascii
+
+lsof
+[说明] 列出打开的文件
+[示例] lsof -p 23413
+
+pidof
+[说明] 显示进程号
+[示例]pidof bash
+
+ldd ✧ objdump ✧ pldd /pmap
+[说明] 根据程序路径或者进程号列出其依赖的共享库
+[示例] ldd /usr/bin/ssh ✧ objdump -p /usr/bin/git ✧ pldd 1139 ✧ pmap 1139
+
+nl
+[说明] 为输出增加行号
+[示例] cat a.txt|nl
+
+sed
+[说明] 按行处理文件内容，支持直接改变文件内容
+[示例] echo 'pray' | sed 's/a/e/g' 
+
+awk
+[说明] 强大的可编程文件内容处理工具
+[示例] cat /etc/passwd | awk  -F ':'  '{print $1}'  
+
+xargs
+[说明] 将管道的输入作为命令参数
+[示例] ps aux | xargs -L 1 echo
+
+comm
+[说明] 与diff相反，显示两个文件中的相同行，支持交集差集
+[示例] comm a.txt b.txt
+
+seq
+[说明] 以指定增量从首数开始打印数字到尾数
+[示例] seq 1 3 10
+
+strace
+[说明] 跟踪进程执行时的系统调用和所接收的信号
+[示例] strace cat /dev/null 
+
+dos2unix
+[说明] 将DOS格式文本文件转换成UNIX格式
+[示例] dos2unix a.txt
+
+cloc
+[说明] 统计代码行数
+[示例] cloc ./
+
+ncdu
+[说明] 可视化磁盘占用分析器
+[示例] ncdu /root
+
+dmidecode
+[说明] 显示设备序列号等硬件信息
+[示例] dmidecode -t 1
+
+top ✧ htop ✧ glances ✧ dstat ✧ saidar ✧ inxi
+[说明] 各种强大的系统监视工具
+[示例] glances dstat saidar inxi
+
+dict ✧ sdcv ✧ wd
+[说明] 各种命令行词典工具
+[示例] dict mystery ✧ sdcv mystery ✧ wd -s mystery
+
+
+
+<技巧>
+mkdir -p new_folder/{folder_1,folder_2,folder_3,folder_4,folder_5}
+一次性创建多个目录
+
+echo /home/user/1/ /home/user/2/ /home/user/3/ | xargs -n 1  cp /home/user/my_file.txt
+一次将文件复制到多个目录
+
+find `pwd` -maxdepth 1 or  ls |sed "s:^:`pwd`/:g"
+显示当前目录下文件的完整路径
+
+> /path-to-file/huge_file.log
+清空文件内容，比rm删除大文件快
+
+CTRL+l
+清屏快捷键，效果同clear命令
+
+CTRL+a and CTRL+e
+跳转到命令的首尾
+
+CTRL+p and CTRL+n
+显示前一条命令，后一条命令
+
+ALT+.
+列出上一个命令的最后一个参数
+
+cd -
+跳转到上一个目录
+
+ls /usr/{,local}/bin and cp filename{,.bak}
+Brace Expansion列出"/usr/bin"和"/usr/local/bin"下所有文件、快速备份文件
+
+!ll or !! or !n or !-n
+执行上一个、第N个、倒数第N个命令
+
+!str:^ and !str:$ and !str:n and !^ and !$ 
+获取str命令的第一个、最后一个、第N个参数，上一个命令的第一个、最后一个参数
+
+ptyhon -m SimpleHTTPServer  or python3 -m http.server
+快速搭建http服务器
+
+
+
+
+
+
+
+
