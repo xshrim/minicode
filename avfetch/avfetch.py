@@ -344,7 +344,7 @@ def charDetect(data):
     return ''
 
 
-def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('btso', 'https://btso.pw/')], proxy=''):
+def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('btso', 'https://btso.pw/'), ('zhongziso', 'http://www.zhongziso.com/')], proxy=''):
     if type == 'ie':
         for ie in ielist:
             if detectPage(url=ie[1], proxy=proxy):
@@ -384,7 +384,7 @@ def detectPage(url, timeout=2, retry=2, sleep=0, proxy=''):
     # ('Accept-Encoding','gzip,deflate,sdch'),
     # ('Connection','close'),
     # ('Referer',None )]#注意如果依然不能抓取的话，这里可以设置抓取网站的host
-    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'close'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh,en-US,en,*;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://www.deviantart.com/whats-hot/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
+    headers = [('Host', 'img0.imgtn.bdimg.com'), ('Connection', 'close'), ('Cache-Control', 'max-age=0'), ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'), ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'), ('Accept-Encoding', '*'), ('Accept-Language', 'zh-CN,zh,en-US,en,*;q=0.8'), ('If-None-Match', '90101f995236651aa74454922de2ad74'), ('Referer', 'http://image.baidu.com/'), ('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT')]
 
     opener = request.build_opener()
     opener.addheaders = headers
@@ -397,7 +397,7 @@ def detectPage(url, timeout=2, retry=2, sleep=0, proxy=''):
             return True
         except Exception as ex:
             opener.close()
-            if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
+            if '403' in str(ex) or '404' in str(ex) or '502' in str(ex) or '11001'in str(ex):
                 return False
         i -= 1
     return False
@@ -485,7 +485,7 @@ def getHTML(url, timeout=5, retry=3, sleep=0, proxy=''):
         except Exception as ex:
             opener.close()
             logging.debug('getHTML:' + str(ex))
-            if '403' in str(ex) or '404' in str(ex) or '11001'in str(ex):
+            if '403' in str(ex) or '404' in str(ex) or '502' in str(ex) or '11001'in str(ex):
                 break
         i -= 1
     return contents
@@ -1964,8 +1964,16 @@ if __name__ == "__main__":
 # main(['-d', 'C:/Users/xshrim/Desktop/imgss', '-e', 'javbus', '-t', 'file', '-s', 'IPZ-137', 'IPZ820 MDS-825 FSET-337 F-123 FS-1'])
 
 '''
+InfoEngine = choseEngine('ie')
+BTEngine = choseEngine('be')
+for item in keywordlinkFetch('天海つばさ', BTEngine):
+    print(item)
+'''
+
+'''
 # 搜索引擎：
 ▶btso:https://btso.pw/search/ipz-137/
+▶btsoso:http://www.sosobtt.com/s/ipz-371/
 javhoo:https://www.javhoo.com/av/ipz-137/
 ▶btdb:https://btdb.in/q/ipz-137/
 sukebei:https://sukebei.nyaa.se/?page=search&term=ipz-137&sort=4 (only torrent)
