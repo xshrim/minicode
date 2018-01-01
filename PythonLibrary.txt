@@ -45,4 +45,5 @@ PyMySQL      --mysql连接库
 cx-Oracle    --oracle连接库
 pysql        --友好的sqlplus替代品
 pyqt5        --python的QT图形库
+jupyter      --交互式笔记本
 
