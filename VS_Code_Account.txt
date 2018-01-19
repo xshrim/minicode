@@ -2,5 +2,5 @@ vsce发布账号：xshrim
 vsce发布邮箱：xshrim@outlook.com
 vsce发布Token：23t2do2moh3d4bs4azcd756ifv6na7kjmljuftmhjak7e5zkkqta
 
-vs code同步git token：ca271f349209c950814b665fb7810ed9781a991b
-vs code同步gist id  ：a44f1450bf201703ee9586d6ff2ea245
+vs code同步git token：e9647a21fbe0c694283c6503829a54b97297839a
+vs code同步gist id  ：89eb70286b7b7b2d52dcba1e491235a6
