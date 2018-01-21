@@ -344,7 +344,7 @@ def charDetect(data):
     return ''
 
 
-def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('btso', 'https://btso.pw/'), ('zhongziso', 'http://www.zhongziso.com/')], proxy=''):
+def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('zhongziso', 'https://www.zhongziso.com/'), ('btso', 'https://btso.pw/')], proxy=''):
     if type == 'ie':
         for ie in ielist:
             if detectPage(url=ie[1], proxy=proxy):
@@ -397,6 +397,7 @@ def detectPage(url, timeout=2, retry=2, sleep=0, proxy=''):
             return True
         except Exception as ex:
             opener.close()
+            logging.debug('getHTML:' + str(ex))
             if '403' in str(ex) or '404' in str(ex) or '502' in str(ex) or '11001'in str(ex):
                 return False
         i -= 1
@@ -1111,7 +1112,7 @@ def avlinkFetch(code, engine=BTEngine, proxy=''):
                     logging.debug('avlinkFetch:javhoo:' + str(ex))
                     continue
         if engine == 'zhongziso':
-            data = PyQuery(getHTML('http://www.zhongziso.com/list/' + code + '/1', 5, 5, 1, proxy))
+            data = PyQuery(getHTML('https://www.zhongziso.com/list/' + code + '/1', 5, 5, 1, proxy))
             content = data('div.inerTop')
             items = content('table[class="table table-bordered table-striped"]')
             for item in items.items():
@@ -1605,7 +1606,7 @@ def keywordlinkFetch(keyword, engine=BTEngine, limit=-1, proxy='', sprint=True):
                     break
         if engine == 'zhongziso':
             pidx = 1
-            baseurl = 'http://www.zhongziso.com/list/' + keyword + '/'
+            baseurl = 'https://www.zhongziso.com/list/' + keyword + '/'
             while True:
                 try:
                     if limit != -1 and int(limit) <= len(klinks):
