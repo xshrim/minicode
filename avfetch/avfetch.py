@@ -344,7 +344,7 @@ def charDetect(data):
     return ''
 
 
-def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('btso', 'https://btso.pw/'), ('zhongziso', 'http://www.zhongziso.com/')], proxy=''):
+def choseEngine(type='ie', ielist=[('javbus', 'https://www.javbus.com'), ('javhoo', 'https://www.javhoo.com')], belist=[('zhongzidi', 'https://www.zhongzidi.com/'), ('btso', 'https://btso.pw/')], proxy=''):
     if type == 'ie':
         for ie in ielist:
             if detectPage(url=ie[1], proxy=proxy):
@@ -397,6 +397,7 @@ def detectPage(url, timeout=2, retry=2, sleep=0, proxy=''):
             return True
         except Exception as ex:
             opener.close()
+            logging.debug('getHTML:' + str(ex))
             if '403' in str(ex) or '404' in str(ex) or '502' in str(ex) or '11001'in str(ex):
                 return False
         i -= 1
@@ -867,7 +868,7 @@ def avinfoFetch(url, engine=InfoEngine, proxy=''):
             coverlink = str(content('a.bigImage').attr('href')).strip()
             cover = getHTML(coverlink, 5, 5, 0, proxy)
             try:
-                link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
+                link = avlinkFilter(avlinkFetch(code, 'zhongzidi', proxy)).link
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
@@ -921,7 +922,7 @@ def avinfoFetch(url, engine=InfoEngine, proxy=''):
             coverlink = str(content('div.project-content')('img[class="alignnone size-full"]').attr('src')).strip()
             cover = getHTML(coverlink, 5, 5, 0, proxy)
             try:
-                link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
+                link = avlinkFilter(avlinkFetch(code, 'zhongzidi', proxy)).link
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
@@ -952,7 +953,7 @@ def avinfoFetch(url, engine=InfoEngine, proxy=''):
             coverlink = ''
             cover = b''
             try:
-                link = avlinkFilter(avlinkFetch(code, 'zhongziso', proxy)).link
+                link = avlinkFilter(avlinkFetch(code, 'zhongzidi', proxy)).link
             except Exception as ex:
                 logging.debug('#' * 32 + '  No magnet link!  Show info page.  ' + '#' * 32)
                 link = 'page:' + url
@@ -1110,8 +1111,8 @@ def avlinkFetch(code, engine=BTEngine, proxy=''):
                 except Exception as ex:
                     logging.debug('avlinkFetch:javhoo:' + str(ex))
                     continue
-        if engine == 'zhongziso':
-            data = PyQuery(getHTML('http://www.zhongziso.com/list/' + code + '/1', 5, 5, 1, proxy))
+        if engine == 'zhongzidi':
+            data = PyQuery(getHTML('https://www.zhongzidi.com/list/' + code + '/1', 5, 5, 1, proxy))
             content = data('div.inerTop')
             items = content('table[class="table table-bordered table-striped"]')
             for item in items.items():
@@ -1133,7 +1134,7 @@ def avlinkFetch(code, engine=BTEngine, proxy=''):
                     clink = str(item('tr:eq(1)')('td:eq(3)')('a').attr('href')).strip()
                     avlinks.append(avlink(code, head, time, hot, size, clink, engine))
                 except Exception as ex:
-                    logging.debug('avlinkFetch:zhongziso:' + str(ex))
+                    logging.debug('avlinkFetch:zhongzidi:' + str(ex))
                     continue
         '''
         if engine == 'btago':
@@ -1603,9 +1604,9 @@ def keywordlinkFetch(keyword, engine=BTEngine, limit=-1, proxy='', sprint=True):
                 except Exception as ex:
                     logging.warning("keywordlinkFetch:torrentant:" + str(ex))
                     break
-        if engine == 'zhongziso':
+        if engine == 'zhongzidi':
             pidx = 1
-            baseurl = 'http://www.zhongziso.com/list/' + keyword + '/'
+            baseurl = 'https://www.zhongzidi.com/list/' + keyword + '/'
             while True:
                 try:
                     if limit != -1 and int(limit) <= len(klinks):
@@ -1641,7 +1642,7 @@ def keywordlinkFetch(keyword, engine=BTEngine, limit=-1, proxy='', sprint=True):
                                 print(al.title.center(100, '*'))
                                 print(al)
                         except Exception as ex:
-                            logging.debug('keywordlinkFetch:zhongziso:' + str(ex))
+                            logging.debug('keywordlinkFetch:zhongzidi:' + str(ex))
                             continue
                     pagination = data('ul[class="pagination"]')
                     if pagination is not None and str(pagination).strip() != '':
@@ -1661,7 +1662,7 @@ def keywordlinkFetch(keyword, engine=BTEngine, limit=-1, proxy='', sprint=True):
                     else:
                         break
                 except Exception as ex:
-                    logging.warning("keywordlinkFetch:zhongziso:" + str(ex))
+                    logging.warning("keywordlinkFetch:zhongzidi:" + str(ex))
                     break
         '''
         if engine == 'btago':
@@ -1979,7 +1980,7 @@ javhoo:https://www.javhoo.com/av/ipz-137/
 sukebei:https://sukebei.nyaa.se/?page=search&term=ipz-137&sort=4 (only torrent)
 ▶torrentant:http://www.torrentant.com/cn/s/ipz-137?sort=hot (inaccuracy)
 ▶btgongchang:http://btgongchang.org/search/MDS-825-first-asc-1
-▶zhongziso:http://www.zhongziso.com/list/ipz-137/1
+▶zhongzidi:http://www.zhongzidi.com/list/ipz-137/1
 btago:http://www.btago.com/e/ipz-371/
 btbook http://www.btwhat.org/
 ▶磁力搜 http://www.cilisou.cn/s.php?q=i~p~z~-~3~7~1~&encode_=1
@@ -2002,7 +2003,7 @@ bt快搜 http://www.btkuai.cc/word/ipz-371.html
 ▶阿狸磁力 http://alicili.net/list/ipz-371/1-0-0/
 '''
 
-# for cav in avlinkFetch('ipz-371', 'zhongziso'):
+# for cav in avlinkFetch('ipz-371', 'zhongzidi'):
 #    print(cav)
 # print(avlinkFilter(avlinkFetch('ipz-101', 'btso')).title)
 

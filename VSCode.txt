@@ -1,3 +1,0 @@
-vsce发布账号：xshrim
-vsce发布邮箱：xshrim@outlook.com
-vsce发布Token：23t2do2moh3d4bs4azcd756ifv6na7kjmljuftmhjak7e5zkkqta
