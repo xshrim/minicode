@@ -224,7 +224,10 @@ ptyhon -m SimpleHTTPServer  or python3 -m http.server
 快速搭建http服务器
 
 
+<其他>
 
+Visual Studio Code 的 Background 插件失效解决办法:
+sudo chmod o+w /usr/share/code/resources/app/out/vs/workbench/workbench.main.css
 
 
 
