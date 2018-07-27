@@ -1,0 +1,72 @@
+<html xmlns="http://www.w3.org/1999/xhtml " lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <script type=text/javascript src="{{ url_for( 'static', filename='jquery.js' ) }} ">
+    </script>
+    <script type=text/javascript src="{{ url_for( 'static', filename='socket.io.js' ) }} ">
+    </script>
+    <script type=text/javascript>
+        $(function () {
+            $('button#fetch').bind('click', function () {
+                $.getJSON('/fetch', {
+                    symbol: $('input[name="sname"]').val()
+                }, function (data) {
+                    $("td").remove();
+                    if (data.sid != "null") {
+                        $("#stutable").append("<tr><td>" + data.sid + "</td><td>" + data.name +
+                            "</td><td>" + data.score + "</td></tr>");
+                        $("#stutable").show();
+                    } else {
+                        $("#stutable").hide();
+                    }
+                });
+            });
+            var socket = io.connect('http://192.168.103.211:5100/test');
+            socket.on('my response', function (msg) {
+                $('#log').append('<p>Received: ' + msg.data + '</p>');
+            });
+            $('form#emit').submit(function (event) {
+                socket.emit('my event', {
+                    data: $('#emitdata').val()
+                });
+                return false;
+            });
+            $('form#broadcast').submit(function (event) {
+                socket.emit('my broadcast event', {
+                    data: $('#broadcastdata').val()
+                });
+                return false;
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <h1>jQuery Example</h1>
+    <p>
+        <span>Name: </span>
+        <input type=text size=5 name=sname>
+        <button type="button" id=fetch>Fetch</button>
+        <p>
+            <div id=studiv>
+                <table id=stutable hidden="hidden" border=1>
+                    <tr>
+                        <th>编号</th>
+                        <th>姓名</th>
+                        <th>成绩</th>
+                    </tr>
+                </table>
+            </div>
+            <form name="input" action="" id=emit method="get">
+                <input type="text" id="emitdata" value="Mickey" size="20">
+                <input type="submit" value=emit></input>
+            </form>
+            <form name="input" action="" id=broadcast method="get">
+                <input type="text" id="broadcastdata" value="Mouse" size="20">
+                <input type="submit" value=broadcast></input>
+            </form>
+            <div id='log'></div>
+</body>
+
+</html>
