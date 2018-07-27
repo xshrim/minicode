@@ -9,6 +9,7 @@ fuzzywuzzy                          --字符串模糊匹配库
 qrcode                              --二维码生成库
 whoosh                              --全文检索库
 httpie                              --http命令行客户端
+wordcloud                           --词云
 you-get                             --视频站视频下载库
 youtube-dl                          --视频站视频下载库
 itchat                              --微信API
@@ -52,5 +53,6 @@ pysql                               --友好的sqlplus替代品
 mycli                               --友好的mysql命令行替代品
 pgcli                               --友好的psql(postgresql命令行)替代品
 pyqt5                               --python的QT图形库
+keras                               --高层神经网络API
 jupyter                             --交互式笔记本
 
