@@ -9,6 +9,16 @@ import argparse
 from keras.applications import vgg16
 from keras import backend as K
 
+'''
+pip3 install keras
+pip3 install h5py
+pip3 install numpy
+pip3 install scipy
+pip3 install tensorflow
+
+download vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5
+'''
+
 parser = argparse.ArgumentParser(description='Neural style transfer with Keras.')
 parser.add_argument('base_image_path', metavar='base', type=str, help='Path to the image to transform.')
 parser.add_argument('style_reference_image_path', metavar='ref', type=str, help='Path to the style reference image.')
