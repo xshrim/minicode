@@ -6,6 +6,8 @@ yapf                                --python代码格式化
 jieba                               --中文分词库
 pypinyin                            --中文转拼音库
 fuzzywuzzy                          --字符串模糊匹配库
+python-Levenshtein                  --字符串编辑距离库
+difflib                             --字符串比较库(内置)
 qrcode                              --二维码生成库
 whoosh                              --全文检索库
 httpie                              --http命令行客户端
