@@ -2,6 +2,10 @@
 
 
 <命令>
+ssh-copy-id
+[说明] Linux主机免密登录配置
+[示例] ssh-copy-id -i ~/.ssh/id_rsa.pub root@172.16.201.193 (本机的rsa公钥自动复制到远程主机root账号的.ssh目录下的authorized_keys文件中, 下次登录即可免密)
+
 hydra
 [说明] 多情景登录密码暴力破解
 [示例] hydra -l root -P ans.txt ssh://110.1.1.249
