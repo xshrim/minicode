@@ -17,6 +17,8 @@ pip3 install scipy
 pip3 install tensorflow
 
 download vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5
+
+# python neural_style_transfer.py "me.jpg" "sample.jpg" "prefix" --iter n
 '''
 
 parser = argparse.ArgumentParser(description='Neural style transfer with Keras.')
