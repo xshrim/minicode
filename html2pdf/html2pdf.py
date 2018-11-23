@@ -18,68 +18,60 @@ options = {
     'no-outline': None
 }
 
-
-def html2pdf(url, titletag, contenttag, opt):
-
-    page = PyQuery('''<!DOCTYPE html>
+template = '''<!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
         <style>
             @font-face {
                 font-family: yahei;
-                src: url('/home/xshrim/shell/yahei.ttf');
+                src: url('/home/xshrim/lab/yahei.ttf');
             }
             body{
                 font-family: yahei;
             }
         </style>
+        <title>
+        </title>
     </head>
     <body>
     <body>
     </html>
-    ''')
+    '''
 
+
+def CreateHTML(url, titletag, contenttag):
+    page = PyQuery(template)
     data = PyQuery(url)
+
     # fname = os.path.basename(url).replace('.html', '.pdf')
     if titletag[0] == '#' or titletag[0] == '.':
-        title = data(titletag).text().strip() + '.pdf'
+        title = data(titletag).text().strip()
     else:
-        title = titletag + '.pdf'
-    title = data(titletag).text().strip() + '.pdf'
+        title = titletag
+
     content = data(contenttag).html()
+    page("title").append(title)
     page("body").append(content)
-    # print(page.html())
-
-    pdfkit.from_string(page.html(), title, options=opt)
-    '''
-    if os.path.exists(fname):
-        os.rename(fname, title)
-    '''
+    return page
 
 
-html2pdf('https://blog.csdn.net/qq_34598667/article/details/83959393', '.title-article', '.markdown_views.prism-atom-one-dark',
-         options)
-os._exit(0)
+def CreatePDF(url, titletag, contenttag):
+    # html = CreateHTML("https://studygolang.com/articles/12263", "#title", ".content.markdown-body")
+    # html = CreateHTML("https://www.cnblogs.com/nerxious/archive/2012/12/21/2827303.html", ".postTitle", ".postBody")
 
-# html2pdf('https://www.cnblogs.com/CloudMan6/p/6693772.html', options)
-catalog = []
-
-print('Fetch Catalog'.center(100, '#'))
-
-for i in range(2):
-    url = "https://www.cnblogs.com/CloudMan6/tag/Docker/default.html?page=" + str(i + 1)
-    cpage = PyQuery(url)
-
-    for item in cpage('.PostList').items('a'):
-        catalog.insert(0, (item.attr('href'), item.text()))
-        print(item.text())
-    time.sleep(1)
-
-print('Generate PDF'.center(100, '#'))
-for cata in catalog:
-    print(('Fetch Page:' + cata[1]).center(100, '-'), end='...')
-    html2pdf(cata[0], '#cb_post_title_url', '.post', options)
-    print('done')
-    time.sleep(1)
-# pdfkit.from_url('http://www.baidu.com', 'out.pdf', options=options)
+    try:
+        html = CreateHTML(url, titletag, contenttag)
+        title = html("title").text()
+        content = html("body").html()
+        if len(PyQuery(content).children()) < 2:  # markdown
+            content = "# " + title + "\n" + content
+            with open(title + ".md", "w") as wf:
+                wf.write(content)
+        else:  # html
+            html("body").prepend("<h2>" + title + "</h2>")
+            pdfkit.from_string(html.outer_html(), title + ".pdf", options=options)
+        return True
+    except Exception as ex:
+        print(ex)
+        return False
