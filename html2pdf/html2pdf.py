@@ -143,7 +143,7 @@ def CreateHTML(url, titletag, contenttag):
             title = data(titletag + ":first").text().strip()
         else:
             title = titletag
-        print("Articel Title: " + title)
+        print("Article Title: " + title)
 
         page("title").append(title)
         '''
@@ -170,7 +170,6 @@ def CreateHTML(url, titletag, contenttag):
         with open("temp.html", "w") as wf:
             wf.write(page.outer_html())
         '''
-
         return page
     except Exception as ex:
         print("CreateHTML error:" + str(ex))

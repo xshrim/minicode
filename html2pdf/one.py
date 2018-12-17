@@ -29,6 +29,9 @@ for url in catalog:
     elif "jianshu.com" in url:
         titleTag = ".title"
         contentTag = ".show-content"
+    elif "segmentfault.com" in url:
+        titleTag = "#articleTitle"
+        contentTag = ".article.fmt.article__content"
 
     if html2pdf.CreatePDF(url, titleTag, contentTag):
         print(('Generate PDF For ' + url + " < - > Done").center(150, '#'))
