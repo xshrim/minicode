@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>光大E享</title>
+    <link rel="shortcut icon" type="image/png" href="/static/refs/img/favicon.png" />
+
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/bootstrap.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/toastr.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/animate.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/jquery.zsign.css" />
+
+    <script type="text/javascript" src="/static/refs/js/jquery.js"></script>
+    <script type="text/javascript" src="/static/refs/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/static/refs/js/toastr.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/echarts.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/jquery.zsign.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/jquery.magicmove.js" charset="utf-8"></script>
+
+
+    <style>
+    </style>
+
+    <script>
+        function getAttributes($node) {
+            var attrs = {};
+            $.each($node[0].attributes, function (index, attribute) {
+                if (attribute.name != "id" && attribute.name != "style") {
+                    attrs[attribute.name] = attribute.value;
+                }
+            });
+
+            return attrs;
+        }
+        $(function () {
+            var args = getAttributes($("#argDiv"));
+            console.log(args);
+            console.log($("#argDiv")[0].attributes);
+            $("#a").click(function () {
+                //adding your code here 
+            });
+        });
+    </script>
+
+</head>
+
+<body>
+    <div id="argDiv" style="display: none;" username="{{.username}}"></div>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Project name</a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+            <!--/.nav-collapse -->
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div class="starter-template">
+            <h1>Bootstrap starter template</h1>
+            <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text
+                and a mostly barebones HTML document.</p>
+        </div>
+        <a href="/static/files/算法图解.pdf">pdf文档</a>
+        <embed src="/static/files/算法图解.pdf" type="application/pdf" width="50%" height="600">
+        <!-- 
+        <iframe src="/static/files/算法图解.pdf" width="70%" height="80%">
+
+            This browser does not support PDFs. Please download the PDF to view it: <a
+                href="/static/files/算法图解.pdf">Download
+                PDF</a>
+
+        </iframe>
+
+        <object classid="clsid:CA8A9780-280D-11CF-A24D-444553540000" width="700" height="1200" border="0">
+            <param name="_Version" value="65539">
+            <param name="_ExtentX" value="20108">
+            <param name="_ExtentY" value="10866">
+            <param name="_StockProps" value="0">
+            <param name="SRC" value="pdf/test.pdf">
+            <object data="/static/files/算法图解.pdf" type="application/pdf" width="1000" height="1200">
+            </object>
+        </object>
+        -->
+
+        <img src="/static/refs/img/a.svg">
+
+    </div>
+</body>
+
+</html>
