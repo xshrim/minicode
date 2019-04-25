@@ -1,4 +1,4 @@
-package utils
+package doc
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 )
 
 // 将 PDF 转成 SVG
-func ConvertPDF2SVG(pdfFile, svgFile string, pageNO int) (err error) {
+func PDF2SVG(pdfFile, svgFile string, pageNO int) (err error) {
 
 	//Usage: pdf2svg <in file.pdf> <out file.svg> [<page no>]
 	pdfFile, _ = filepath.Abs(pdfFile)
