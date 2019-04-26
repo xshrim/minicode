@@ -1,3 +1,8 @@
+{{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
+
+<h3>
+    {{.title}}
+</h3>
 <div class="container">
     <div class="row">
         <div class="panel panel-default">
@@ -6,7 +11,7 @@
             </div>
             <div class="panel-body">
                 <div class="wenku-tips text-center help-block">
-                    每成功上传一篇未被分享过的文档，可获得 <span class="text-primary">+{{.Sys.Reward}}</span> 个金币奖励。
+                    每成功上传一篇未被分享过的文档，可获得 <span class="text-primary">+{{.reward}}</span> 个金币奖励。
                     <!-- 若有完善的标签和文档简介，将有机会额外获得 <span class="text-danger">1-20</span> 个财富值奖励。 -->
                     {{/*待积分商城上线，财富值可用于兑换各种小礼品！*/}}
                 </div>
@@ -146,3 +151,5 @@
         <iframe frameborder="0" style="display: none;" id="notarget" name="notarget"></iframe>
     </div>
 </div>
+
+{{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}

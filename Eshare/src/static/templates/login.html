@@ -1,28 +1,17 @@
-<!DOCTYPE html>
+{{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
-<html lang="zh-ch">
+<h3>
+    {{ .title }}
+</h3>
+<form action="/login" method="post">
+    用户名：<input type="text" name="user"><br>
+    密码：<input type="password" name="passwd"><br>
+    <input type="submit" value="登 录">
+</form>
+<div>
+    <span>
 
-<head>
-    <meta charset="utf-8">
-    <title>登录</title>
-</head>
+    </span>
+</div>
 
-<body>
-    <h3>
-        {{ .title }}
-    </h3>
-    <form action="/login" method="post">
-        用户名：<input type="text" name="user"><br>
-        密码：<input type="password" name="passwd"><br>
-        <input type="submit" value="登 录">
-    </form>
-    <div>
-        <span>
-
-        </span>
-    </div>
-
-
-</body>
-
-</html>
+{{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}

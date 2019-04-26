@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
+	"crypto/md5"
 	"crypto/rand"
-	"doc"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path"
@@ -14,13 +16,21 @@ import (
 	"strings"
 	"time"
 
+	"./doc"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
+
+	// go get go.mongodb.org/mongo-driver/mongo
+	"go.mongodb.org/mongo-driver/mongo"
+	//"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 func ReplaceStr(str string) string {
-	replacer := strings.NewReplacer("\\", "", " ", "", "\n", "", "\t", "", "/", "", ":", "", "*", "", "?", "", "|", "", "<", "", ">", "")
+	replacer := strings.NewReplacer("\\", "", " ", "", "\n", "", "\t", "", "/", "", ":", "", "*", "", "?", "", "|", "", "<", "", ">", "", "@", "")
 	return replacer.Replace(str)
 }
 
@@ -40,36 +50,94 @@ func GenerateSID() string {
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return ""
 	}
-	return base64.URLEncoding.EncodeToString(b)
+	return ReplaceStr(base64.URLEncoding.EncodeToString(b))
+}
+
+func GetMD5(filepath string) string {
+	var filechunk uint64 = 8192 // we settle for 8KB
+
+	file, err := os.Open(filepath)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer file.Close()
+
+	// calculate the file size
+	info, _ := file.Stat()
+
+	filesize := info.Size()
+
+	blocks := uint64(math.Ceil(float64(filesize) / float64(filechunk)))
+
+	hash := md5.New()
+
+	for i := uint64(0); i < blocks; i++ {
+		blocksize := int(math.Min(float64(filechunk), float64(filesize-int64(i*filechunk))))
+		buf := make([]byte, blocksize)
+
+		file.Read(buf)
+		io.WriteString(hash, string(buf)) // append into the hash
+	}
+
+	return fmt.Sprintf("%x", hash.Sum(nil))
+}
+
+func Save(doc *doc.Document, url string) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	ctx, _ = context.WithTimeout(context.Background(), 2*time.Second)
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		log.Println(err)
+	}
+
+	db := client.Database("eshare")
+	col := db.Collection("document")
+	res, err := col.InsertOne(ctx, doc)
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println(res)
+
 }
 
 func Share(c *gin.Context) {
+	log.Println("===================================")
 	sid, err := c.Cookie("sid")
-	fmt.Println(sid)
+	log.Println("Share:" + sid)
 	session := sessions.Default(c)
 	svalue := session.Get(sid)
 	if err != nil || sid == "" || svalue == nil {
 		// c.Request.URL.Path = "/login"
 		// r.HandleContext(c)
-		c.Redirect(http.StatusMovedPermanently, "/login")
+		c.Redirect(http.StatusFound, "/login")
 	} else {
 		c.HTML(http.StatusOK, "upload.html", gin.H{
-			"title":    "ok",
+			"title":    "光大E享-上传",
 			"username": svalue.(string),
 			"maxsize":  2 << 26,
+			"reward":   5,
 		})
 	}
 }
 
 func Upload(c *gin.Context) {
 	sid, err := c.Cookie("sid")
-	fmt.Println(sid)
+	log.Println("Upload:" + sid)
 	session := sessions.Default(c)
 	svalue := session.Get(sid)
 	if err != nil || sid == "" || svalue == nil {
 		// c.Request.URL.Path = "/login"
 		// r.HandleContext(c)
-		c.Redirect(http.StatusMovedPermanently, "/login")
+		c.Redirect(http.StatusFound, "/login")
 	} else {
 
 		owner := svalue.(string)
@@ -87,10 +155,13 @@ func Upload(c *gin.Context) {
 
 		name = ReplaceStr(name)
 
+		name = sid + "@" + name
+
 		path := path.Join("static/files", name)
 
 		if PathExists(path) {
 			c.String(http.StatusOK, fmt.Sprintf("'%s' uploade failed: filename is existed!", file.Filename))
+			return
 		}
 
 		log.Println(name)
@@ -98,19 +169,30 @@ func Upload(c *gin.Context) {
 		err = c.SaveUploadedFile(file, path)
 		if err != nil {
 			c.String(http.StatusOK, fmt.Sprintf("'%s' uploade failed: '%s'!", file.Filename, err.Error()))
+			return
 		}
+
+		if !PathExists(path) {
+			c.String(http.StatusOK, fmt.Sprintf("'%s' uploade failed!", file.Filename))
+			return
+		}
+
+		id := GetMD5(path)
 		title := c.PostForm("title")
 		catalog := c.PostForm("catalog")
 		class := c.PostForm("class")
 		subclass := c.PostForm("subclass")
-		price := c.PostForm("price")
 		tag := c.PostForm("tag")
 		desc := c.PostForm("desc")
-		date := strconv.FormatInt(time.Now().Unix(), 10)
+		date := time.Now().Unix()
+
+		price, err := strconv.ParseInt(c.PostForm("price"), 10, 64)
+		if err != nil {
+			price = 0
+		}
 
 		doc := &doc.Document{
-			ID:       "",
-			SliceID:  "",
+			ID:       id,
 			Owner:    owner,
 			Title:    title,
 			Name:     name,
@@ -128,27 +210,48 @@ func Upload(c *gin.Context) {
 			Date:     date,
 			Status:   0,
 		}
+
+		log.Println(doc)
+		Save(doc, "mongodb://localhost:27017")
 		c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
 	}
 }
 
 func View(c *gin.Context) {
 	//	docid := c.PostForm("docid")
-
-}
-
-func Index(r *gin.Engine, c *gin.Context) {
+	log.Println("===================================")
 	sid, err := c.Cookie("sid")
-	fmt.Println(sid)
+	log.Println("View:" + sid)
 	session := sessions.Default(c)
 	svalue := session.Get(sid)
 	if err != nil || sid == "" || svalue == nil {
 		// c.Request.URL.Path = "/login"
 		// r.HandleContext(c)
-		c.Redirect(http.StatusMovedPermanently, "/login")
+		c.Redirect(http.StatusFound, "/login")
+	} else {
+		c.HTML(http.StatusOK, "test.html", gin.H{
+			"title":    "光大E享-上传",
+			"username": svalue.(string),
+			"maxsize":  2 << 26,
+			"reward":   5,
+		})
+	}
+
+}
+
+func Index(r *gin.Engine, c *gin.Context) {
+	sid, err := c.Cookie("sid")
+	log.Println("Index:" + sid)
+	session := sessions.Default(c)
+	svalue := session.Get(sid)
+	if err != nil || sid == "" || svalue == nil {
+		// c.Request.URL.Path = "/login"
+		// r.HandleContext(c)
+		//c.Redirect(http.StatusMovedPermanently, "/login")
+		c.Redirect(http.StatusFound, "/login")
 	} else {
 		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title":    "ok",
+			"title":    "光大E享-主页",
 			"username": svalue.(string),
 		})
 	}
@@ -156,10 +259,11 @@ func Index(r *gin.Engine, c *gin.Context) {
 
 func Login(c *gin.Context) {
 	sid, err := c.Cookie("sid") // 根据用户浏览器的cookie中的特定关键字得到cookie id
+	log.Println("Login:" + sid)
 	session := sessions.Default(c)
 	svalue := session.Get(sid)                    // 根据cookie id查找该用户在session中的信息
 	if err == nil && sid != "" && svalue != nil { // 如果用户仍然在session中, 则无需登录
-		c.Redirect(http.StatusMovedPermanently, "/index")
+		c.Redirect(http.StatusFound, "/index")
 	} else {
 		username := c.PostForm("user")
 		password := c.PostForm("passwd")
@@ -174,10 +278,11 @@ func Login(c *gin.Context) {
 			session.Save() // 保存session
 
 			// c.Redirect(http.StatusMovedPermanently, "http://localhost:8080/index")
-			c.Redirect(http.StatusMovedPermanently, "/index")
+			// 用301状态码(StatusMovedPermanently)作重定向会导致路由失效(缓存问题), 改为302状态码正常(StatusFound)
+			c.Redirect(http.StatusFound, "/index") 
 		} else {
 			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
-				"title": "login",
+				"title": "光大E享-登录",
 			})
 		}
 	}
@@ -198,8 +303,10 @@ func main() {
 
 	router.MaxMultipartMemory = 8 << 26 //限制文件大小512MB
 
-	router.GET("/", func(c *gin.Context) {
-		Index(router, c)
+	router.Any("/test", func(c *gin.Context) {
+		c.HTML(http.StatusUnauthorized, "test.html", gin.H{
+			"title": "Test Page",
+		})
 	})
 	router.GET("/index", func(c *gin.Context) {
 		Index(router, c)
@@ -208,11 +315,16 @@ func main() {
 	router.Any("/login", Login)
 	//router.POST("/login", Login)
 
-	router.Any("/share", Share)
+	router.GET("/share", Share)
 
 	router.POST("/upload", Upload)
 
-	router.Any("/view", View)
+	router.GET("/view", View)
+	/*
+		router.GET("/", func(c *gin.Context) {
+			Index(router, c)
+		})
+	*/
 
 	/*
 		router.GET("/index", func(c *gin.Context) {

@@ -1,0 +1,59 @@
+{{define "header"}} {{/* header.html 它是页面的嵌入模板 */}}
+<!DOCTYPE html><!-- 声明当前页面文件格式符合w3c标准，兼容所有浏览器 -->
+<!DOCTYPE html>
+<html lang="zh-ch">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{.title}}</title>
+    <link rel="shortcut icon" type="image/png" href="/static/refs/img/favicon.png" />
+
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/bootstrap.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/toastr.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/animate.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/jquery.zsign.css" />
+
+    <script type="text/javascript" src="/static/refs/js/jquery.js"></script>
+    <script type="text/javascript" src="/static/refs/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/static/refs/js/toastr.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/echarts.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/jquery.zsign.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/jquery.magicmove.js" charset="utf-8"></script>
+
+
+    <style>
+    </style>
+
+    <script>
+        function getAttributes($node) {
+            var attrs = {};
+            if ($node === undefined) {
+                return attrs;
+            }
+            $.each($node[0].attributes, function (index, attribute) {
+                if (attribute.name != "id" && attribute.name != "style") {
+                    attrs[attribute.name] = attribute.value;
+                }
+            });
+
+            return attrs;
+        }
+        /*
+        $(function () {
+            var args = getAttributes($("#argDiv"));
+            if (args.length > 0) {
+                console.log(args);
+                console.log($("#argDiv")[0].attributes);
+                $("#a").click(function () {
+                    //adding your code here 
+                });
+            }
+
+        });
+        */
+    </script>
+
+</head>
+
+<body>
+    {{end}} {{/*  {{ 嵌入模板定义格式：define "嵌入模板名称"}} {{end}}  */}}
