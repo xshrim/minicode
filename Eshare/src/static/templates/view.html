@@ -1,135 +1,109 @@
-<div class="container wenku-main">
-    {{/*SEO优化需要，这里的文本内容不需要展示给用户看*/}}
-    <div class="zero-height">{{.Content}}</div>
+{{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
+
+
+<div class="container wenku-main">
     <div class="row">
         <div class="col-xs-9 wenku-left wenku-nopadding">
 
             <div class="panel panel-default wenku-noborder">
                 <div class="panel-body">
-                    <h1>
-                        <img alt="{{.Doc.Ext}}文档" src="/static/Home/default/img/{{.Doc.ExtCate}}_24.png" />
-                        {{.Doc.Title}}
-                        {{if gt $.AdminId 0}}
-                        <a href="/admin/doc/action?type=remove&id={{.Doc.Id}}"
-                            class="text-muted wenku-tooltip wenku-ajax-get" title="将文档移入回收站"><i
-                                class="fa fa-recycle"></i></a>
-                        {{end}}
-                    </h1>
+                    <h1><img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                        Flask&#43;By&#43;Example&#43;2016.3</h1>
                     <div class="help-block wenku-doc-info">
                         <span>
-                            <a href="/list/{{.Breadcrumb.Chanel.Alias}}"
-                                title="{{.Breadcrumb.Chanel.Title}}">{{.Breadcrumb.Chanel.Title}}</a> >
-                            <a href="/list/{{.Breadcrumb.Chanel.Alias}}/pid/{{.Breadcrumb.Parent.Id}}"
-                                title="{{.Breadcrumb.Parent.Title}}">{{.Breadcrumb.Parent.Title}}</a> >
-                            <a href="/list/{{.Breadcrumb.Chanel.Alias}}/pid/{{.Breadcrumb.Parent.Id}}/cid/{{.Breadcrumb.Parent.Id}}"
-                                title="{{.Breadcrumb.Child.Title}}">{{.Breadcrumb.Child.Title}}</a> >
+                            <a href="/list/coding" title="编程开发">编程开发</a> >
+                            <a href="/list/coding/pid/7" title="后端开发">后端开发</a> >
+                            <a href="/list/coding/pid/7/cid/31" title="Python">Python</a> >
                             <span class="text-muted">文档预览</span>
                         </span>
                         <div class="pull-right text-muted">
-                            <span title="页数"><i class="fa fa-file-text-o"></i> {{.Doc.Page}} 页</span>
-                            <span title="下载"><i class="fa fa-download"></i> {{.Doc.Dcnt}} 下载</span>
-                            <span title="浏览"><i class="fa fa-eye"></i> {{.Doc.Vcnt}} 浏览</span>
-                            <span title="评论"><i class="fa fa-comments-o"></i> {{.Doc.ScorePeople}} 评论</span>
-                            <span title="收藏"><i class="fa fa-heart-o"></i> {{.Doc.Ccnt}} 收藏</span>
-                            <span title="评分"><i class="wenku-star star-{{.Doc.Score false}}"></i>
-                                {{.Doc.Score true}}分</span>
+                            <span title="页数"><i class="fa fa-file-text-o"></i> 277 页</span>
+                            <span title="下载"><i class="fa fa-download"></i> 10 下载</span>
+                            <span title="浏览"><i class="fa fa-eye"></i> 3249 浏览</span>
+                            <span title="评论"><i class="fa fa-comments-o"></i> 2 评论</span>
+                            <span title="收藏"><i class="fa fa-heart-o"></i> 4 收藏</span>
+                            <span title="评分"><i class="wenku-star star-35"></i> 3.5分</span>
                         </div>
                     </div>
 
-                    <!--<div class="help-block wenku-preview-tips">温馨提示：如果当前文档出现乱码或未能正常浏览，请先下载原文档进行浏览。</div>-->
-                    {{if $.ViewAll}}
-                    <div class="help-block wenku-preview-tips">温馨提示：如果当前文档出现乱码或未能正常浏览，请先下载原文档进行浏览。</div>
-                    {{else}}
                     <div class="help-block wenku-preview-tips">
-                        温馨提示：当前文档最多只能预览 <span class="strong text-primary">{{.Doc.PreviewPage}}</span> 页，若文档总页数超出了 <span
-                            class="strong text-primary">{{.Doc.PreviewPage}}</span> 页，请下载原文档以浏览全部内容。
+                        温馨提示：如果当前文档未能正常浏览，则可能是文档正在做转码处理，请先下载原文档进行浏览。
                     </div>
-                    {{end}}
-
 
                     <div class="wenku-viewer" id="wenku-viewer" data-scale="9">
-                        {{range $index,$el:=.PreviewPages}}
-                        {{if gt $index 1}}
-                        <img src="/static/Common/img/loading.gif"
-                            data-original="{{$.PreviewDomain}}/{{$.Doc.Md5}}/{{$index "+" 1}}.{{$.Doc.PreviewExt "svg"}}"
-                            class="wenku-lazy wenku-viewer-img wenku-page{{$index "+" 1}}" data-page="{{$index "+" 1}}"
-                            alt="{{$.Doc.Title}} 第 {{$index "+" 1}} 页">
-                        {{else}}
-                        <img src="{{$.PreviewDomain}}/{{$.Doc.Md5}}/{{$index "+" 1}}.{{$.Doc.PreviewExt "svg"}}"
-                            class="wenku-lazy wenku-viewer-img wenku-page{{$index "+" 1}}" data-page="{{$index "+" 1}}"
-                            alt="{{$.Doc.Title}} 第 {{$index "+" 1}} 页">
-                        {{end}}
-                        {{end}}
 
-                        {{if gt $.Doc.Page $.PageShow}}
-                        <div class="wenku-viewer-more text-center" data-next="{{$.PageShow "+" 1}}"
-                            data-ext="{{$.Doc.PreviewExt "svg"}}" data-svg="{{$.PreviewDomain}}/{{$.Doc.Md5}}/">
 
-                            {{if gt .Doc.Price -1}}
+                        <img src="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/1.svg"
+                            class="wenku-lazy wenku-viewer-img wenku-page1" data-page="1"
+                            alt="Flask&#43;By&#43;Example&#43;2016.3 第 1 页">
+
+
+
+                        <img src="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/2.svg"
+                            class="wenku-lazy wenku-viewer-img wenku-page2" data-page="2"
+                            alt="Flask&#43;By&#43;Example&#43;2016.3 第 2 页">
+
+
+
+                        <img src="/static/refs/img/loading.gif"
+                            data-original="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/3.svg"
+                            class="wenku-lazy wenku-viewer-img wenku-page3" data-page="3"
+                            alt="Flask&#43;By&#43;Example&#43;2016.3 第 3 页">
+
+
+
+                        <img src="/static/refs/img/loading.gif"
+                            data-original="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/4.svg"
+                            class="wenku-lazy wenku-viewer-img wenku-page4" data-page="4"
+                            alt="Flask&#43;By&#43;Example&#43;2016.3 第 4 页">
+
+
+
+                        <img src="/static/refs/img/loading.gif"
+                            data-original="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/5.svg"
+                            class="wenku-lazy wenku-viewer-img wenku-page5" data-page="5"
+                            alt="Flask&#43;By&#43;Example&#43;2016.3 第 5 页">
+
+
+
+
+                        <div class="wenku-viewer-more text-center" data-next="6" data-ext="svg"
+                            data-svg="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/">
                             <div>下载文档到电脑，方便使用</div>
                             <div><a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal"
                                     data-target="#ModalDownload"><i class="fa fa-cloud-download"></i> 下载文档</a></div>
-                            {{end}}
-
-                            {{if $.ViewAll}}
                             <a href="javascript:void(0);" class="wenku-viewer-more-btn">
-                                <div class="help-block">
-                                    还有 <span class="wenku-unread-pages">{{$.Doc.Page "-" $.PageShow}}</span>
-                                    页可预览，<span class="text-primary">继续阅读</span>
-                                </div>
+                                <div class="help-block">还有 <span class="wenku-unread-pages">272</span> 页未阅读，<span
+                                        class="text-primary">继续阅读</span></div>
                             </a>
-                            {{else}}
-                            <a href="javascript:void(0);" class="wenku-viewer-more-btn">
-                                <div class="help-block">
-                                    当前文档最多只能预览 {{.Doc.PreviewPage}} 页 <br>
-                                    还有 <span class="wenku-unread-pages">{{$.Doc.PreviewPage "-" $.PageShow}}</span>
-                                    页可预览，<span class="text-primary">继续阅读</span>
-                                </div>
-                            </a>
-                            {{end}}
                             <div class="help-block"><a href="javascript:void(0);" class="wenku-viewer-more-btn"><i
                                         class="fa fa-angle-down"></i></a></div>
                         </div>
-                        {{end}}
-
-
 
                     </div>
 
 
 
                     <div class="help-block">
-                        <span>本文档由 <a href="/user/{{.Doc.Uid}}" target="_blank"
-                                title="{{.Doc.Username}}">{{.Doc.Username}}</a> 于 <span
-                                class="text-muted">{{.Doc.TimeCreate}}</span>上传分享</span>
+                        <span>本文档由 <a href="/user/4" target="_blank" title="Bug大人">Bug大人</a> 于 <span
+                                class="text-muted">2017-09-10 10:22:18</span>上传分享</span>
                     </div>
-                    <div class="help-block wenku-action">
+                    <div class="help-block">
                         <div class="pull-left">
                             <a href="javascript:void(0);" data-toggle="modal" data-target="#ModalReport"
                                 class="btn btn-primary btn-sm"><i class="fa fa-warning"></i> 举报</a>
                         </div>
                         <div class="pull-right wenku-mgl-15px">
-                            {{if gt .Doc.Price -1}}
                             <a href="javascript:void(0);" rel="nofollow" data-toggle="modal"
                                 data-target="#ModalDownload" target="_blank" class="btn btn-primary btn-sm"><i
-                                    class="fa fa-cloud-download"></i> 下载<span
-                                    class="hidden-xs">原文档</span>({{.Doc.Size}})</a>
-                            {{else}}
-                            <a href="javascript:void(0);" rel="nofollow" class="btn btn-primary btn-sm disabled"><i
-                                    class="fa fa-cloud-download"></i> 下载<span
-                                    class="hidden-xs">原文档</span>({{.Doc.Size}})</a>
-                            {{end}}
+                                    class="fa fa-cloud-download"></i> 下载原文档(5.11MB)</a>
                         </div>
                         <div class="pull-right">
-                            {{if .Doc.Id .LoginUid}}
-                            <a href="javascript:void(0);" rel="nofollow"
-                                class="btn btn-primary btn-sm wenku-collect disabled"><i class="fa fa-heart-o"></i>
-                                <span>已收藏</span></a>
-                            {{else}}
+
                             <a href="javascript:void(0);" rel="nofollow" class="btn btn-primary btn-sm wenku-collect"><i
                                     class="fa fa-heart-o"></i> <span>收藏</span></a>
-                            {{end}}
+
                             <a href="javascript:void(0);" data-toggle="modal" data-target="#ModalShare"
                                 class="btn btn-primary btn-sm"><i class="fa fa-share-alt"></i> 分享</a>
                         </div>
@@ -139,14 +113,80 @@
                 </div>
             </div>
 
-            <!--评分评论-->
-            {{template "Comment" .}}
+
+
+            <div class="panel panel-default wenku-noborder wenku-comment">
+                <div class="panel-body">
+                    <div title="给文档打分">给文档打分
+                        <span class="wenku-score disabled">
+                            <i class="fa fa-star-o" data-v="1"></i>
+                            <i class="fa fa-star-o" data-v="2"></i>
+                            <i class="fa fa-star-o" data-v="3"></i>
+                            <i class="fa fa-star-o" data-v="4"></i>
+                            <i class="fa fa-star-o" data-v="5"></i>
+                        </span>
+                        <span class="wenku-score-tips color-gray"></span>
+                    </div>
+                    <form role="form" method="post" action="/comment/5" class="wenku-comment-form">
+                        <div class="form-group">
+                            <textarea name="Comment" rows="3" class="form-control" required="required"
+                                placeholder="文明评论，文明你我他"></textarea>
+                            <input type="hidden" name="Score" id="score" value="0" />
+                        </div>
+                        <div class="form-group">
+                            <div class="col-xs-3 clearfix wenku-nopadding">
+                                <div class="help-block">您好可以输入 <span class="text-danger wenku-comment-num">255</span>
+                                    个字符</div>
+                            </div>
+                            <div class="col-xs-5 clearfix text-right wenku-answer-tips">
+                                <div class="help-block">IT文库的网址是多少？( 答案：<span class="text-danger">wenku.it</span> )
+                                </div>
+                            </div>
+                            <input type="hidden" name="_xsrf" value="qfeNSKG4GNvWu95HrgLl0w6p9VWGXELj" />
+                            <div class="col-xs-2 clearfix wenku-nopadding">
+                                <input type="text" name="Answer" required="required" class="form-control"
+                                    placeholder="请输入答案">
+                            </div>
+                            <div class="col-xs-2 wenku-no-pdr clearfix text-right">
+                                <input type="submit" class="btn btn-danger btn-block" value="发表评论">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="panel panel-default wenku-noborder wenku-comment-list">
+                <div class="panel-heading">评论列表</div>
+                <div class="panel-body">
+
+                    <ul>
+
+                        <li class="clearfix">
+                            <div class="col-xs-1 wenku-nopadding">
+                                <a href="/user/26" target="_blank" class="thumbnail thumbnail-avatar" title="xinyichv">
+                                    <img src="http://itwenku.oss-cn-hongkong.aliyuncs.com/default/avatar.png"
+                                        class="img-responsive " alt="xinyichv">
+                                </a>
+                            </div>
+                            <div class="col-xs-11 wenku-no-pdr">
+                                <a href="/user/26" target="_blank" title="xinyichv">xinyichv</a>
+                                <span><i class="wenku-star star-40"></i> 4.0分</span>
+                                <span class="color-gray pull-right">2018-06-01 10:16:33</span>
+                                <div class="help-block wenku-comment-content">好好好好好好好好好好</div>
+                            </div>
+                        </li>
+
+                    </ul>
+
+
+                </div>
+            </div>
+
 
         </div>
         <div class="col-xs-3 wenku-right">
 
 
-            {{if .Hots}}
+
             <div class="panel panel-default wenku-noborder wenku-maylike">
                 <div class="panel-heading">
                     <div class="strong">热门文档</div>
@@ -154,14 +194,24 @@
                 <div class="panel-body">
 
                     <ul class="wenku-tabs-list">
-                        {{range .Hots}}
-                        <li><img alt="{{.Ext}}文档" src="/static/Home/default/img/{{.ExtCate}}_24.png" /><a
-                                href="/view/{{.Id}}" target="_blank" title="{{.Title}}">{{.Title}}</a></li>
-                        {{end}}
+                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5272" target="_blank"
+                                title="my flask">my flask</a></li>
+
+                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/5220" target="_blank"
+                                title="flask学习笔记">flask学习笔记</a></li>
+
+                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5148" target="_blank"
+                                title="Flask 学习笔记">Flask 学习笔记</a></li>
+
+                        <li><img alt="ppt文档" src="/static/refs/img/ppt_24.png" /><a href="/view/4974" target="_blank"
+                                title="Tornado-explore">Tornado-explore</a></li>
+
+                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/4917" target="_blank"
+                                title="Django学习笔记">Django学习笔记</a></li>
                     </ul>
                 </div>
             </div>
-            {{end}}
+
 
             <div class="panel panel-default wenku-noborder wenku-maylike">
                 <div class="panel-heading">
@@ -170,10 +220,38 @@
                 <div class="panel-body">
 
                     <ul class="wenku-tabs-list">
-                        {{range .Latest}}
-                        <li><img alt="{{.Ext}}文档" src="/static/Home/default/img/{{.ExtCate}}_24.png" /><a
-                                href="/view/{{.Id}}" target="_blank" title="{{.Title}}">{{.Title}}</a></li>
-                        {{end}}
+
+                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5272" target="_blank"
+                                title="my flask">my flask</a></li>
+
+                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/5220" target="_blank"
+                                title="flask学习笔记">flask学习笔记</a></li>
+
+                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5148" target="_blank"
+                                title="Flask 学习笔记">Flask 学习笔记</a></li>
+
+                        <li><img alt="ppt文档" src="/static/refs/img/ppt_24.png" /><a href="/view/4974" target="_blank"
+                                title="Tornado-explore">Tornado-explore</a></li>
+
+                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/4917" target="_blank"
+                                title="Django学习笔记">Django学习笔记</a></li>
+
+                        <li><img alt="word文档" src="/static/refs/img/word_24.png" /><a href="/view/4914" target="_blank"
+                                title=" Django Cupcake Shop"> Django Cupcake Shop</a></li>
+
+                        <li><img alt="txt文档" src="/static/refs/img/txt_24.png" /><a href="/view/4908" target="_blank"
+                                title="Django-Tutorial">Django-Tutorial</a></li>
+
+                        <li><img alt="md文档" src="/static/refs/img/md_24.png" /><a href="/view/4905" target="_blank"
+                                title="Django-Design-Patterns-and-Best-Practices-zh">Django-Design-Patterns-and-Best-Practices-zh</a>
+                        </li>
+
+                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/4902" target="_blank"
+                                title="Django noname ">Django noname </a></li>
+
+                        <li><img alt="epub文档" src="/static/refs/img/book_24.png" /><a href="/view/4899" target="_blank"
+                                title="django進階測試-簡單翻譯筆記">django進階測試-簡單翻譯筆記</a></li>
+
                     </ul>
 
                 </div>
@@ -181,6 +259,8 @@
 
         </div>
     </div>
+
+
 </div>
 
 
@@ -190,7 +270,7 @@
             <div class="col-xs-9">
                 <ul class="nav navbar-nav">
                     <li><a href="javascript:void(0);" class="wenku-expend"><i
-                                class="fa fa-arrows-alt em14"></i>&nbsp;</a></li>
+                                class="fa fa-arrows-alt em14"></i>&nbsp;</a></a></li>
 
 
                     <li><a href="javascript:void(0);" data-toggle="modal" data-target="#ModalShare"><i
@@ -206,15 +286,8 @@
 
                     <li class="wenku-mgl-15px"><a href="javascript:void(0);" class="wenku-page-prev"><i
                                 class="fa fa-chevron-up em14"></i></a></li>
-                    <p class="navbar-text"> <span class="wenku-current-page">1</span> /
-                        {{if gt .Doc.PreviewPage 0}}
-                        <span class="wenku-total-page hide">{{.Doc.PreviewPage}}</span>
-                        <!--仍然显示全部页数，但是用于计算的是当前允许预览的最大页数-->
-                        <span class="">{{.Doc.Page}}</span>
-                        {{else}}
-                        <span class="wenku-total-page">{{.Doc.Page}}</span>
-                        {{end}}
-                    </p>
+                    <p class="navbar-text"> <span class="wenku-current-page">1</span> / <span
+                            class="wenku-total-page">277</span> </p>
                     <li class="wenku-mgr-15px"><a href="javascript:void(0);" class="wenku-page-next"><i
                                 class="fa fa-chevron-down em14"></i></a></li>
 
@@ -225,16 +298,9 @@
 
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    {{if gt .Doc.Price -1}}
-                    <div class="navbar-text"><i class="fa fa-database"></i>&nbsp;&nbsp;{{.Doc.Price}}&nbsp;&nbsp;个金币
-                    </div>
+                    <p class="navbar-text"><i class="fa fa-database"></i>&nbsp;&nbsp;0&nbsp;&nbsp;个金币 </p>
                     <li class="active" data-toggle="modal" data-target="#ModalDownload"><a href="javascript:void(0);"><i
-                                class="fa fa-cloud-download em14"></i> 下载文档({{.Doc.Size}})</a></li>
-                    {{else}}
-                    <div class="navbar-text"><span class="text-danger">不允许下载&nbsp;</span>&nbsp;</div>
-                    <li class="active active-forbidden"><a href="javascript:void(0);"><i
-                                class="fa fa-cloud-download em14"></i> 下载文档({{.Doc.Size}})</a></li>
-                    {{end}}
+                                class="fa fa-cloud-download em14"></i> 下载文档(5.11MB)</a></li>
                 </ul>
             </div>
             <div class="col-xs-3">
@@ -248,7 +314,190 @@
 </div>
 
 
-{{template "ModalDownload" .}}
-{{template "ModalShare" .}}
-{{template "ModalReport" .}}
-{{template "ModalCollect" .}}
+
+<div class="modal fade" id="ModalDownload" tabindex="-1" role="dialog" aria-labelledby="ModalShareLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="ModalDownloadLabel">下载提示</h4>
+            </div>
+            <div class="modal-body clearfix">
+
+
+                <div class="help-block wenku-download-tips">文档下载，需要消耗您 <span class="text-danger">0</span> 个金币。</div>
+
+
+                <div class="help-block">您确定要下载 <span class="text-danger">Flask&#43;By&#43;Example&#43;2016.3</span> 文档吗？
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">取消下载</button>
+                <button type="button" class="btn btn-primary btn-submit-download" data-url="/down/5"
+                    data-id="5">确定下载</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="ModalShare" tabindex="-1" role="dialog" aria-labelledby="ModalShareLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="ModalShareLabel">分享，让知识传承更久远</h4>
+            </div>
+            <div class="modal-body">
+                <div class="bdsharebuttonbox"><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a
+                        href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_tqq"
+                        data-cmd="tqq" title="分享到腾讯微博"></a><a href="#" class="bds_renren" data-cmd="renren"
+                        title="分享到人人网"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a><a
+                        href="#" class="bds_sqq" data-cmd="sqq" title="分享到QQ好友"></a><a href="#" class="bds_bdysc"
+                        data-cmd="bdysc" title="分享到百度云收藏"></a><a href="#" class="bds_kaixin001" data-cmd="kaixin001"
+                        title="分享到开心网"></a><a href="#" class="bds_bdxc" data-cmd="bdxc" title="分享到百度相册"></a><a href="#"
+                        class="bds_tieba" data-cmd="tieba" title="分享到百度贴吧"></a><a href="#" class="bds_douban"
+                        data-cmd="douban" title="分享到豆瓣网"></a><a href="#" class="bds_tqf" data-cmd="tqf"
+                        title="分享到腾讯朋友"></a><a href="#" class="bds_thx" data-cmd="thx" title="分享到和讯微博"></a><a href="#"
+                        class="bds_bdhome" data-cmd="bdhome" title="分享到百度新首页"></a><a href="#" class="bds_meilishuo"
+                        data-cmd="meilishuo" title="分享到美丽说"></a><a href="#" class="bds_ibaidu" data-cmd="ibaidu"
+                        title="分享到百度中心"></a><a href="#" class="bds_mogujie" data-cmd="mogujie" title="分享到蘑菇街"></a><a
+                        href="#" class="bds_diandian" data-cmd="diandian" title="分享到点点网"></a><a href="#"
+                        class="bds_huaban" data-cmd="huaban" title="分享到花瓣"></a><a href="#" class="bds_hx" data-cmd="hx"
+                        title="分享到和讯"></a><a href="#" class="bds_duitang" data-cmd="duitang" title="分享到堆糖"></a><a
+                        href="#" class="bds_fx" data-cmd="fx" title="分享到飞信"></a><a href="#" class="bds_youdao"
+                        data-cmd="youdao" title="分享到有道云笔记"></a><a href="#" class="bds_sdo" data-cmd="sdo"
+                        title="分享到麦库记事"></a><a href="#" class="bds_qingbiji" data-cmd="qingbiji" title="分享到轻笔记"></a><a
+                        href="#" class="bds_people" data-cmd="people" title="分享到人民微博"></a><a href="#" class="bds_xinhua"
+                        data-cmd="xinhua" title="分享到新华微博"></a><a href="#" class="bds_mail" data-cmd="mail"
+                        title="分享到邮件分享"></a><a href="#" class="bds_isohu" data-cmd="isohu" title="分享到我的搜狐"></a><a
+                        href="#" class="bds_yaolan" data-cmd="yaolan" title="分享到摇篮空间"></a><a href="#"
+                        class="bds_wealink" data-cmd="wealink" title="分享到若邻网"></a><a href="#" class="bds_iguba"
+                        data-cmd="iguba" title="分享到股吧"></a><a href="#" class="bds_ty" data-cmd="ty"
+                        title="分享到天涯社区"></a><a href="#" class="bds_fbook" data-cmd="fbook" title="分享到Facebook"></a><a
+                        href="#" class="bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a><a href="#"
+                        class="bds_h163" data-cmd="h163" title="分享到网易热"></a><a href="#" class="bds_twi" data-cmd="twi"
+                        title="分享到Twitter"></a><a href="#" class="bds_evernotecn" data-cmd="evernotecn"
+                        title="分享到印象笔记"></a><a href="#" class="bds_copy" data-cmd="copy" title="分享到复制网址"></a></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">取消分享</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="ModalReport" tabindex="-1" role="dialog" aria-labelledby="ModalShareLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="ModalReportLabel">文档举报</h4>
+            </div>
+            <div class="modal-body clearfix">
+                <div class="help-block clearfix">举报原因：</div>
+                <div class="col-xs-4"><label><input type="radio" checked name="Reason" value="1"> 垃圾广告</label></div>
+                <div class="col-xs-4"><label><input type="radio" name="Reason" value="2"> 淫秽色情</label></div>
+                <div class="col-xs-4"><label><input type="radio" name="Reason" value="3"> 虚假中奖</label></div>
+                <div class="col-xs-4"><label><input type="radio" name="Reason" value="4"> 敏感信息</label></div>
+                <div class="col-xs-4"><label><input type="radio" name="Reason" value="5"> 人身攻击</label></div>
+                <div class="col-xs-4"><label><input type="radio" name="Reason" value="6"> 骚扰他人</label></div>
+                <input type="hidden" name="Did" value="5">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">取消举报</button>
+                <button type="button" class="btn btn-primary btn-submit-report" data-dismiss="modal">提交举报</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="ModalCollect" tabindex="-1" role="dialog" aria-labelledby="ModalShareLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="ModalCollectLabel">收藏文档</h4>
+            </div>
+            <div class="modal-body clearfix">
+                <div class="help-block wenku-clt-title">收藏文档</div>
+                <div class="form-group">
+                    <input type="text" class="disabled form-control" readonly="readonly" name="Title"
+                        value="Flask&#43;By&#43;Example&#43;2016.3">
+                </div>
+                <div class="help-block">请选择收藏夹</div>
+                <div class="form-group">
+                    <select name="Cid" class="form-control">
+                        <option value="">请选择收藏夹</option>
+                    </select>
+                </div>
+                <input type="hidden" name="Did" value="5">
+                <div class="help-block text-right wenku-create-folder">没有合适的收藏夹？去 <a href="/user/0/collect"
+                        target="_blank" class="text-primary">创建收藏夹</a></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">取消收藏</button>
+                <button type="button" class="btn btn-primary btn-submit-collect">提交收藏</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container-fluid wenku-footer">
+    <div class="container">
+        <div class="row wenku-flink">
+            <div class="col-xs-12">
+                <div><strong>友情链接</strong></div>
+                <div class="help-block">
+
+                    <a href="https://www.bookstack.cn" target="_blank" title="书栈">书栈</a>
+
+                    <a href="http://www.weiyoou.com" target="_blank" title="微友搜索网">微友搜索网</a>
+
+                    <a href="http://www.wangpanzhijia.net" target="_blank" title="网盘之家">网盘之家</a>
+
+                    <a href="https://www.myquant.cn" target="_blank" title="掘金量化">掘金量化</a>
+
+                    <a href="http://www.hc-cms.com" target="_blank" title="HC-CMS">HC-CMS</a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid wenku-footer-dark">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 text-center wenku-help">
+
+                <a href="/pages/about" target="_blank" title="关于我们">关于我们</a>
+
+                <a href="/pages/xieyi" target="_blank" title="文库协议">文库协议</a>
+
+                <a href="/pages/feedback" target="_blank" title="意见反馈">意见反馈</a>
+
+                <a href="/pages/contact" target="_blank" title="联系我们">联系我们</a>
+
+            </div>
+            <div class="col-xs-12 text-center">
+                IT文库(wenku.it)&nbsp;&nbsp;&copy;2017
+            </div>
+            <div class="col-xs-12 text-center">
+                Powered By <a href="http://www.hc-cms.com" style="color: #1abc9c;" target="_blank"
+                    title="HC-CMS">HC-CMS</a>
+            </div>
+            <div class="col-xs-12 text-center">
+            </div>
+        </div>
+    </div>
+</div>
+
+{{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}

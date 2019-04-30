@@ -1,0 +1,10 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title> </title></head><body>
+<p>import java.security.Provider; import java.security.Security; public class Test{ public static void main(String[] args) {</p>
+<p>    for (Provider provider:Security.getProviders()) {</p>
+<p>    System.out.println("Provider:"+provider.getName());</p>
+<p>    for (Provider.Service service:provider.getServices()) {</p>
+<p>    System.out.println("Algorithm:"+service.getAlgorithm());</p>
+<p>    }</p>
+<p>    System.out.println("\n");</p>
+<p>    } } }</p>
+</body></html>

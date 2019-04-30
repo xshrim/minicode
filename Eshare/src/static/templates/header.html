@@ -12,6 +12,9 @@
     <link type="text/css" rel="stylesheet" href="/static/refs/css/toastr.css" />
     <link type="text/css" rel="stylesheet" href="/static/refs/css/animate.css" />
     <link type="text/css" rel="stylesheet" href="/static/refs/css/jquery.zsign.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/common.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/custom.css" />
+    <link type="text/css" rel="stylesheet" href="/static/refs/css/fonts.css" />
 
     <script type="text/javascript" src="/static/refs/js/jquery.js"></script>
     <script type="text/javascript" src="/static/refs/js/bootstrap.js"></script>
@@ -56,4 +59,44 @@
 </head>
 
 <body>
+    <div class="container-fluid wenku-header">
+        <div class="container">
+            <div class="col-xs-6">
+                <a href="/" title="光大E享">
+                    <img alt="光大E享" width="48px" src="/static/refs/img/logo.png" />
+                </a>
+            </div>
+            <div class="col-xs-6">
+                <form class="pull-right" action="/search" target="_blank" method="get" role="search">
+                    <div class="input-group input-group-lg">
+                        <input type="text" required="required" name="wd" placeholder="请输入搜索关键字" class="form-control">
+                        <span class="input-group-btn"><button type="submit" class="btn btn-default">文库搜索</button></span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <nav class="container-fluid navbar-inverse navbar navbar-default" role="navigation">
+        <div class="container">
+            <ul class="nav navbar-nav">
+                <li><a href="/">首页</a></li>
+
+                <li class="active"><a href="/list/coding">编程开发</a></li>
+
+                <li><a href="/list/opera">系统运维</a></li>
+
+                <li><a href="/list/design">设计·创作</a></li>
+
+                <li><a href="/list/compute">云计算·大数据</a></li>
+
+                <li><a href="/list/product">产品·运营·综合</a></li>
+
+                <li><a href="https://gitee.com/truthhun/DocHub" target="_blank">文库开源</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/upload"><span class="fa fa-upload"></span> 上传文档</a></li>
+                <li><a href="/user"><span class="fa fa-user"></span> 会员中心</a></li>
+            </ul>
+        </div>
+    </nav>
     {{end}} {{/*  {{ 嵌入模板定义格式：define "嵌入模板名称"}} {{end}}  */}}

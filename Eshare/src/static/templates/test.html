@@ -6,14 +6,77 @@
                         <div class="t-header">  
                                 <div class="t-logo">  
                                         <a href="#">  
-                                                <img src="static/images/logo.png" alt="天猫Tmall.com" width="190px"
-                        height="27px" />  
+                                                <img src="static/refs/img/logo.png" alt="光大科技" width="50px"
+                        height="50px" />  
                                             </a>  
                                     </div>   
                             </div>  
+        <div>
+            <script>
+                $(function () {
+                    $('#imgDiv').hover(function () {
+                        $('#imgDiv').css({
+                            'overflow-y': 'auto'
+                        })
+                    }, function () {
+                        $('#imgDiv').css({
+                            'overflow-y': 'hidden'
+                        })
+                    })
+                })
+
+                $(document).ready(function () {
+                    $("#echo").click(function () {
+                        $.post("/echo", {
+                            id: "712424cd388514767af651419a4e0407"
+                        }, function (data, status) {
+                            console.log(data, status);
+                        }, "json")
+                    });
+                    $("#show").click(function () {
+                        $.post("/show", {
+                            //id: "d714dabdd3286329bb1210646d0acf30",
+                            //id: "7e6801b711c3efd329d7983ff083be99",
+                            //id: "4a43505883f8783d6b97b76cba74f8fa",
+                            //id: "c94b101114c3e63c69a757f630380572",
+                            //id: "341189b9762a35d95c0be62612655e8c",
+                            id: "c68e51c212ad5db49bd866602821b84f",
+                            number: "1-3"
+                        }, function (data, status) {
+                            if (status == "success") {
+                                $("#imgDiv").empty()
+                                $(data.res).each(function (i, item) {
+                                    console.log(item);
+                                    if (item.prenum == -1 || i < item.prenum) {
+                                        // svg格式前缀为data:image/svg+xml;base54,
+                                        $image = $(
+                                            '<img alt="第' + item.number +
+                                            '页/共' + item.pagenum + '页"' +
+                                            'src="data:image/png;base64,' +
+                                            item.content + '" width="100%" />');
+                                        $("#imgDiv").append($image);
+                                        /*
+                                        $("#pic").attr("src",
+                                            "data:image/svg+xml;base64," +
+                                            item.content);
+                                            */
+                                    }
+                                });
+                            }
+
+                        }, "json")
+                    });
+                });
+            </script>
+            <a id="echo" href="#">查找</a>
+            <a id="show" href="#">图片</a>
+            <div id="imgDiv" style="height: 500px; width: 450px; overflow-y:hidden; position: relative">
+            </div>
+        </div>
                 </header>
             <section class="main">
 
                 </section>
        </div> 
+<embed src="/static/files/算法图解.pdf" type="application/pdf" width="50%" height="600" />
 {{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}

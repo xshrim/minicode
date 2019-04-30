@@ -3,9 +3,26 @@
 <h3>
     {{ .title }}
 </h3>
-<form action="/login" method="post">
-    用户名：<input type="text" name="user"><br>
-    密码：<input type="password" name="passwd"><br>
+<script>
+    function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]);
+        return null;
+    }
+
+    function submit() {
+        var form = document.getElementById('loginForm');
+        form.action = "/login?surl=" + GetQueryString("surl")
+        //进行下一步
+        return true;
+    }
+</script>
+<form id="loginForm" action="" method="post" omsubmit='return submit()'>
+    用户名： <input type="text" name="user">
+    <br>
+    密码： <input type="password" name="passwd">
+    <br>
     <input type="submit" value="登 录">
 </form>
 <div>

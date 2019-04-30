@@ -1,42 +1,23 @@
 {{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
-<h3>
-    {{.title}}
-</h3>
 <div id="argDiv" style="display: none;" username="{{.username}}"></div>
-<nav class="navbar navbar-inverse navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
-                aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">Project name</a>
-        </div>
-        <div id="navbar" class="collapse navbar-collapse">
-            <ul class="nav navbar-nav">
-                <li class="active"><a href="#">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </div>
-        <!--/.nav-collapse -->
-    </div>
-</nav>
 
 <div class="container">
-
+    <h3>
+        {{.title}}
+    </h3>
     <div class="starter-template">
         <h1>Bootstrap starter template</h1>
         <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text
             and a mostly barebones HTML document.</p>
     </div>
-    <a href="/share"> 上传文档</a>
-    <a href="/static/files/算法图解.pdf">pdf文档</a>
-    <embed src="/static/files/算法图解.pdf" type="application/pdf" width="50%" height="600" />
+    <div>
+        <a href="/share"> 上传文档</a>
+        <a href="/static/files/算法图解.pdf">pdf文档</a>
+    </div>
+    <div>
+        <embed src="/static/files/算法图解.pdf" type="application/pdf" width="50%" height="600" />
+    </div>
     <!-- 
         <iframe src="/static/files/算法图解.pdf" width="70%" height="80%">
 
@@ -57,7 +38,6 @@
         </object>
         -->
 
-    <img src="/static/refs/img/a.svg" />
 
 </div>
 
