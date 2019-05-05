@@ -1,6 +1,195 @@
 {{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
+<script>
+    function formatDateTime(timeStamp) {
+        var date = new Date();
+        date.setTime(timeStamp * 1000);
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        m = m < 10 ? ('0' + m) : m;
+        var d = date.getDate();
+        d = d < 10 ? ('0' + d) : d;
+        var h = date.getHours();
+        h = h < 10 ? ('0' + h) : h;
+        var minute = date.getMinutes();
+        var second = date.getSeconds();
+        minute = minute < 10 ? ('0' + minute) : minute;
+        second = second < 10 ? ('0' + second) : second;
+        return y + '-' + m + '-' + d + ' ' + h + ':' + minute + ':' + second;
+    };
 
+    function bytesToSize(bytes) {
+        if (bytes === 0) return '0 B';
+
+        var k = 1024;
+
+        sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+        //toPrecision(3) 后面保留一位小数，如1.0GB                                                                                                                  //return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+    }
+
+    function GetQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]);
+        return null;
+    }
+
+    $(function () {
+
+        $('#imgDiv').hover(function () {
+            $('#imgDiv').css({
+                'overflow-y': 'auto'
+            })
+        }, function () {
+            $('#imgDiv').css({
+                'overflow-y': 'hidden'
+            })
+        })
+
+        $("#echo").click(function () {
+            $.post("/echo", {
+                id: "712424cd388514767af651419a4e0407"
+            }, function (data, status) {
+                console.log(data, status);
+            }, "json")
+        });
+
+        $(".wenku-viewer-more-btn").click(function () {
+            docid = $(".wenku-doc-title").data("docid");
+            start = Number($(".wenku-current-page").text()) + 1;
+            end = start + 9; // 每次加载10页
+            getPages(docid, start + "-" + end);
+        });
+
+
+        function getDocument(docid) {
+            $.post("/docinfo", {
+                //id: "d714dabdd3286329bb1210646d0acf30",
+                //id: "7e6801b711c3efd329d7983ff083be99", // arch.ppt
+                //id: "4a43505883f8783d6b97b76cba74f8fa",
+                //id: "c94b101114c3e63c69a757f630380572",
+                //id: "341189b9762a35d95c0be62612655e8c", // xlsx
+                //id: "c68e51c212ad5db49bd866602821b84f", // p.jpg
+                //id: "3f92937346d59dc3c0145152b0f72223", // ca.pdf
+                id: docid,
+            }, function (data, status) {
+                if (status == "success") {
+                    doc = data.res
+                    if (doc) {
+                        $("#imgDiv").empty()
+
+                        console.log(doc);
+                        // 图标问题
+                        doctype = doc.ext.replace("docx", "word");
+                        doctype = doctype.replace(".", "");
+                        console.log(doctype);
+                        $(".wenku-doc-type").attr("alt", doctype + "文档");
+                        $(".wenku-doc-type").attr("src", "/static/refs/img/" + doctype +
+                            "_24.png"); // 增加图标
+
+                        $(".wenku-doc-title").data("docid", doc.id);
+                        $(".wenku-doc-title-span").text(doc.title);
+
+                        $(".wenku-doc-catalog").text(doc.catalog);
+                        $(".wenku-doc-class").text(doc.class);
+                        $(".wenku-doc-subclass").text(doc.subclass);
+
+                        $(".wenku-doc-owner").text(doc.owner);
+                        $(".wenku-doc-pagenum").text(doc.pagenum);
+                        $(".wenku-doc-dcnt").text(doc.dcnt);
+                        $(".wenku-doc-vcnt").text(doc.vcnt);
+                        $(".wenku-doc-ccnt").text(doc.ccnt);
+                        $(".wenku-doc-date").text(formatDateTime(doc.date));
+                        $(".wenku-doc-size").text(bytesToSize(doc.size));
+                        $(".wenku-doc-perm").text(doc.perm[1]); // 此处perm值应依据用户身份判定(是否交由后台?)
+
+                        $(".wenku-star").removeClass("star-35")
+                        $(".wenku-star").addClass("star-" + doc.score)
+                        $(".wenku-doc-score").text((Number(doc.score) / 10).toFixed(1))
+                        // $(".wenku-doc-score").text((doc.score / 10.0).toFixed(1)); // 后台记录评分为原始评分*10
+
+                        if (doc.desc) {
+                            var descs = doc.desc.split("\n");
+                            $.each(descs, function (idx, desc) {
+                                console.log(idx, desc);
+                                $tmpp = $('<span>' + desc + '</span><br>')
+                                $(".wenku-doc-desc").append($tmpp);
+                            })
+                        }
+
+
+                        $(doc.tag).each(function (i, item) {
+                            console.log(item);
+                            $tmptag = $('<label class="tag-label">' + item + '</label>');
+                            $(".wenku-doc-tag").append($tmptag);
+                        });
+
+                        $(".wenku-chain-docid").text(doc.id);
+                        $(".wenku-chain-endorse").text(doc.endorse);
+                        $(".wenku-chain-block").text(doc.block);
+                        $(".wenku-chain-txhash").text(doc.txhash);
+
+                        getPages(doc.id, "1-3");
+                    }
+                }
+            }, "json")
+        }
+
+
+        function getPages(docid, pgrg) {
+            $.post("/pageinfo", {
+                //id: "d714dabdd3286329bb1210646d0acf30",
+                //id: "7e6801b711c3efd329d7983ff083be99", // arch.ppt
+                //id: "4a43505883f8783d6b97b76cba74f8fa",
+                //id: "c94b101114c3e63c69a757f630380572",
+                //id: "341189b9762a35d95c0be62612655e8c", // xlsx
+                //id: "c68e51c212ad5db49bd866602821b84f", // p.jpg
+                //id: "3f92937346d59dc3c0145152b0f72223", // ca.pdf
+                id: docid,
+                range: pgrg
+            }, function (data, status) {
+                if (status == "success") {
+                    console.log(data);
+                    pagenum = Number($(".wenku-doc-pagenum:eq(0)").text());
+                    $(data.res).each(function (i, item) {
+                        console.log(item);
+                        if (item.prenum == -1 || i < item.prenum) {
+                            // svg格式前缀为data:image/svg+xml;base54,
+                            $image = $(
+                                '<img class="wenku-lazy wenku-viewer-img" alt="第' +
+                                item.number +
+                                '页/共' + pagenum + '页"' + ' data-next="' + (
+                                    item.number + 1) + '" ' +
+                                'src="data:image/png;base64,' +
+                                item.content + '" width="100%" />');
+                            $("#imgDiv").append($image);
+                            // console.log($("#imgDiv").children().length);
+                            $(".wenku-unread-pages").text(pagenum - item.number);
+                            $(".wenku-current-page").text(item.number);
+                            /*
+                            $("#pic").attr("src",
+                                "data:image/svg+xml;base64," +
+                                item.content);
+                                */
+                        }
+                    });
+                }
+
+            }, "json")
+        }
+        var docid = GetQueryString("docid")
+        if (docid && typeof (docid) != "undefined") {
+            getDocument(docid);
+        } else {
+            window.location.href = "/index"
+        }
+
+    });
+</script>
 
 <div class="container wenku-main">
     <div class="row">
@@ -8,32 +197,70 @@
 
             <div class="panel panel-default wenku-noborder">
                 <div class="panel-body">
-                    <h1><img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
-                        Flask&#43;By&#43;Example&#43;2016.3</h1>
+
+                    <h1 class="wenku-doc-title" data-docid=""><img class="wenku-doc-type" alt="未知文档"
+                            src="/static/refs/img/unkown_24.png" />
+                        <span class="wenku-doc-title-span"></span><img class="wenku-doc-sec"
+                            style="vertical-align:super; width: 16px; margin-left: 3px"
+                            src="/static/refs/img/sec.png" /></h1>
                     <div class="help-block wenku-doc-info">
-                        <span>
-                            <a href="/list/coding" title="编程开发">编程开发</a> >
-                            <a href="/list/coding/pid/7" title="后端开发">后端开发</a> >
-                            <a href="/list/coding/pid/7/cid/31" title="Python">Python</a> >
-                            <span class="text-muted">文档预览</span>
+                        <span class="text-muted">
+                            <a class="wenku-doc-catalog text-muted" href="/list/coding"></a> >
+                            <a class="wenku-doc-class text-muted" href="/list/coding/pid/7"></a> >
+                            <a class="wenku-doc-subclass text-muted" href="/list/coding/pid/7/cid/31"></a> >
+                            <span>预览</span>
                         </span>
                         <div class="pull-right text-muted">
-                            <span title="页数"><i class="fa fa-file-text-o"></i> 277 页</span>
-                            <span title="下载"><i class="fa fa-download"></i> 10 下载</span>
-                            <span title="浏览"><i class="fa fa-eye"></i> 3249 浏览</span>
-                            <span title="评论"><i class="fa fa-comments-o"></i> 2 评论</span>
-                            <span title="收藏"><i class="fa fa-heart-o"></i> 4 收藏</span>
-                            <span title="评分"><i class="wenku-star star-35"></i> 3.5分</span>
+                            <span title="页数"><i class="fa fa-file-text-o"></i> <span class="wenku-doc-pagenum">0</span>
+                                页</span>
+                            <span title="下载"><i class="fa fa-download"></i> <span class="wenku-doc-dcnt">0</span>
+                                下载</span>
+                            <span title="浏览"><i class="fa fa-eye"></i> <span class="wenku-doc-vcnt">0</span>
+                                浏览</span>
+                            <span title="评论"><i class="fa fa-comments-o"></i> <span class="wenku-doc-ccnt">0</span>
+                                评论</span>
+                            <!--<span title="收藏"><i class="fa fa-heart-o"></i> 4 收藏</span>-->
+                            <span title="评分"><i class="wenku-star star-1"></i> <span
+                                    class="wenku-doc-score">0.0</span>分</span>
                         </div>
                     </div>
 
                     <div class="help-block wenku-preview-tips">
-                        温馨提示：如果当前文档未能正常浏览，则可能是文档正在做转码处理，请先下载原文档进行浏览。
+                        <div class="row">
+                            <div class="col-md-3"
+                                style="width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span class="text-muted">可信标识: <span class="wenku-chain-docid"></span></span>
+                            </div>
+                            <div class="col-md-3"
+                                style="width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span class="text-muted">背书组织: <span class="wenku-chain-endorse"></span></span>
+                            </div>
+                            <div class="col-md-3"
+                                style="width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span class="text-muted">区块编号: <span class="wenku-chain-block"></span></span>
+                            </div>
+                            <div class="col-md-3"
+                                style="width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span class="text-muted">交易哈希: <span class="wenku-chain-txhash"></span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="wenku-doc-desc">
+
+                        </div>
+                        <div class="wenku-doc-tag">
+
+                        </div>
                     </div>
 
                     <div class="wenku-viewer" id="wenku-viewer" data-scale="9">
 
+                        <div id="imgDiv" class="image-preview">
 
+                        </div>
+                        <!--
+                            温馨提示：如果当前文档未能正常浏览，则可能是文档正在做转码处理，请先下载原文档进行浏览。
                         <img src="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/1.svg"
                             class="wenku-lazy wenku-viewer-img wenku-page1" data-page="1"
                             alt="Flask&#43;By&#43;Example&#43;2016.3 第 1 页">
@@ -66,15 +293,13 @@
                             alt="Flask&#43;By&#43;Example&#43;2016.3 第 5 页">
 
 
+                        -->
 
-
-                        <div class="wenku-viewer-more text-center" data-next="6" data-ext="svg"
-                            data-svg="http://itwenku.oss-cn-hongkong.aliyuncs.com/7k0kse0lvRD064gWT63ToG/">
-                            <div>下载文档到电脑，方便使用</div>
-                            <div><a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal"
+                        <div class="wenku-viewer-more text-center" style="margin-top: 10px">
+                            <div><a href="javascript:void(0);" class="btn btn-warning" data-toggle="modal"
                                     data-target="#ModalDownload"><i class="fa fa-cloud-download"></i> 下载文档</a></div>
                             <a href="javascript:void(0);" class="wenku-viewer-more-btn">
-                                <div class="help-block">还有 <span class="wenku-unread-pages">272</span> 页未阅读，<span
+                                <div class="help-block">还有 <span class="wenku-unread-pages">0</span> 页未阅读，<span
                                         class="text-primary">继续阅读</span></div>
                             </a>
                             <div class="help-block"><a href="javascript:void(0);" class="wenku-viewer-more-btn"><i
@@ -86,8 +311,8 @@
 
 
                     <div class="help-block">
-                        <span>本文档由 <a href="/user/4" target="_blank" title="Bug大人">Bug大人</a> 于 <span
-                                class="text-muted">2017-09-10 10:22:18</span>上传分享</span>
+                        <span>本文档由 <a class="wenku-doc-owner" href="" target="_blank">无名氏</a> 于 <span
+                                class="text-muted wenku-doc-date">0000-00-00 00:00:00</span>上传分享</span>
                     </div>
                     <div class="help-block">
                         <div class="pull-left">
@@ -97,7 +322,8 @@
                         <div class="pull-right wenku-mgl-15px">
                             <a href="javascript:void(0);" rel="nofollow" data-toggle="modal"
                                 data-target="#ModalDownload" target="_blank" class="btn btn-primary btn-sm"><i
-                                    class="fa fa-cloud-download"></i> 下载原文档(5.11MB)</a>
+                                    class="fa fa-cloud-download"></i> 下载原文档(<span
+                                    class="wenku-doc-size">5.11MB</span>)</a>
                         </div>
                         <div class="pull-right">
 
@@ -138,6 +364,7 @@
                                 <div class="help-block">您好可以输入 <span class="text-danger wenku-comment-num">255</span>
                                     个字符</div>
                             </div>
+                            <!--
                             <div class="col-xs-5 clearfix text-right wenku-answer-tips">
                                 <div class="help-block">IT文库的网址是多少？( 答案：<span class="text-danger">wenku.it</span> )
                                 </div>
@@ -147,7 +374,8 @@
                                 <input type="text" name="Answer" required="required" class="form-control"
                                     placeholder="请输入答案">
                             </div>
-                            <div class="col-xs-2 wenku-no-pdr clearfix text-right">
+                            -->
+                            <div class="col-xs-2 col-xs-offset-7 wenku-no-pdr clearfix text-right">
                                 <input type="submit" class="btn btn-danger btn-block" value="发表评论">
                             </div>
                         </div>
@@ -170,7 +398,7 @@
                             <div class="col-xs-11 wenku-no-pdr">
                                 <a href="/user/26" target="_blank" title="xinyichv">xinyichv</a>
                                 <span><i class="wenku-star star-40"></i> 4.0分</span>
-                                <span class="color-gray pull-right">2018-06-01 10:16:33</span>
+                                <span class="color-gray pull-right">2019-05-01 10:16:33</span>
                                 <div class="help-block wenku-comment-content">好好好好好好好好好好</div>
                             </div>
                         </li>
@@ -186,28 +414,419 @@
         <div class="col-xs-3 wenku-right">
 
 
-
             <div class="panel panel-default wenku-noborder wenku-maylike">
                 <div class="panel-heading">
-                    <div class="strong">热门文档</div>
+                    <div class="strong">相关推荐</div>
                 </div>
                 <div class="panel-body">
 
                     <ul class="wenku-tabs-list">
-                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5272" target="_blank"
-                                title="my flask">my flask</a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                以太网权威指南（第2版）
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">328 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">203 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
-                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/5220" target="_blank"
-                                title="flask学习笔记">flask学习笔记</a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                银行云数据中心网络架构设计方案
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">46 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">70 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
-                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5148" target="_blank"
-                                title="Flask 学习笔记">Flask 学习笔记</a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="word文档" src="/static/refs/img/word_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                全数字化网络架构及案例介绍
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">23 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">29 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
-                        <li><img alt="ppt文档" src="/static/refs/img/ppt_24.png" /><a href="/view/4974" target="_blank"
-                                title="Tornado-explore">Tornado-explore</a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="ppt文档" src="/static/refs/img/ppt_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                软件定义网络：SDN与OpenFlow解析
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">37 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">106 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
-                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/4917" target="_blank"
-                                title="Django学习笔记">Django学习笔记</a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="txt文档" src="/static/refs/img/txt_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                VLAN的基本配置命令及公司内部进行VLAN的划分实例
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">17 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">22 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="ppt文档" src="/static/refs/img/ppt_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                云数据中心网络技术
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">204 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">85 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="excel文档" src="/static/refs/img/excel_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                网络机房日巡查记录表
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">11 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">7 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="md文档" src="/static/refs/img/md_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                计算机网络英文缩写解释大全
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">69 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">112 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="img文档" src="/static/refs/img/img_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                一张图看尽Linux内核运行原理
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">1 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">88 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="ppt文档" src="/static/refs/img/ppt_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                Kubernetes与服务网格介绍
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">47 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">141 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+
+            <div class="panel panel-default wenku-noborder wenku-maylike">
+                <div class="panel-heading">
+                    <div class="strong">近期热门</div>
+                </div>
+                <div class="panel-body">
+
+                    <ul class="wenku-tabs-list">
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="word文档" src="/static/refs/img/word_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                2018年Hyperledger 区块链技术概况实践报告
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">78 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">177 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                基于Kubernetes的分布式ELK日志分析系统
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">52 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">94 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="mobi文档" src="/static/refs/img/mobi_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                Docker开发指南
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">407 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">128 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="word文档" src="/static/refs/img/word_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                可行性分析报告—容器云PaaS平台建设项目
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">49 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">88 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="excel文档" src="/static/refs/img/excel_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                科技公司项目架构调查表
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">15 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">72 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                中国区块链白皮书(2018)
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">57 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">100 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="epub文档" src="/static/refs/img/epub_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                MongoDB技术架构介绍
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">241 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">105 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="txt文档" src="/static/refs/img/txt_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                Linux系统架构和应用技巧
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">93 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">33 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -215,42 +834,186 @@
 
             <div class="panel panel-default wenku-noborder wenku-maylike">
                 <div class="panel-heading">
-                    <div class="strong">最新文档</div>
+                    <div class="strong">最新上传</div>
                 </div>
                 <div class="panel-body">
 
                     <ul class="wenku-tabs-list">
-
-                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5272" target="_blank"
-                                title="my flask">my flask</a></li>
-
-                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/5220" target="_blank"
-                                title="flask学习笔记">flask学习笔记</a></li>
-
-                        <li><img alt="mobi文档" src="/static/refs/img/book_24.png" /><a href="/view/5148" target="_blank"
-                                title="Flask 学习笔记">Flask 学习笔记</a></li>
-
-                        <li><img alt="ppt文档" src="/static/refs/img/ppt_24.png" /><a href="/view/4974" target="_blank"
-                                title="Tornado-explore">Tornado-explore</a></li>
-
-                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/4917" target="_blank"
-                                title="Django学习笔记">Django学习笔记</a></li>
-
-                        <li><img alt="word文档" src="/static/refs/img/word_24.png" /><a href="/view/4914" target="_blank"
-                                title=" Django Cupcake Shop"> Django Cupcake Shop</a></li>
-
-                        <li><img alt="txt文档" src="/static/refs/img/txt_24.png" /><a href="/view/4908" target="_blank"
-                                title="Django-Tutorial">Django-Tutorial</a></li>
-
-                        <li><img alt="md文档" src="/static/refs/img/md_24.png" /><a href="/view/4905" target="_blank"
-                                title="Django-Design-Patterns-and-Best-Practices-zh">Django-Design-Patterns-and-Best-Practices-zh</a>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="umd文档" src="/static/refs/img/umd_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                卷积神经网络的Python实现
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">196 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">13 下载</span>
+                                    </div>
+                                </div>
+                            </div>
                         </li>
 
-                        <li><img alt="pdf文档" src="/static/refs/img/pdf_24.png" /><a href="/view/4902" target="_blank"
-                                title="Django noname ">Django noname </a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="word文档" src="/static/refs/img/word_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                光大科技有限公司研发项目管理办法
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">10 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">7 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
-                        <li><img alt="epub文档" src="/static/refs/img/book_24.png" /><a href="/view/4899" target="_blank"
-                                title="django進階測試-簡單翻譯筆記">django進階測試-簡單翻譯筆記</a></li>
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                图说区块链,通俗易懂的告诉你什么是区块链
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">103 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">10 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                大宗商品交易平台中数据交换系统的设计与实现
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">37 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">11 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="md文档" src="/static/refs/img/md_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                kubernetes容器云平台设计与实践
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">124 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">21 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="word文档" src="/static/refs/img/word_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                信息安全技术数据交易服务安全要求
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">53 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">9 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="pdf文档" src="/static/refs/img/pdf_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                Go并发编程
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">347 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">20 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <img alt="word文档" src="/static/refs/img/word_24.png" />
+                                </div>
+                                <div class="col-md-10">
+                                    <div
+                                        style="width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <a href="/view/5272" target="_blank" title="my flask">
+                                            <span>
+                                                基于分布式ETL和Django的终端运营管理系统
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span class="wenku-tabs-list-tip" style="float:left">77 页</span>
+                                        <span class="wenku-tabs-list-tip" style="float:right">16 下载</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
                     </ul>
 
@@ -286,8 +1049,8 @@
 
                     <li class="wenku-mgl-15px"><a href="javascript:void(0);" class="wenku-page-prev"><i
                                 class="fa fa-chevron-up em14"></i></a></li>
-                    <p class="navbar-text"> <span class="wenku-current-page">1</span> / <span
-                            class="wenku-total-page">277</span> </p>
+                    <p class="navbar-text" style="margin-top: 15px"> <span class="wenku-current-page">0</span> / <span
+                            class="wenku-doc-pagenum">0</span> </p>
                     <li class="wenku-mgr-15px"><a href="javascript:void(0);" class="wenku-page-next"><i
                                 class="fa fa-chevron-down em14"></i></a></li>
 
@@ -298,9 +1061,12 @@
 
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    <p class="navbar-text"><i class="fa fa-database"></i>&nbsp;&nbsp;0&nbsp;&nbsp;个金币 </p>
+                    <p class="navbar-text" style="margin-top: 15px"><i class="fa fa-database"></i>&nbsp;&nbsp;<span
+                            class="wenku-doc-perm">0</span>&nbsp;&nbsp;积分
+                    </p>
                     <li class="active" data-toggle="modal" data-target="#ModalDownload"><a href="javascript:void(0);"><i
-                                class="fa fa-cloud-download em14"></i> 下载文档(5.11MB)</a></li>
+                                class="fa fa-cloud-download em14"></i> 下载文档(<span class="wenku-doc-size">0 B</span>)</a>
+                    </li>
                 </ul>
             </div>
             <div class="col-xs-3">
@@ -326,7 +1092,8 @@
             <div class="modal-body clearfix">
 
 
-                <div class="help-block wenku-download-tips">文档下载，需要消耗您 <span class="text-danger">0</span> 个金币。</div>
+                <div class="help-block wenku-download-tips">文档下载，需要消耗您 <span class="text-danger wenku-doc-perm">1</span>
+                    积分</div>
 
 
                 <div class="help-block">您确定要下载 <span class="text-danger">Flask&#43;By&#43;Example&#43;2016.3</span> 文档吗？
@@ -450,7 +1217,7 @@
     </div>
 </div>
 
-
+<!--
 <div class="container-fluid wenku-footer">
     <div class="container">
         <div class="row wenku-flink">
@@ -499,5 +1266,6 @@
         </div>
     </div>
 </div>
+-->
 
 {{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}

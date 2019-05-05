@@ -1,34 +1,82 @@
-{{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 
-<h3>
-    {{ .title }}
-</h3>
-<script>
-    function getQueryString(name) {
-        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
-        var r = window.location.search.substr(1).match(reg);
-        if (r != null) return unescape(r[2]);
-        return null;
-    }
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{{.title}}</title>
+    <link rel="stylesheet" href="/static/refs/css/lrtk.css">
 
-    function submit() {
-        var form = document.getElementById('loginForm');
-        form.action = "/login?surl=" + GetQueryString("surl")
-        //进行下一步
-        return true;
-    }
-</script>
-<form id="loginForm" action="" method="post" omsubmit='return submit()'>
-    用户名： <input type="text" name="user">
-    <br>
-    密码： <input type="password" name="passwd">
-    <br>
-    <input type="submit" value="登 录">
-</form>
-<div>
-    <span>
+    <script>
+        function getQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) return unescape(r[2]);
+            return null;
+        }
 
-    </span>
-</div>
+        function submit() {
+            var form = document.getElementById('loginForm');
+            form.action = "/login?surl=" + GetQueryString("surl")
+            //进行下一步
+            return true;
+        }
+    </script>
+</head>
 
-{{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}
+<body>
+    <!-- 代码 开始 -->
+    <div id="login">
+        <div class="wrapper">
+            <div class="login">
+                <form id="loginForm" action="" method="post" class="container offset1 loginform">
+                    <div id="owl-login">
+                        <div class="hand"></div>
+                        <div class="hand hand-r"></div>
+                        <div class="arms">
+                            <div class="arm"></div>
+                            <div class="arm arm-r"></div>
+                        </div>
+                    </div>
+                    <div class="pad">
+                        <input type="hidden" name="_csrf" value="9IAtUxV2CatyxHiK2LxzOsT6wtBE6h8BpzOmk=">
+                        <div class="control-group">
+                            <div class="controls">
+                                <label for="user" class="control-label"><i class="fa fa-user"></i></label>
+                                <input id="user" type="text" name="user" placeholder="用户名" tabindex="1"
+                                    autofocus="autofocus" class="form-control input-medium">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label for="password" class="control-label"><i class="fa fa-asterisk"></i>
+                                </label>
+                                <input id="password" type="password" name="passwd" placeholder="密码" tabindex="2"
+                                    class="form-control input-medium">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions"><a href="" tabindex="5"
+                            class="btn pull-left btn-link text-muted">忘记密码?</a><a href="" tabindex="6"
+                            class="btn btn-link text-muted">注册</a>
+                        <button type="submit" tabindex="4" class="btn btn-primary">登录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script src="/static/refs/js/jquery.js"></script>
+        <script>
+            $(function () {
+
+                $('#login #password').focus(function () {
+                    $('#owl-login').addClass('password');
+                }).blur(function () {
+                    $('#owl-login').removeClass('password');
+                });
+            });
+        </script>
+    </div>
+    <!-- 代码 结束 -->
+</body>
+
+</html>

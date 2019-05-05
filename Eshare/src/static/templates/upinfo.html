@@ -1,0 +1,119 @@
+{{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
+
+<script type="text/javascript">
+    $(function () {
+        $("#viewdoc").click(function () {
+            window.location.href = "/view?docid=" + $(this).data("docid")
+        });
+
+        $("#uponemore").click(function () {
+            window.location.href = "/share"
+        });
+    });
+</script>
+
+<div class="container">
+    <div class="row">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="strong">上传信息</div>
+            </div>
+            <div class="panel-body row">
+                <div class="col-xs-6 col-md-8 upinfo">
+                    <div class="upinfo-title">
+                        <img src="/static/refs/img/success.png" width=50px style="vertical-align:middle">
+                        <span style="font-size: 20px"><strong>文档上传成功</strong></span>
+                        </img>
+                    </div>
+                    <div class="upinfo-content">
+                        <!--
+                        <div>
+                            <div style="float:left">&nbsp;&nbsp;&nbsp;&nbsp;<img src="/static/refs/img/safe.png"
+                                    width=24px style="vertical-align:middle"><span> 文档已在区块链上锚定:</span></div>
+                            <div style="float:right"><a>点击预览</a></div>
+                        </div>
+                        <div class="clear"></div>
+                        渐变分割线
+                        <div style="background:linear-gradient(to left,#efefef,#b6b6b6,#efefef);height:1px;"></div>
+                        -->
+                        <div class="separate-line">
+                            <div class="separate-content"><img src="/static/refs/img/safe.png" width=24px
+                                    style="vertical-align:middle" /><br><span
+                                    style="font-size:10px; color: #b6b6b6">文档已上链</span></div>
+                        </div>
+
+                        <div class="row" style="margin-bottom: 40px">
+                            <div class="col-md-6"
+                                style="width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <img src="/static/refs/img/sign.png" width=24px style="vertical-align:middle"><span
+                                    style="color: gray; font-size: 14px" data-toggle="tooltip" title="{{.docid}}">
+                                    <strong>可信标识:</strong> {{.docid}}</span>
+                            </div>
+                            <div class="col-md-6"
+                                style="width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <img src="/static/refs/img/endoser.png" width=24px style="vertical-align:middle"><span
+                                    style="color: gray; font-size: 14px" data-toggle="tooltip" title="{{.endorse}}">
+                                    <strong>背书组织:</strong> {{.endorse}}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6"
+                                style="width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <img src="/static/refs/img/blk.png" width=24px style="vertical-align:middle"><span
+                                    style="color: gray; font-size: 14px" data-toggle="tooltip" title="{{.blknum}}">
+                                    <strong>区块编号:</strong> {{.blknum}}</span>
+                            </div>
+                            <div class="col-md-6"
+                                style="width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <img src="/static/refs/img/tx.png" width=24px style="vertical-align:middle"><span
+                                    style="color: gray; font-size: 14px" data-toggle="tooltip" title="{{.txid}}">
+                                    <strong>交易哈希:</strong>
+                                    {{.txid}}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <!--
+                            <div class=" upinfo-chain">
+                                    <div style="float:left"><img src="/static/refs/img/sign.png" width=24px
+                                            style="vertical-align:middle"><span style="color: gray; font-size: 14px">
+                                            <strong>可信标识:</strong> {{.id}}</span></div>
+                                    <div style="float:right"><img src="/static/refs/img/endoser.png" width=24px
+                                            style="vertical-align:middle"><span style="color: gray; font-size: 14px">
+                                            <strong>背书组织:</strong> {{.endorse}}</span></div>
+                            </div>
+                            <div class="clear"></div>
+                            <div class="upinfo-chain">
+                                <div style="float:left"><img src="/static/refs/img/blk.png" width=24px
+                                        style="vertical-align:middle"><span style="color: gray; font-size: 14px">
+                                        <strong>区块编号:</strong> {{.blknum}}</span></div>
+                                <div style="float:right"><img src="/static/refs/img/tx.png" width=24px
+                                        style="vertical-align:middle"><span style="color: gray; font-size: 14px">
+                                        <strong>交易哈希:</strong> {{.title}}</span>
+                                </div>
+                            </div>
+                            -->
+                        </div>
+                        <!--
+                        <div class="clear"></div>
+                        -->
+                        <div
+                            style="margin-top: 40px; background:linear-gradient(to left,#efefef,#b6b6b6,#efefef);height:1px;">
+                        </div>
+                        <div class="upinfo-btn row">
+                            <div class="col-xs-6" style="text-align:center">
+                                <button id="viewdoc" type="button" class="button green"
+                                    data-docid="{{.docid}}">查看文档</button>
+                            </div>
+                            <div class="col-xs-6" style="text-align:center">
+                                <button id="uponemore" type="button" class="button yellow">继续上传</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{template "footer"}} {{/* footer.html 它是页面嵌入模板,双花括号内容后面没有那个点表示footer.html模板中没有变量 */}}

@@ -3,6 +3,19 @@
 <h3>
     {{.title}}
 </h3>
+<script type="text/javascript">
+    /*
+    onclick="$('input[id=lefile]').click();"
+    $('#lefile').change(function () {
+        console.log("aaa");
+        $('#photoCover').val($(this).val());
+    });
+    */
+
+    function change() {
+        document.getElementById("photoCover").value = document.getElementById("lefile").value;
+    }
+</script>
 <div class="container">
     <div class="row">
         <div class="panel panel-default">
@@ -11,7 +24,7 @@
             </div>
             <div class="panel-body">
                 <div class="wenku-tips text-center help-block">
-                    每成功上传一篇未被分享过的文档，可获得 <span class="text-primary">+{{.reward}}</span> 个金币奖励。
+                    每成功上传一篇未被分享过的文档，可获得 <span class="text-primary">+{{.reward}}</span> 个积分奖励。
                     <!-- 若有完善的标签和文档简介，将有机会额外获得 <span class="text-danger">1-20</span> 个财富值奖励。 -->
                     {{/*待积分商城上线，财富值可用于兑换各种小礼品！*/}}
                 </div>
@@ -21,10 +34,21 @@
                         <div class="form-group">
                             <label class="col-sm-2 control-label">文档上传 <i class="text-danger">*</i></label>
                             <div class="col-sm-10">
-                                <input type="file" required="required" data-err="请上传一篇文档" class="form-control"
+                                <input id="lefile" type="file" required="required" style="display:none"
+                                    onchange="change();" data-err="请上传一篇文档" class="form-control"
                                     data-maxsize="{{.maxsize}}"
-                                    data-accept="doc,docx,rtf,wps,odt,ppt,pptx,pps,ppsx,dps,odp,pot,xls,xlsx,et,ods,md,txt,pdf,chm,epub,umd,mobi"
+                                    data-accept="doc,docx,rtf,wps,odt,ppt,pptx,pps,ppsx,dps,odp,pot,xls,xlsx,et,ods,md,txt,pdf,chm,epub,umd,mobi,png,jpg,jpeg,bmp,tiff,gif,webp"
                                     name="file" placeholder="请上传一篇文档">
+                                <div class="input-group">
+                                    <input id="photoCover" type="text" class="form-control" readonly="readonly"
+                                        placeholder="请上传一篇文档">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-default" type="button"
+                                            onclick="lefile.click();">浏览...</button>
+                                    </span>
+                                </div>
+
+
                             </div>
                         </div>
                         <div class="form-group">
@@ -40,7 +64,9 @@
                             <div class="col-sm-10">
                                 <select name="catalog" required="required" data-err="请选择文档类目" class="form-control">
                                     <option value="">请选择文档类目</option>
-                                    <option value="program">编程开发</option>
+                                    <option value="编程开发">编程开发</option>
+                                    <option value="系统运维">系统运维</option>
+                                    <option value="项目管理">项目管理</option>
                                 </select>
                             </div>
                         </div>
@@ -49,39 +75,87 @@
                             <div class="col-sm-5 form-level-one">
                                 <select name="class" required="required" data-err="请选择文档分类" class="form-control">
                                     <option value="">请先选择文档分类</option>
-                                    <option value="frontend">前端开发</option>
-                                    <option value="backend">后端开发</option>
+                                    <option value="前端开发">前端开发</option>
+                                    <option value="后端开发">后端开发</option>
+                                    <option value="网络技术">网络技术</option>
+                                    <option value="文档报告">文档报告</option>
                                 </select>
                             </div>
                             <div class="col-sm-5 form-level-two">
                                 <select name="subclass" required="required" data-err="请选择文档子类" class="form-control">
                                     <option value="">请先选择文档子类</option>
-                                    <option value="jquery">jQuery</option>
-                                    <option value="bootstrap">Bootstrap</option>
-                                    <option value="vue">Vue</option>
-                                    <option value="go">Go</option>
-                                    <option value="java">Java</option>
-                                    <option value="python">Python</option>
+                                    <option value="jQuery">jQuery</option>
+                                    <option value="Bootstrap">Bootstrap</option>
+                                    <option value="Vue">Vue</option>
+                                    <option value="Go">Go</option>
+                                    <option value="Java">Java</option>
+                                    <option value="Python">Python</option>
+                                    <option value="网络架构">网络架构</option>
+                                    <option value="需求文档">需求文档</option>
                                 </select>
                             </div>
                         </div>
+                        <!--
                         <div class="form-group">
-                            <label class="col-sm-2 control-label">文档售价</label>
-                            <div class="col-sm-5">
-                                <select name="price" class="form-control">
-                                    <option value="0">免费下载</option>
-                                    <option value="1">1个金币</option>
-                                    <option value="2">2个金币</option>
-                                    <option value="5">5个金币</option>
-                                    <option value="8">8个金币</option>
-                                    <option value="10">10个金币</option>
-                                    <option value="20">20个金币</option>
-                                    <option value="-1">禁止下载</option>
-                                </select>
+                            <label class="col-sm-2 control-label">文档售价 <i class="text-danger">*</i></label>
+                            <div class="col-sm-10">
+                                <div class="controls form-inline">
+                                    <select name="price" class="form-control form-control-inline">
+                                        <option value="0">免费下载</option>
+                                        <option value="1">1个金币</option>
+                                        <option value="2">2个金币</option>
+                                        <option value="5">5个金币</option>
+                                        <option value="8">8个金币</option>
+                                        <option value="10">10个金币</option>
+                                        <option value="20">20个金币</option>
+                                        <option value="-1">禁止下载</option>
+                                    </select>
+                                    <select name="price1" class="form-control form-control-inline">
+                                        <option value="0">免费下载</option>
+                                        <option value="1">1个金币</option>
+                                        <option value="2">2个金币</option>
+                                        <option value="5">5个金币</option>
+                                        <option value="8">8个金币</option>
+                                        <option value="10">10个金币</option>
+                                        <option value="20">20个金币</option>
+                                        <option value="-1">禁止下载</option>
+                                    </select>
+                                    <select name="price2" class="form-control form-control-inline">
+                                        <option value="0">免费下载</option>
+                                        <option value="1">1个金币</option>
+                                        <option value="2">2个金币</option>
+                                        <option value="5">5个金币</option>
+                                        <option value="8">8个金币</option>
+                                        <option value="10">10个金币</option>
+                                        <option value="20">20个金币</option>
+                                        <option value="-1">禁止下载</option>
+                                    </select>
+                                    <select name="price3" class="form-control form-control-inline">
+                                        <option value="0">免费下载</option>
+                                        <option value="1">1个金币</option>
+                                        <option value="2">2个金币</option>
+                                        <option value="5">5个金币</option>
+                                        <option value="8">8个金币</option>
+                                        <option value="10">10个金币</option>
+                                        <option value="20">20个金币</option>
+                                        <option value="-1">禁止下载</option>
+                                    </select>
+                                    <select name="price4" class="form-control form-control-inline">
+                                        <option value="0">免费下载</option>
+                                        <option value="1">1个金币</option>
+                                        <option value="2">2个金币</option>
+                                        <option value="5">5个金币</option>
+                                        <option value="8">8个金币</option>
+                                        <option value="10">10个金币</option>
+                                        <option value="20">20个金币</option>
+                                        <option value="-1">禁止下载</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
+                        -->
                         <div class="form-group">
-                            <label class="col-sm-2 control-label">预览页数</label>
+                            <label class="col-sm-2 control-label">预览页数 <i class="text-danger">*</i></label>
                             <div class="col-sm-5">
                                 <select name="prenum" class="form-control">
                                     <option value="0">不可预览</option>
@@ -95,6 +169,109 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">文档权限</i></label>
+                            <div class="col-sm-10">
+                                <div class="controls form-inline">
+                                    <input type="text" class="form-control form-control-inline" data-err="团队内权限"
+                                        placeholder="团队权限" name="teamperm" list="teamlist"
+                                        onkeyup="this.value=this.value.replace(/[^\d-]/g,'')" data-toggle="tooltip"
+                                        title="团队内成员访问权限(-1:禁止访问; 0: 公开访问; >1: 积分访问) 默认: 0">
+                                    <datalist id="teamlist">
+                                        <option value="-1">禁止访问</option>
+                                        <option value="0">公开访问</option>
+                                        <option value="1">积分访问</option>
+                                        <option value="2">积分访问</option>
+                                        <option value="3">积分访问</option>
+                                        <option value="5">积分访问</option>
+                                        <option value="8">积分访问</option>
+                                        <option value="10">积分访问</option>
+                                        <option value="15">积分访问</option>
+                                        <option value="20">积分访问</option>
+                                        <option value="30">积分访问</option>
+                                        <option value="50">积分访问</option>
+                                        <option value="100">积分访问</option>
+                                    </datalist>
+                                    <input type="text" class="form-control form-control-inline" data-err="组织内权限"
+                                        placeholder="组织权限" name="orgperm" list="orglist"
+                                        onkeyup="this.value=this.value.replace(/[^\d-]/g,'')" data-toggle="tooltip"
+                                        title="组织内成访问权限(-1:禁止访问; 0: 公开访问; >1: 积分访问) 默认: 0">
+                                    <datalist id="orglist">
+                                        <option value="-1">禁止访问</option>
+                                        <option value="0">公开访问</option>
+                                        <option value="1">积分访问</option>
+                                        <option value="2">积分访问</option>
+                                        <option value="3">积分访问</option>
+                                        <option value="5">积分访问</option>
+                                        <option value="8">积分访问</option>
+                                        <option value="10">积分访问</option>
+                                        <option value="15">积分访问</option>
+                                        <option value="20">积分访问</option>
+                                        <option value="30">积分访问</option>
+                                        <option value="50">积分访问</option>
+                                        <option value="100">积分访问</option>
+                                    </datalist>
+                                    <input type="text" class="form-control form-control-inline" data-err="公司内权限"
+                                        placeholder="公司权限" name="corpperm" list="corplist"
+                                        onkeyup="this.value=this.value.replace(/[^\d-]/g,'')" data-toggle="tooltip"
+                                        title="公司内成员访问权限(-1:禁止访问; 0: 公开访问; >1: 积分访问) 默认: -1">
+                                    <datalist id="corplist">
+                                        <option value="-1">禁止访问</option>
+                                        <option value="0">公开访问</option>
+                                        <option value="1">积分访问</option>
+                                        <option value="2">积分访问</option>
+                                        <option value="3">积分访问</option>
+                                        <option value="5">积分访问</option>
+                                        <option value="8">积分访问</option>
+                                        <option value="10">积分访问</option>
+                                        <option value="15">积分访问</option>
+                                        <option value="20">积分访问</option>
+                                        <option value="30">积分访问</option>
+                                        <option value="50">积分访问</option>
+                                        <option value="100">积分访问</option>
+                                    </datalist>
+                                    <input type="text" class="form-control form-control-inline" data-err="集团内权限"
+                                        placeholder="集团权限" name="grpperm" list="grplist"
+                                        onkeyup="this.value=this.value.replace(/[^\d-]/g,'')" data-toggle="tooltip"
+                                        title="集团内成员访问权限(-1:禁止访问; 0: 公开访问; >1: 积分访问) 默认: -1">
+                                    <datalist id="grplist">
+                                        <option value="-1">禁止访问</option>
+                                        <option value="0">公开访问</option>
+                                        <option value="1">积分访问</option>
+                                        <option value="2">积分访问</option>
+                                        <option value="3">积分访问</option>
+                                        <option value="5">积分访问</option>
+                                        <option value="8">积分访问</option>
+                                        <option value="10">积分访问</option>
+                                        <option value="15">积分访问</option>
+                                        <option value="20">积分访问</option>
+                                        <option value="30">积分访问</option>
+                                        <option value="50">积分访问</option>
+                                        <option value="100">积分访问</option>
+                                    </datalist>
+                                    <input type="text" class="form-control form-control-inline" data-err="联盟内权限"
+                                        placeholder="联盟权限" name="consperm" list="conslist"
+                                        onkeyup="this.value=this.value.replace(/[^\d-]/g,'')" data-toggle="tooltip"
+                                        title="联盟内成员访问权限(-1:禁止访问; 0: 公开访问; >1: 积分访问) 默认: -1">
+                                    <datalist id="conslist">
+                                        <option value="-1">禁止访问</option>
+                                        <option value="0">公开访问</option>
+                                        <option value="1">积分访问</option>
+                                        <option value="2">积分访问</option>
+                                        <option value="3">积分访问</option>
+                                        <option value="5">积分访问</option>
+                                        <option value="8">积分访问</option>
+                                        <option value="10">积分访问</option>
+                                        <option value="15">积分访问</option>
+                                        <option value="20">积分访问</option>
+                                        <option value="30">积分访问</option>
+                                        <option value="50">积分访问</option>
+                                        <option value="100">积分访问</option>
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label class="col-sm-2 control-label">文档标签</label>
                             <div class="col-sm-10">
@@ -145,6 +322,9 @@
                                     <img src="/static/refs/img/book_24.png" alt="其他文档"> epub，umd，chm，mobi
                                 </p>
                                 <p>
+                                    <img src="/static/refs/img/img_24.png" alt="图片文件" /> png, jpg, bmp, gif, webp, tiff
+                                </p>
+                                <p>
                                     <img src="/static/refs/img/md_24.png" alt="Markdown文档" /> md
                                 </p>
                                 <p>
@@ -156,8 +336,8 @@
                             </div>
                             <div class="help-block">5.上传涉嫌侵权或违法的文档将会被移除。</div>
                             <div class="help-block">6.上传有问题？请查看 <a href="/pages/help" target="_blank"
-                                    title="文库帮助">文库帮助</a> 和 <a href="/pages/feedback" target="_blank"
-                                    title="意见反馈">意见反馈</a></div>
+                                    title="文库帮助">文库帮助</a>
+                                和 <a href="/pages/feedback" target="_blank" title="意见反馈">意见反馈</a></div>
                             <div class="help-block">7.为营造绿色网络环境，严禁上传含淫秽色情及低俗信息等文档，让我们一起携手打造健康文库</div>
                         </div>
                     </div>

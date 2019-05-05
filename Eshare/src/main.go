@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ const (
 )
 
 func ReplaceStr(str string) string {
-	replacer := strings.NewReplacer("\\", "", " ", "", "\n", "", "\t", "", "/", "", ":", "", "*", "", "?", "", "|", "", "<", "", ">", "", "@", "")
+	replacer := strings.NewReplacer("\\", "", " ", "", "\n", "", "\r", "", "\t", "", "/", "", ":", "", "*", "", "?", "", "|", "", "<", "", ">", "", "@", "")
 	return replacer.Replace(str)
 }
 
@@ -150,11 +151,11 @@ func Save(obj interface{}, colname string) string {
 }
 
 // 更新数据库上的对象
-func Update(id, colname string, val bson.M) string {
+func Update(id, colname string, val bson.M) int64 {
 
 	client := Conn(url)
 	if client == nil {
-		return ""
+		return 0
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 
@@ -169,14 +170,15 @@ func Update(id, colname string, val bson.M) string {
 	res, err := col.UpdateOne(ctx, bson.M{"id": id}, bson.M{"$set": val})
 	if err != nil {
 		log.Println(err)
-		return ""
+		return 0
 	}
 
-	if oid, ok := res.UpsertedID.(primitive.ObjectID); ok {
-		return oid.Hex()
-	}
-
-	return ""
+	return res.ModifiedCount
+	/*
+		if oid, ok := res.UpsertedID.(primitive.ObjectID); ok {
+			return oid.Hex()
+		}
+	*/
 }
 
 // 查找数据库上的文档对象
@@ -242,15 +244,20 @@ func Convert(document *doc.Document) bool {
 	}
 	isImg := false
 	fullname := path.Join("static/files", document.Name)
+	fullname, err := filepath.Abs(fullname)
+	if err != nil {
+		return false
+	}
+	ext := filepath.Ext(fullname)
 	pdffile := fullname
-	switch document.Ext {
+	switch strings.ToLower(ext) {
 	case ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".wps", ".rtf", ".pps", ".ppsx", ".dps", ".odp", ".pot", ".et", ".ods":
 		// office文档转pdf
 		// 需要为服务器安装相应字体, 否则可能导致转换后页数与原文件不一致
 		// 常用字体: simsun.ttf(宋体SimSun), simhei.ttf(黑体SimHei)
 		err := doc.OfficeToPDF(fullname)
 		log.Println(err)
-		pdffile = strings.TrimSuffix(fullname, document.Ext) + ".pdf"
+		pdffile = strings.TrimSuffix(fullname, ext) + ".pdf"
 	case ".epub", ".umd", ".chm", ".mobi", ".md", ".txt", ".azw3", ".fb2", ".htmlz", ".lit", ".lrf", ".pdb", ".pmiz", ".rb", ".snb", ".tcr", ".txtz":
 		var err error
 		pdffile, err = doc.FileToPDF(fullname)
@@ -260,15 +267,34 @@ func Convert(document *doc.Document) bool {
 		log.Println("image")
 	}
 	if PathExists(pdffile) {
-		i := 1
-		for {
+
+		defer func() {
+			// 删除临时生成的pdf文件
+			if !strings.HasSuffix(pdffile, document.Name) {
+				os.Remove(pdffile)
+			}
+		}()
+
+		var pagenum int64
+		if isImg {
+			pagenum = 1
+		} else {
+			pagenum = doc.PageNumber(pdffile)
+		}
+		log.Println(pagenum)
+		if res := Update(document.ID, "document", bson.M{"pagenum": pagenum}); res == 0 {
+			return false
+		}
+
+		// 多线程处理
+		for i := 1; i <= int(pagenum); i++ {
 			var pngfile string
 			if !isImg {
 				/*
 					svgfile := strings.TrimSuffix(fullname, document.Ext) + "-" + strconv.Itoa(i) + ".svg"
 					osvgfile := pngfile + ".svg"
 				*/
-				pngfile = strings.TrimSuffix(fullname, document.Ext) + "-" + strconv.Itoa(i) + ".png"
+				pngfile = strings.TrimSuffix(fullname, ext) + "-" + strconv.Itoa(i) + ".png"
 				// png图片生成
 				doc.PDF2PNG(pdffile, pngfile, i, 256) // ghostscript自带图像质量选项
 				// TODO 多线程转换? 通过pdfinfo命令获取pdf基本信息(包括页数)
@@ -281,31 +307,27 @@ func Convert(document *doc.Document) bool {
 
 				// pngfile = opngfile // 不作压缩
 			} else {
-				var err error
-				pngfile, err = doc.ImageToPNG(pdffile) //此时pcffile就是源文件路径, 直接对其进行格式转换
-				if err != nil {
-					break
-				}
+				pngfile, _ = doc.ImageToPNG(pdffile) //此时pcffile就是源文件路径, 直接对其进行格式转换
 			}
 
 			if !PathExists(pngfile) {
-				log.Println("png file not found")
-				break // pdf已经拆解完
+				log.Println("Document convert finished")
+				continue // pdf已经拆解完
 			}
 
 			fileBytes, err := ioutil.ReadFile(pngfile)
 			log.Println(err)
 
 			// 删除临时生成的png文件
-			if !strings.HasSuffix(pngfile, document.Ext) {
+			if !strings.HasSuffix(pngfile, ext) {
 				os.Remove(pngfile)
 			}
 
 			page := &doc.Page{
 				ID:      document.ID,
 				Name:    document.Name,
+				Pagenum: pagenum,
 				Prenum:  document.Prenum,
-				Pagenum: document.Pagenum,
 				Number:  int64(i),
 				Content: fileBytes,
 			}
@@ -313,23 +335,6 @@ func Convert(document *doc.Document) bool {
 
 			res := Save(page, "page")
 			log.Println(res)
-			i++
-
-			if isImg {
-				break
-			}
-		}
-
-		// 删除临时生成的pdf文件
-		if !strings.HasSuffix(pdffile, document.Name) {
-			os.Remove(pdffile)
-		}
-
-		// 更新document总页数
-		res := Update(document.ID, "document", bson.M{"pagenum": int64(i - 1)})
-		log.Println(res)
-		if res != "" {
-			return true
 		}
 	}
 	return false
@@ -344,9 +349,24 @@ func Echo(c *gin.Context) {
 	//c.JSON(http.StatusOK, res)
 }
 
-func Show(c *gin.Context) {
+func DocInfo(c *gin.Context) {
 	id := c.PostForm("id")
-	number := c.PostForm("number")
+	if id == "" {
+		return
+	}
+
+	document := FindDocument(id)
+	if document == nil {
+		log.Println("Not Found Document")
+	}
+	c.JSON(http.StatusCreated, map[string]interface{}{
+		"res": document,
+	})
+}
+
+func PageInfo(c *gin.Context) {
+	id := c.PostForm("id")
+	number := c.PostForm("range")
 	if id == "" || number == "" {
 		return
 	}
@@ -355,11 +375,13 @@ func Show(c *gin.Context) {
 	var start, end int64
 	start, err := strconv.ParseInt(num[0], 10, 64)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	if len(num) > 1 {
 		end, err = strconv.ParseInt(num[1], 10, 64)
 		if err != nil {
+			log.Println(err)
 			return
 		}
 	}
@@ -419,7 +441,10 @@ func Upload(c *gin.Context) {
 			files := form.File["upload[]"]
 			file := files[0]
 		*/
+
 		name := file.Filename
+
+		size := file.Size
 
 		name = ReplaceStr(name)
 
@@ -452,19 +477,110 @@ func Upload(c *gin.Context) {
 		catalog := c.PostForm("catalog")
 		class := c.PostForm("class")
 		subclass := c.PostForm("subclass")
-		tag := c.PostForm("tag")
+		tagstr := c.PostForm("tag")
 		desc := c.PostForm("desc")
 		date := time.Now().Unix()
 
-		price, err := strconv.ParseInt(c.PostForm("price"), 10, 64)
-		if err != nil {
-			price = -1
+		var tags []string
+		for _, tag := range strings.Split(tagstr, ",") {
+			tags = append(tags, strings.TrimSpace(tag))
+		}
+
+		var perms [5]int64
+
+		teamPermStr := strings.TrimSpace(c.PostForm("teamperm"))
+		if teamPermStr == "" {
+			perms[0] = int64(0)
+		} else {
+			perm, err := strconv.ParseInt(teamPermStr, 10, 64)
+			if err != nil {
+				perms[0] = int64(0)
+			} else {
+				perms[0] = perm
+			}
+		}
+
+		orgPermStr := strings.TrimSpace(c.PostForm("orgperm"))
+		if orgPermStr == "" {
+			perms[1] = int64(0)
+		} else {
+			perm, err := strconv.ParseInt(orgPermStr, 10, 64)
+			if err != nil {
+				perms[1] = int64(0)
+			} else {
+				perms[1] = perm
+			}
+		}
+
+		corpPermStr := strings.TrimSpace(c.PostForm("corpperm"))
+		if corpPermStr == "" {
+			perms[2] = int64(-1)
+		} else {
+			perm, err := strconv.ParseInt(corpPermStr, 10, 64)
+			if err != nil {
+				perms[2] = int64(-1)
+			} else {
+				perms[2] = perm
+			}
+		}
+
+		grpPermStr := strings.TrimSpace(c.PostForm("grpperm"))
+		if grpPermStr == "" {
+			perms[3] = int64(-1)
+		} else {
+			perm, err := strconv.ParseInt(grpPermStr, 10, 64)
+			if err != nil {
+				perms[3] = int64(-1)
+			} else {
+				perms[3] = perm
+			}
+		}
+
+		consPermStr := strings.TrimSpace(c.PostForm("consperm"))
+		if consPermStr == "" {
+			perms[4] = int64(-1)
+		} else {
+			perm, err := strconv.ParseInt(consPermStr, 10, 64)
+			if err != nil {
+				perms[4] = int64(-1)
+			} else {
+				perms[4] = perm
+			}
 		}
 
 		prenum, err := strconv.ParseInt(c.PostForm("prenum"), 10, 64)
 		if err != nil {
 			prenum = -1
 		}
+
+		/*
+			document := &doc.Document{
+				ID:       id,
+				Ext:      ext,
+				Owner:    owner,
+				Title:    title,
+				Name:     name,
+				Catalog:  catalog,
+				Class:    class,
+				SubClass: subclass,
+				Tag:      tags,
+				Desc:     desc,
+				Size:     size,
+				Pagenum:  0,
+				Vcnt:     0,
+				Dcnt:     0,
+				Score:    30,
+				Ccnt:     0,
+				Rcnt:     0,
+				Perm:     perms,
+				Prenum:   prenum,
+				Date:     date,
+				Endorse:  "光大科技 运维服务部",
+				Block:    300,
+				Txhash:   "1adbf20ace0d1601b00cc2b9dfdd4a431cfff9a13f6a6f5e5e4a80c897e0f7a8",
+				Status:   0,
+			}
+		*/
 
 		document := &doc.Document{
 			ID:       id,
@@ -475,16 +591,21 @@ func Upload(c *gin.Context) {
 			Catalog:  catalog,
 			Class:    class,
 			SubClass: subclass,
-			Tag:      tag,
+			Tag:      tags,
 			Desc:     desc,
+			Size:     size,
 			Pagenum:  0,
-			Vcnt:     0,
-			Dcnt:     0,
-			Score:    3,
-			Raternum: 0,
-			Price:    price,
+			Vcnt:     12,
+			Dcnt:     3,
+			Score:    45,
+			Ccnt:     1,
+			Rcnt:     2,
+			Perm:     perms,
 			Prenum:   prenum,
 			Date:     date,
+			Endorse:  "光大科技 运维服务部",
+			Block:    301,
+			Txhash:   "fa5c6b15723ec5d0aa104cf943611ebdefeb0a201a25d99464806aaa8c9326d0",
 			Status:   0,
 		}
 
@@ -493,7 +614,15 @@ func Upload(c *gin.Context) {
 		if res != "" {
 			go Convert(document)
 		}
-		c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
+		c.HTML(http.StatusOK, "upinfo.html", gin.H{
+			"title":    "光大E享-成功",
+			"username": svalue.(string),
+			"docid":    document.ID,
+			"blknum":   document.Block,
+			"txid":     document.Txhash,
+			"endorse":  document.Endorse,
+		})
+		//c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
 	}
 }
 
@@ -592,8 +721,18 @@ func main() {
 	router.MaxMultipartMemory = 8 << 26 //限制文件大小512MB
 
 	router.Any("/test", func(c *gin.Context) {
-		c.HTML(http.StatusUnauthorized, "test.html", gin.H{
-			"title": "Test Page",
+		/*
+			c.HTML(http.StatusUnauthorized, "test.html", gin.H{
+				"title": "Test Page",
+			})
+		*/
+		c.HTML(http.StatusOK, "upinfo.html", gin.H{
+			"title":    "光大E享-成功",
+			"username": "张三",
+			"docid":    "2b9dfdd4a431cfff9a13f",
+			"blknum":   300,
+			"txid":     "1adbf20ace0d1601b00cc2b9dfdd4a431cfff9a13f6a6f5e5e4a80c897e0f7a8",
+			"endorse":  "光大科技 运维服务部",
 		})
 	})
 	router.GET("/index", func(c *gin.Context) {
@@ -611,7 +750,9 @@ func main() {
 
 	router.POST("/echo", Echo)
 
-	router.POST("/show", Show)
+	router.POST("/pageinfo", PageInfo)
+
+	router.POST("/docinfo", DocInfo)
 
 	router.GET("/", func(c *gin.Context) {
 		Index(router, c)

@@ -72,9 +72,10 @@ func PDF2SVG(pdfFile, svgFile string, pageNO int) (err error) {
 	return
 }
 
-// 使用GhostScript将PDF页转换为PNG图片
+// 使用GhostScript将PDF页转换为PNG图片(单页)
 func PDF2PNG(pdfFile, pngFile string, pageNO, imgSize int) (err error) {
 	// gs -sDEVICE=pngalpha -r256 -dNOPAUSE -dBATCH -dFirstPage=5 -dLastPage=5 -sOutputFile=output.png  input.pdf
+	// gs -sDEVICE=pngalpha -r512 -dNOPAUSE -dBATCH -dFirstPage=1 -dLastPage=10 -sOutputFile=output-%d.png 算法图解.pdf
 	// r似乎表示尺寸上限, 如r144表示不超过144KiB
 	pdfFile, err = filepath.Abs(pdfFile)
 	if err != nil {
@@ -208,36 +209,53 @@ func FileToPDF(input string) (output string, err error) {
 
 // 使用pdfinfo获取pdf页数
 func PageNumber(input string) int64 {
-	if strings.ToLower(path.Ext(input)) != ".pdf" {
-		return -1
+	ext := strings.ToLower(path.Ext(input))
+	if ext != ".pdf" {
+		log.Println(ext)
+		return 0
 	}
 	input, err := filepath.Abs(input)
 	if err != nil {
-		return -1
+		log.Println(input)
+		return 0
 	}
 
-	cmdstr := "pdfinfo " + input + " | grep Pages | cut -d ':' -f2"
-	cmd := exec.Command(cmdstr)
+	args := "pdfinfo " + input + " | grep Pages | cut -d ':' -f2"
+	cmd := exec.Command("bash", "-c", args)
 
-	log.Println("calibre文档转换：%v", cmdstr)
+	log.Println("pdfinfo 获取文档页数：%v", args)
 	time.AfterFunc(5*time.Minute, func() {
 		if cmd.Process != nil {
 			cmd.Process.Kill()
 		}
 	})
 
-	var out bytes.Buffer
-	cmd.Stderr = &out
+	stdout, err := cmd.Output()
+	if err != nil {
+		log.Println(stdout, err)
+		return 0
+	}
 
-	cmd.Run()
-
-	res := strings.Trim(out.String(), " ")
+	res := strings.Trim(strings.Replace(string(stdout), "\n", "", -1), " ")
 	pagenum, err := strconv.ParseInt(res, 10, 64)
 	if err != nil {
-		pagenum = -1
+		return 0
 	}
 
 	return pagenum
+
+	/*
+		var out bytes.Buffer
+		cmd.Stderr = &out
+
+		cmd.Run()
+
+		res := strings.Trim(out.String(), " ")
+		pagenum, err := strconv.ParseInt(res, 10, 64)
+		if err != nil {
+			pagenum = 0
+		}
+	*/
 }
 
 func ImageToPNG(input string) (output string, err error) {
