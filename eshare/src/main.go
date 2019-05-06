@@ -35,6 +35,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+// 图标转换:
+// imagemagick convert -resize 24x24 jpg.png jpg_24.png
+
 const (
 	url    = "mongodb://localhost:27017"
 	dbname = "eshare"
