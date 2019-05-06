@@ -1,21 +1,6 @@
 {{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
-<h3>
-    {{.title}}
-</h3>
-<script type="text/javascript">
-    /*
-    onclick="$('input[id=lefile]').click();"
-    $('#lefile').change(function () {
-        console.log("aaa");
-        $('#photoCover').val($(this).val());
-    });
-    */
 
-    function change() {
-        document.getElementById("photoCover").value = document.getElementById("lefile").value;
-    }
-</script>
 <div class="container">
     <div class="row">
         <div class="panel panel-default">

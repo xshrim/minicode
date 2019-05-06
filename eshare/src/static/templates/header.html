@@ -22,39 +22,11 @@
     <script type="text/javascript" src="/static/refs/js/echarts.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="/static/refs/js/jquery.zsign.js" charset="utf-8"></script>
     <script type="text/javascript" src="/static/refs/js/jquery.magicmove.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/refs/js/custom.js" charset="utf-8"></script>
 
 
     <style>
     </style>
-
-    <script>
-        function getAttributes($node) {
-            var attrs = {};
-            if ($node === undefined) {
-                return attrs;
-            }
-            $.each($node[0].attributes, function (index, attribute) {
-                if (attribute.name != "id" && attribute.name != "style") {
-                    attrs[attribute.name] = attribute.value;
-                }
-            });
-
-            return attrs;
-        }
-        /*
-        $(function () {
-            var args = getAttributes($("#argDiv"));
-            if (args.length > 0) {
-                console.log(args);
-                console.log($("#argDiv")[0].attributes);
-                $("#a").click(function () {
-                    //adding your code here 
-                });
-            }
-
-        });
-        */
-    </script>
 
 </head>
 

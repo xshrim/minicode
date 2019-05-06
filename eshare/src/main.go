@@ -451,7 +451,7 @@ func Upload(c *gin.Context) {
 
 		name = ReplaceStr(name)
 
-		name = sid + "@" + name
+		name = owner + "@" + name
 
 		fullname := path.Join("static/files", name)
 
@@ -476,6 +476,9 @@ func Upload(c *gin.Context) {
 		}
 
 		id := GetMD5(fullname)
+
+		// TODO 检测md5是否已存在
+
 		title := c.PostForm("title")
 		catalog := c.PostForm("catalog")
 		class := c.PostForm("class")

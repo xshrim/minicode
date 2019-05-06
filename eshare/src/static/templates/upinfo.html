@@ -1,17 +1,5 @@
 {{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
-<script type="text/javascript">
-    $(function () {
-        $("#viewdoc").click(function () {
-            window.location.href = "/view?docid=" + $(this).data("docid")
-        });
-
-        $("#uponemore").click(function () {
-            window.location.href = "/share"
-        });
-    });
-</script>
-
 <div class="container">
     <div class="row">
         <div class="panel panel-default">

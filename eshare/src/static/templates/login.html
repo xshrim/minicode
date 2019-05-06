@@ -7,21 +7,6 @@
     <title>{{.title}}</title>
     <link rel="stylesheet" href="/static/refs/css/lrtk.css">
 
-    <script>
-        function getQueryString(name) {
-            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
-            var r = window.location.search.substr(1).match(reg);
-            if (r != null) return unescape(r[2]);
-            return null;
-        }
-
-        function submit() {
-            var form = document.getElementById('loginForm');
-            form.action = "/login?surl=" + GetQueryString("surl")
-            //进行下一步
-            return true;
-        }
-    </script>
 </head>
 
 <body>
@@ -66,13 +51,10 @@
         </div>
         <script src="/static/refs/js/jquery.js"></script>
         <script>
-            $(function () {
-
-                $('#login #password').focus(function () {
-                    $('#owl-login').addClass('password');
-                }).blur(function () {
-                    $('#owl-login').removeClass('password');
-                });
+            $('#login #password').focus(function () {
+                $('#owl-login').addClass('password');
+            }).blur(function () {
+                $('#owl-login').removeClass('password');
             });
         </script>
     </div>

@@ -1,23 +1,5 @@
 {{template "header" .}} {{/* header.html 它是页面嵌入模板,最后的那个点表示将当前模板中的变量传递到header.html模板中 */}}
 
-<h3>
-    {{ .title }}
-</h3>
-<script>
-    function getQueryString(name) {
-        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
-        var r = window.location.search.substr(1).match(reg);
-        if (r != null) return unescape(r[2]);
-        return null;
-    }
-
-    function submit() {
-        var form = document.getElementById('loginForm');
-        form.action = "/login?surl=" + GetQueryString("surl")
-        //进行下一步
-        return true;
-    }
-</script>
 <form id="loginForm" action="" method="post" omsubmit='return submit()'>
     用户名： <input type="text" name="user">
     <br>
