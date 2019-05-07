@@ -35,6 +35,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+// go-playground:
+// docker run --name=play --rm -d -p 8080:8080 playground
+
+// mongo数据库:
+// docker run -p 27017:27017 -v /home/xshrim/data/mongodb:/data/db --name mongo -d mongo
+
+// redis:
+// docker run -p 6379:6379 -v /home/xshrim/data/redis:/data --name redis -d redis
+
 // 图标转换:
 // imagemagick convert -resize 24x24 jpg.png jpg_24.png
 
