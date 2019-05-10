@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+
+<body>
+    <div id="main" style="width: 100%; height: 900px"></div>
+    <div id="ss"></div>
+    <script src="./refs/js/echarts.js"></script>
+    <script type="text/javascript">
+        require.config({
+            paths: {
+                echarts: './refs/js'
+            }
+        });
+        require(["echarts", "echarts/chart/force"], function (ec) {
+            var myChart = ec.init(document.getElementById('main'), 'macarons');
+            var option = {
+                tooltip: {
+                    show: false
+                },
+                series: [{
+                    type: 'force',
+                    name: "Force tree",
+                    itemStyle: {
+                        normal: {
+                            label: {
+                                show: true
+                            },
+                            nodeStyle: {
+                                brushType: 'both',
+                                borderColor: 'rgba(255,215,0,0.4)',
+                                borderWidth: 1
+                            }
+                        }
+                    },
+                    categories: [{
+                        name: '集团'
+                    }, {
+                        name: '公司'
+                    }, {
+                        name: '部门'
+                    }, {
+                        name: '个人'
+                    }],
+                    nodes: [{
+                            id: 0,
+                            category: 0,
+                            name: '0',
+                            label: '光大集团\n205',
+                            symbolSize: 60,
+                            ignore: false,
+                            flag: true
+                        },
+                        {
+                            id: 1,
+                            category: 1,
+                            name: '1',
+                            label: '光大证券\n0',
+                            symbolSize: 50,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 2,
+                            category: 2,
+                            name: '2',
+                            label: '研发部\n0',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 3,
+                            category: 2,
+                            name: '3',
+                            label: '运维部\n0',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 4,
+                            category: 1,
+                            name: '4',
+                            label: '光大银行\n44',
+                            symbolSize: 50,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 5,
+                            category: 2,
+                            name: '5',
+                            label: '综合部\n0',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 6,
+                            category: 2,
+                            name: '6',
+                            label: '人力部\n28',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 7,
+                            category: 2,
+                            name: '7',
+                            label: '财务部\n16',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 8,
+                            category: 1,
+                            name: '8',
+                            label: '光大科技\n161',
+                            symbolSize: 50,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 9,
+                            category: 2,
+                            name: '9',
+                            label: '综合部\n0',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 10,
+                            category: 2,
+                            name: '10',
+                            label: '运维部\n128',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 11,
+                            category: 2,
+                            name: '11',
+                            label: '财务部\n33',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 12,
+                            category: 2,
+                            name: '12',
+                            label: '研发部\n0',
+                            symbolSize: 40,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 13,
+                            category: 4,
+                            name: '13',
+                            label: '张三三\n22',
+                            number: 45,
+                            position: 'AA',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 14,
+                            category: 4,
+                            name: '14',
+                            label: '李四四\n6',
+                            number: 52,
+                            position: 'BB',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 15,
+                            category: 4,
+                            name: '15',
+                            label: '王五五\n16',
+                            number: 55,
+                            position: 'CC',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        },
+                        {
+                            id: 16,
+                            category: 4,
+                            name: '16',
+                            label: '赵六六\n9',
+                            number: 46,
+                            position: 'DD',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        }, {
+                            id: 17,
+                            category: 4,
+                            name: '17',
+                            label: '钱七七\n101',
+                            number: 23,
+                            position: 'EE',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        }, {
+                            id: 18,
+                            category: 4,
+                            name: '18',
+                            label: '周八八\n33',
+                            number: 11,
+                            position: 'FF',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        }, {
+                            id: 19,
+                            category: 4,
+                            name: '19',
+                            label: '陈九九\n18',
+                            number: 11,
+                            position: 'GG',
+                            symbolSize: 20,
+                            ignore: true,
+                            flag: true
+                        },
+                    ],
+                    links: [{
+                            source: 1,
+                            target: 0
+                        }, {
+                            source: 4,
+                            target: 0
+                        }, {
+                            source: 8,
+                            target: 0
+                        },
+                        {
+                            source: 2,
+                            target: 1
+                        }, {
+                            source: 3,
+                            target: 1
+                        }, {
+                            source: 5,
+                            target: 4
+                        },
+                        {
+                            source: 6,
+                            target: 4
+                        }, {
+                            source: 7,
+                            target: 4
+                        }, {
+                            source: 9,
+                            target: 8
+                        },
+                        {
+                            source: 10,
+                            target: 8
+                        }, {
+                            source: 11,
+                            target: 8
+                        }, {
+                            source: 12,
+                            target: 8
+                        },
+                        {
+                            source: 13,
+                            target: 6
+                        }, {
+                            source: 14,
+                            target: 6
+                        }, {
+                            source: 15,
+                            target: 7
+                        }, {
+                            source: 16,
+                            target: 10
+                        }, {
+                            source: 17,
+                            target: 10
+                        }, {
+                            source: 18,
+                            target: 11
+                        }, {
+                            source: 19,
+                            target: 10
+                        }
+                    ]
+                }]
+            };
+            myChart.setOption(option);
+            var ecConfig = require('echarts/config');
+
+            var option = myChart.getOption();
+            var nodesOption = option.series[0].nodes;
+            var linksOption = option.series[0].links;
+
+            // ajax 初始化nodes和links, 开始仅一个node, 没有link, 随着请求的不断细化, 逐渐添加node和link
+            // 每点击一个未展开的node, 就通过ajax向后台请求该node的子node数据, 将子node加入nodesOption并为该node和子node添加link
+            function append(nodeData) {
+                var nodeLength = nodesOption.Length
+                nodesOption.push({
+                    id: nodeLength, // node id从0开始
+                    category: 4, // 父node category + 1
+                    name: '20', // nodeData数据
+                    label: '李十十\n18', // nodeData数据(label+value)
+                    number: 31, // nodeData数据
+                    position: 'HH', // nodeData数据
+                    symbolSize: 20,
+                    ignore: true, // 动态添加的方式下, 此属性全局无用(表示node是否显示), 只有图的所有node和link均一次性请求的情况下需要
+                    flag: true // 表示node是否折叠状态(折叠状态点击将展开子node, 否则点击将折叠子node)
+                })
+                linksOption.push({
+                    source: nodeLength,
+                    target: 11 // 父node id
+                });
+            }
+
+            function openOrFold(param) {
+                console.log(param);
+
+                var data = param.data;
+                var linksNodes = [];
+
+                var categoryLength = option.series[0].categories.length;
+                console.log(categoryLength);
+                console.log(data.category);
+                if (data.category == (categoryLength - 1)) {
+                    alert(data.label);
+                }
+
+                if (data != null && data != undefined) {
+                    if (data.flag) {
+
+                        for (var m in linksOption) {
+
+                            if (linksOption[m].target == data.id) {
+                                linksNodes.push(linksOption[m].source);
+                            }
+                        }
+                        if (linksNodes != null && linksNodes != undefined) {
+                            for (var p in linksNodes) {
+                                nodesOption[linksNodes[p]].ignore = false;
+                                nodesOption[linksNodes[p]].flag = true;
+                            }
+                        }
+                        nodesOption[data.id].flag = false;
+                        myChart.setOption(option);
+                    } else {
+
+                        for (var m in linksOption) {
+
+                            if (linksOption[m].target == data.id) {
+                                linksNodes.push(linksOption[m].source);
+                            }
+                            if (linksNodes != null && linksNodes != undefined) {
+                                for (var n in linksNodes) {
+                                    if (linksOption[m].target == linksNodes[n]) {
+                                        linksNodes.push(linksOption[m].source);
+                                    }
+                                }
+                            }
+                        }
+                        if (linksNodes != null && linksNodes != undefined) {
+                            for (var p in linksNodes) {
+                                nodesOption[linksNodes[p]].ignore = true;
+                                nodesOption[linksNodes[p]].flag = true;
+                            }
+                        }
+                        nodesOption[data.id].flag = true;
+                        myChart.setOption(option);
+                    }
+                }
+            }
+            myChart.on(ecConfig.EVENT.CLICK, openOrFold);
+        });
+    </script>
+
+</body>
+
+</html>
