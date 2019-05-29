@@ -1,0 +1,467 @@
+1.接口名：注册
+url: /rock/user/register.action
+method:post
+param:
+	userName:用户名
+	pwd:密码
+	phone:手机号
+	email:电子邮箱（和phone选填一个）
+	vaildCode:验证码
+返回值：
+	code: 0成功 -1失败
+	msg：code为-1时返回
+	
+	
+2.接口名：发送邮箱验证码
+url:/rock/user/checkEmail.action
+method:post
+param:
+	email:邮箱地址
+返回值：
+	code： 0成功 -1失败
+	
+	
+3.接口名：登录
+url:/rock/sso/login.action
+method:post
+param:
+	username:用户名
+	password:密码
+返回值：
+	code: 0登录成功 -1登录失败
+	msg：code为-1时返回
+	userInfo:
+	{
+		userId:用户id
+		userName:用户名
+		realName:真实姓名
+		phone:手机号
+		email:电子邮箱
+		idcard:身份证号码
+		idcardPhoto:证件照
+		birthday:生日
+		sex:性别 1男 2女
+		level:用户级别 1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+		status:用户认证状态 0 未认证 1审核中 2通过 3未通过
+		createTime:注册时间
+	}
+	
+	
+	
+4.接口名：提交认证信息
+url:/rock/auth/submitInfo.action
+method:post
+param:
+	userId:用户id
+	phone:手机号
+	email:电子邮箱
+	realName:真实姓名
+	idcard:身份证号码
+	idcardPhoto:身份证照片地址
+	addr:地址
+	birthdayStr：生日
+	sex:性别  1男 2女
+	level:用户级别  1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+	companyId:公司id  id为空或为0时，companyInfo不为空时则新增公司，否则用户选择已有公司
+	companyInfo.name:企业名称
+	companyInfo.apt:企业资质证明
+返回值：
+	code:0提交成功 -1提交失败
+	msg：code为-1时返回
+	
+	
+5.接口名：审核列表
+url:/rock/auth/authList.action
+method:get
+返回值：
+	code:0查询成功 -1 查询失败
+	msg:code为-1时返回
+	users[
+		{
+			userId:用户id
+			userName:用户名称
+			phone:手机号
+			email:电子邮箱
+			realName:真实姓名
+			idcard:身份证号码
+			idcardPhoto:身份证照片地址
+			companyId:公司id
+			addr:地址
+			birthdayStr：生日
+			sex:性别
+			level:用户级别 1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+			createTime:注册时间
+			companyInfo:{
+				id:公司id
+				name:公司名称
+				apt:公司资质证明
+				createTime:提交时间
+			}
+			status:0认证 1修改
+		}
+	]
+	
+6.接口名：审核操作
+url:/rock/auth/auditing.action
+method:POST
+param:
+	status:审核状态  2通过 3驳回
+	userId:用户id
+返回值：
+	code:0成功 -1失败
+	msg:code为-1时返回
+	
+	
+7.接口名：文件上传
+url:/rock/file/upload.action
+method:POST
+param:
+	file:文件
+返回值：
+	code:0成功 -1失败
+	path:文件地址 code为0时返回
+	msg：code为-1时返回
+	
+8.接口名：获取用户信息
+url:/rock/user/getUserInfo.action
+method:post
+param:
+	userId:用户id
+	userName:用户名
+返回值：
+	code:0查询成功
+	userInfo:{
+		userId:用户id
+		userName:用户名
+		realName:真实姓名
+		phone:手机号
+		email:电子邮箱
+		idcard:身份证号码
+		idcardPhoto:证件照
+		birthday:生日
+		sex:性别 1男 2女
+		level:用户级别 1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+		status:用户认证状态 0 未认证 1审核中 2通过 3未通过
+		createTime:注册时间
+	}
+
+	
+9.接口名：退出登录接口
+url:/rock/logout.action
+method:get
+返回值：
+	code：0成功 -1失败
+	msg：code为-1时返回
+	
+
+10.接口名：添加文件接口
+url:/rock/item/addItem.action
+method:post
+param:
+	title:标题
+	content:描述
+	type:文件类型 1.视频文件 2文本文件 ...
+	path:文件地址
+
+	iopen:资源公开度(0: 不公开, 1: 公司内高级别用户公开, 2: 公司内公开, 4: 平台内高级别用户公开, 5: 平台公开)
+	level:安全级别 1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+	userId:文件所有者
+返回值：
+	code:0成功 -1失败
+	msg: code为-1时返回
+	
+
+11.接口名： 授权接口
+url:/rock/perm/addPerm.action
+method:post
+param:
+	tid:权限父id，可选
+	userId:被授权用户名
+	itemId:资源id
+	device:设备
+	pmark:水印
+	prvs:权限数组 [是否可查看, 是否可下载源文件, 是否可下载加密文件, 是否可向下授权]  0表示没有该权限 1表示有该权限
+	ptime：授权查看时间([总时间, 剩余时间])  若没有设置时间则值都为 -1
+    ptimes: 授权查看次数([总次数, 剩余次数])  若没有设置次数则值都为 -1
+    psliceStart:授权查看视频时间起始 没有设置则值为-1
+	psliceEnd: 授权查看视频时间结束 没有设置则值为-1
+    ptimestampEnd:授权查看时间戳 过期时间戳 精确到秒 没有设置则值为-1
+    ptype: 授权类型(0: 独立授权, 1: 委托授权)
+返回值：
+	code:0成功 -1失败
+	msg：code为-1时返回
+	
+	
+12.接口名 获取资源列表接口
+url:/rock/item/getItemList.action
+method:post
+param:
+	type:1查自己上传的视频 2查授权的视频 3同时都查询
+返回值：
+	code：0成功
+	preFix：地址前缀
+	list[
+		{
+			iid:资源id
+			tid：资源父id
+			uperId：资源上传者id
+			userId:资源所有者id
+			iopen：资源公开度
+			level：资源安全级别
+			timestamp：资源生成时间戳
+			status:资源状态(0: 不存在, 1: 正常, 2：冻结， 6: 不可用)
+			title:标题
+			content：描述
+			type：类别 1视频 2文本
+			path：资源网络路径
+			permId:下级授权权限父id
+			permInfo:{
+				sgerid:授权者
+				ptimestamp：下标为0的为授权时间
+			}
+		}
+	]
+	
+	
+	
+13.接口名：获取用户列表接口
+url:/rock/user/getUserList.action
+method:post
+返回值：
+	code:0成功
+	list[
+		{
+			userId:用户id
+			userName:用户名
+		}
+	]
+	
+14.接口名 日志记录接口（权限修改）
+url:/rock/log/addLog.action
+method:post
+param:
+	itemId:资源id
+	action:操作 play播放 stop停止 download下载 auth授权
+	duration:当action为stop时，表示播放的时长（秒）
+	permId:权限id
+返回值：
+	code：0成功 -1失败
+	msg:code为-1时返回
+	perm:{
+		prvs:权限数组 [是否可查看, 是否可下载源文件, 是否可下载加密文件, 是否可向下授权]  0表示没有该权限 1表示有该权限
+		ptime：授权查看时间([总时间, 剩余时间])  若没有设置时间则值都为 -1
+		ptimes: 授权查看次数([总次数, 剩余次数])  若没有设置次数则值都为 -1
+		ptimestampEnd:授权查看时间戳 过期时间戳 精确到秒 没有设置则值为-1
+	}
+	
+	
+15.接口名 公司列表接口
+url:/rock/company/getComapnyList.action
+method:get
+返回值：
+	code：0成功
+	list:[
+		{
+			id:公司编号
+			name:公司名称
+		}
+	]
+
+(暂时不用)16.接口名 获取当前用户授权信息列表接口
+url:/rock/perm/getPerms.action
+method:post
+param:
+	itemId:资源id
+返回值：
+	code:0成功
+	permList[
+		{
+			pid:权限id
+			sgerid:授权者
+			userId:被授权用户名
+			itemId:资源id
+			device:设备
+			pmark:水印
+			prvs:权限数组 [是否可查看, 是否可下载源文件, 是否可下载加密文件, 是否可向下授权]  0表示没有该权限 1表示有该权限
+			ptime：授权查看时间([总时间, 剩余时间])  若没有设置时间则值都为 -1
+			ptimes: 授权查看次数([总次数, 剩余次数])  若没有设置次数则值都为 -1
+			//psliceStart:授权查看视频时间起始 没有设置则值为-1
+			//psliceEnd: 授权查看视频时间结束 没有设置则值为-1
+			pslice:授权查看视频时间([开始时间, 结束时间]) 没有设置则值为-1
+			//ptimestampEnd:授权查看时间戳 过期时间戳 精确到秒 没有设置则值为-1
+			ptimestamp:授权时间([授权时间戳, 过期时间戳]) 精确到秒 没有设置则值为-1
+			ptype: 授权类型(0: 独立授权, 1: 委托授权)
+					
+		}
+	]
+	
+17.接口名 通过权限id获取授权信息接口
+url:/rock/perm/getPermById.action
+method:post
+param:
+	permId:权限id
+返回值：
+	code:0成功
+	perm:{
+		pid:权限id
+		sgerid:授权者
+		userId:被授权用户名
+		itemId:资源id
+		device:设备
+		pmark:水印
+		prvs:权限数组 [是否可查看, 是否可下载源文件, 是否可下载加密文件, 是否可向下授权]  0表示没有该权限 1表示有该权限
+		ptime：授权查看时间([总时间, 剩余时间])  若没有设置时间则值都为 -1
+		ptimes: 授权查看次数([总次数, 剩余次数])  若没有设置次数则值都为 -1
+		pslice:授权查看视频时间([开始时间, 结束时间]) 没有设置则值为-1
+		ptimestamp:授权时间([授权时间戳, 过期时间戳]) 精确到秒 没有设置则值为-1
+		ptype: 授权类型(0: 独立授权, 1: 委托授权)
+	}
+	
+18.接口名 日志追踪接口
+url:/rock/log/getLogs.action
+param:
+	timestamp：时间戳（秒）
+返回值：
+	code:0成功
+	logInfo:{
+		sn:流水号
+		duration：持续时间
+		itemId：资源id
+		operate:操作
+		sender:操作者
+		timestamp：时间戳（秒）
+		userId：被操作者
+		details:详情
+	}
+
+19.接口名： 批量授权接口
+url:/rock/perm/batchAddPerm.action
+method:post
+param:
+	tid:权限父id，可选
+	userId:被授权用户名
+	itemId:资源id
+	device:设备
+	pmark:水印
+	prvs:权限数组 [是否可查看, 是否可下载源文件, 是否可下载加密文件, 是否可向下授权]  0表示没有该权限 1表示有该权限
+	ptime：授权查看时间([总时间, 剩余时间])  若没有设置时间则值都为 -1
+    ptimes: 授权查看次数([总次数, 剩余次数])  若没有设置次数则值都为 -1
+    psliceStart:授权查看视频时间起始 没有设置则值为-1
+	psliceEnd: 授权查看视频时间结束 没有设置则值为-1
+    ptimestampEnd:授权查看时间戳 过期时间戳 精确到秒 没有设置则值为-1
+    ptype: 授权类型(0: 独立授权, 1: 委托授权)
+	users:被勾选的用户数组 ，只传用户名
+返回值：
+	code:0成功 -1失败
+	msg：code为-1时返回
+	
+20.接口名 撤销权限接口
+url:/rock/perm/cancelPerm.action
+method:post
+param:
+	permId:权限id
+	type：0单个撤销，1级联撤销
+返回值：
+	code：0成功 -1 失败
+	msg：code为-1时返回
+	
+21.接口名 修改用户资料接口
+url:rock/user/modifyUserInfo.action
+method:post
+param:
+	type:1非认证 2认证
+	
+	userId:用户id
+	phone:手机号
+	email:电子邮箱
+	addr:地址
+	birthdayStr：生日
+	sex:性别  1男 2女
+	
+	realName:真实姓名
+	idcard:身份证号码
+	idcardPhoto:身份证照片地址
+	level:用户级别  1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+	companyId:公司id
+	companyName:企业名称
+	companyApt:企业资质证明
+返回值：
+	code:0成功 -1失败
+	msg:code为-1时返回
+	
+	
+	
+22.接口名 获取修改用户资料页用户信息接口
+url:/rock/auth/getAuthUserInfo.action
+method:get
+返回值：
+	code:0查询成功
+	userInfo:{
+		userId:用户id
+		userName:用户名
+		realName:真实姓名
+		phone:手机号
+		email:电子邮箱
+		idcard:身份证号码
+		idcardPhoto:证件照
+		birthday:生日
+		sex:性别 1男 2女
+		level:用户级别 1：平台管理员；2：企业管理员；3：子公司管理员；4：企业/公司委托管理员；5：企业/公司员工；6：普通认证账户；7：非认证账户
+		status:用户认证状态 0 未认证 1审核中 2通过 3未通过
+		createTime:注册时间
+		companyInfo:{
+			id:公司id
+			name:公司名称
+			apt:公司资质证明
+			createTime:提交时间
+		}
+	}
+	changeStatus：1审核中 3未通过 -1则不显示
+	status:1不可以修改 0可以修改
+	
+	
+23.接口名 获取对应权限列表
+url:/rock/perm/getPermsList.action
+method:post
+param:
+	itemId:资源id,不为空时只查该资源id下的所有授权记录列表，否则做分页查询当前用户相关的权限记录列表
+	
+	mid:分页
+	curPage:当前页
+	goPage:下一页
+	pageSize:每页条数
+返回值：
+	code：0成功
+	page:{
+		curPage:上一页
+		goPage:当前页
+		totalSize:总条数
+		totalPage:总页数
+		pageSize:每页条数
+	}
+	permList:[
+		{
+			pid:权限id
+			sgerid:授权者
+			userId:被授权用户名
+			itemId:资源id
+			device:设备
+			pmark:水印
+			prvs:权限数组 [是否可查看, 是否可下载源文件, 是否可下载加密文件, 是否可向下授权]  0表示没有该权限 1表示有该权限
+			ptime：授权查看时间([总时间, 剩余时间])  若没有设置时间则值都为 -1
+			ptimes: 授权查看次数([总次数, 剩余次数])  若没有设置次数则值都为 -1
+			pslice:授权查看视频时间([开始时间, 结束时间]) 没有设置则值为-1
+			ptimestamp:授权时间([授权时间戳, 过期时间戳]) 精确到秒 没有设置则值为-1
+			ptype: 授权类型(0: 独立授权, 1: 委托授权)				
+			mid：分页
+			item:{
+				title:资源名
+				content:描述
+				createTime:创建时间
+				type：类别	
+			}
+		}
+	]
+	
+
+	
