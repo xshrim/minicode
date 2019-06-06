@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "7x1a8CvEGgF8O3jsekeyRpNBKrg=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "1d3f30b51784bec5aad268e59fd3c2fc1c2fe73f",
+			"revisionTime": "2018-11-28T19:23:52Z"
+		},
+		{
+			"checksumSHA1": "3E2wNLppqY88QPmU2SThQ80/ixM=",
+			"path": "github.com/hyperledger/fabric/common/attrmgr",
+			"revision": "d700b43476e803c864c48021e63a78543b60e17e",
+			"revisionTime": "2019-01-09T15:47:59Z"
+		},
+		{
+			"checksumSHA1": "dkfvjynLX+PztfZyw0kVeZ8M8SU=",
+			"path": "github.com/hyperledger/fabric/core/chaincode/lib/cid",
+			"revision": "d700b43476e803c864c48021e63a78543b60e17e",
+			"revisionTime": "2019-01-09T15:47:59Z"
+		},
+		{
+			"checksumSHA1": "ompugDeM/SjRjWu1LlCuLQqkRAw=",
+			"path": "github.com/pkg/errors",
+			"revision": "059132a15dd08d6704c67711dae0cf35ab991756",
+			"revisionTime": "2018-10-23T23:59:46Z"
+		}
+	],
+	"rootPath": "example"
+}

@@ -702,10 +702,8 @@ func Login(c *gin.Context) {
 			// session.Options(sessions.Options{   // seesion 可选项设置(过期时间等)
 			// })
 			session.Save() // 保存session
-
 			// c.Redirect(http.StatusMovedPermanently, "http://localhost:8080/index")
 			// 用301状态码(StatusMovedPermanently)作重定向会导致路由失效(缓存问题), 改为302状态码正常(StatusFound)
-
 			if surl != "" {
 				c.Redirect(http.StatusFound, "/"+surl)
 			} else {
