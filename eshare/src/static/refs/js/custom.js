@@ -82,7 +82,7 @@ function getDocument(docid) {
                 console.log(doc);
                 // 图标问题
                 // doctype = doc.ext.replace("docx", "word");
-                doctype = doctype.replace(".", "");
+                var doctype = doc.ext.replace(".", "");
 
                 $(".wenku-doc-type").attr("alt", doctype + "文档");
                 $(".wenku-doc-type").attr("src", "/static/refs/img/" + doctype +
