@@ -11,7 +11,8 @@
    合并后的pdf文件的输出文件名：merged-out.pdf
    是否从pdf文件中导入书签的值：True
 '''
-import os, sys
+import os, re, sys
+from functools import cmp_to_key
 from PyPDF2 import PdfFileReader, PdfFileWriter, PdfFileMerger
 
 
@@ -29,12 +30,37 @@ def getfilenames(filepath='', filelist_out=[], file_ext='all'):
     return filelist_out
 
 
+def cmpfunc(x, y):
+    pattern = re.compile(r'\((\d+)\)')
+    matchx = pattern.findall(x)
+    matchy = pattern.findall(y)
+
+    if matchx and matchy:
+        ix = int(matchx[0])
+        iy = int(matchy[0])
+        if ix < iy:
+            return -1
+        elif ix > iy:
+            return 1
+        else:
+            return 0
+    else:
+        if x < y:
+            return -1
+        elif x > y:
+            return 1
+        else:
+            return 0
+
+
 def mergefiles(path, output_filename, import_bookmarks=False):
     # 遍历目录下的所有pdf将其合并输出到一个pdf文件中，输出的pdf文件默认带书签，书签名为之前的文件名
     # 默认情况下原始文件的书签不会导入，使用import_bookmarks=True可以将原文件所带的书签也导入到输出的pdf文件中
     merger = PdfFileMerger()
     filelist = getfilenames(filepath=path, file_ext='.pdf')
-    filelist = sorted(filelist)
+    # filelist = sorted(filelist)
+    filelist = sorted(filelist, key=cmp_to_key(cmpfunc))
+    # print(filelist)
     if len(filelist) == 0:
         print("当前目录及子目录下不存在pdf文件")
         sys.exit()
@@ -47,6 +73,7 @@ def mergefiles(path, output_filename, import_bookmarks=False):
             bm = bm.split(']')[1].strip()
             short_filename = bm
             '''
+            # short_filename = short_filename.split("-")[1].strip()
             if file_rd.isEncrypted == True:
                 print('不支持的加密文件：%s' % (filename))
                 continue

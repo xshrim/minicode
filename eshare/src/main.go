@@ -696,9 +696,9 @@ func Login(c *gin.Context) {
 
 		if username == "admin" && password == "admin" {
 
-			sid := GenerateSID()                                         // 随机生成一个cookie id
-			c.SetCookie("sid", sid, 3600, "/", "localhost", false, true) // 设置用户浏览器客户端的cookie, domain部分必须与网页url一致
-			session.Set(sid, username)                                   // 以cookie id为键, 用户名为值(可以是任何数据类型)在session中存储用户信息
+			sid := GenerateSID()                                              // 随机生成一个cookie id
+			c.SetCookie("sid", sid, 3600, "/", "192.168.43.103", false, true) // 设置用户浏览器客户端的cookie, domain部分必须与网页url一致
+			session.Set(sid, username)                                        // 以cookie id为键, 用户名为值(可以是任何数据类型)在session中存储用户信息
 			// session.Options(sessions.Options{   // seesion 可选项设置(过期时间等)
 			// })
 			session.Save() // 保存session
