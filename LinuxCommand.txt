@@ -153,6 +153,10 @@ comm
 [说明] 与diff相反，显示两个文件中的相同行，支持交集差集
 [示例] comm a.txt b.txt
 
+objdump
+[说明] 查看目标文件构成
+[示例] ojbdump -t libzmq.5.0.2
+
 seq
 [说明] 以指定增量从首数开始打印数字到尾数
 [示例] seq 1 3 10
