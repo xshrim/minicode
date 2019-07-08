@@ -237,7 +237,14 @@ ptyhon -m SimpleHTTPServer  or python3 -m http.server
 Visual Studio Code 的 Background 插件失效解决办法:
 sudo chmod o+w /usr/share/code/resources/app/out/vs/workbench/workbench.main.css
 
+删除git仓库无用的提交
+#!/bin/bash
+git checkout --orphan temp $1
+git commit -m "截取的历史记录起点"
+git rebase --onto temp $1 master
+git branch -D temp
 
+git gc --prune
 
 
 
