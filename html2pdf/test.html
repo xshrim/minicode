@@ -1,0 +1,387 @@
+<div class="article-header-box">
+    <div class="article-header">
+        <div class="article-title-box">
+            <span class="article-type type-1 float-left">原</span>
+            <h1 class="title-article">Go实战--golang中使用echo框架中的HTTP/2、Server Push(labstack/echo、golang.org/x/net/http2)
+            </h1>
+        </div>
+        <div class="article-info-box">
+            <div class="article-bar-top">
+                <span class="time">2017年11月22日 14:07:00</span>
+                <a class="follow-nickName" href="https://me.csdn.net/wangshubo1989" target="_blank">一蓑烟雨1989</a>
+                <span class="read-count">阅读数 6283</span>
+                <div class="tags-box space">
+                    <span class="label">所属专栏：</span>
+                    <a class="tag-link" href="https://blog.csdn.net/column/details/16165.html"
+                        target="_blank">Go从不放弃到实战</a>
+
+                </div>
+            </div>
+            <div class="operating">
+            </div>
+        </div>
+    </div>
+</div>
+<article class="baidu_pl">
+    <div id="article_content" class="article_content clearfix"
+        data-track-view="{&quot;mod&quot;:&quot;popu_307&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/wangshubo1989/article/details/78603052,&quot;}"
+        data-track-click="{&quot;mod&quot;:&quot;popu_307&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/wangshubo1989/article/details/78603052&quot;}">
+        <div class="article-copyright">
+            <svg class="icon" title="CSDN认证原创" aria-hidden="true"
+                style="width:53px; height: 18px; vertical-align: -4px;">
+                <use xlink:href="#CSDN_Cert" />
+            </svg>
+
+            版权声明：本文为博主原创文章，未经博主允许不得转载。 https://blog.csdn.net/wangshubo1989/article/details/78603052 </div>
+        <div id="content_views" class="markdown_views prism-atom-one-dark">
+            <!-- flowchart 箭头图标 勿删 -->
+            <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                <path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block"
+                    style="-webkit-tap-highlight-color: rgba(0, 0, 0, 0);" />
+            </svg>
+            <p>生命不止，继续 go go go !!!</p>
+
+            <p>继续echo web框架，今天搞一下http2。</p>
+
+            <h3 id="http2"><strong>HTTP2</strong></h3>
+
+            <p><strong>What is HTTP/2?</strong> <br />
+                HTTP/2 is a replacement for how HTTP is expressed “on the wire.” It is not a ground-up rewrite of the
+                protocol; HTTP methods, status codes and semantics are the same, and it should be possible to use the
+                same APIs as HTTP/1.x (possibly with some small additions) to represent the protocol.</p>
+
+            <p>The focus of the protocol is on performance; specifically, end-user perceived latency, network and server
+                resource usage. One major goal is to allow the use of a single connection from browsers to a Web site.
+            </p>
+
+            <p><strong>新的二进制格式（Binary Format）</strong> <br />
+                HTTP1.x的解析是基于文本。基于文本协议的格式解析存在天然缺陷，文本的表现形式有多样性，要做到健壮性考虑的场景必然很多，二进制则不同，只认0和1的组合。基于这种考虑HTTP2.0的协议解析决定采用二进制格式，实现方便且健壮。
+            </p>
+
+            <p><strong>多路复用（MultiPlexing）</strong> <br />
+                即连接共享，即每一个request都是是用作连接共享机制的。一个request对应一个id，这样一个连接上可以有多个request，每个连接的request可以随机的混杂在一起，接收方可以根据request的
+                id将request再归属到各自不同的服务端请求里面。多路复用原理图：</p>
+
+            <p><strong>header压缩</strong> <br />
+                HTTP2.0使用encoder来减少需要传输的header大小，通讯双方各自cache一份header fields表，既避免了重复header的传输，又减小了需要传输的大小。</p>
+
+            <p><strong>服务端推送（server push）</strong> <br />
+                同SPDY一样，HTTP2.0也具有server push功能。</p>
+
+
+
+            <h3 id="生成证书"><strong>生成证书</strong></h3>
+
+
+
+            <pre
+                class="prettyprint"><code class="language-go hljs "><span class="hljs-keyword">go</span> run C:\<span class="hljs-keyword">go</span>\src\crypto\tls\generate_cert.<span class="hljs-keyword">go</span> --host localhost<span class="hljs-number">
+2017/11</span><span class="hljs-number">/22</span><span class="hljs-number"> 10</span><span class="hljs-number">:06</span><span class="hljs-number">:58</span> written cert.pem<span class="hljs-number">
+2017/11</span><span class="hljs-number">/22</span><span class="hljs-number"> 10</span> <span class="hljs-number">:06</span><span class="hljs-number">:58</span> written key.pem</code></pre>
+
+
+
+            <h3 id="echo中的http2"><strong>echo中的HTTP/2</strong></h3>
+
+            <p>代码main.go:</p>
+
+
+
+            <pre class="prettyprint"><code class="language-go hljs "><span class="hljs-keyword">package</span> main
+
+<span class="hljs-keyword">import</span> (
+<span class="hljs-string">"fmt"</span>
+<span class="hljs-string">"net/http"</span>
+
+<span class="hljs-string">"github.com/labstack/echo"</span>
+)
+
+<span class="hljs-keyword">func</span> main() {
+e := echo.New()
+e.GET(<span class="hljs-string">"/request"</span>, <span class="hljs-keyword">func</span>(c echo.Context) error {
+    req := c.Request()
+    format := <span class="hljs-string">`
+        &lt;code&gt;
+            Protocol: %s&lt;br&gt;
+            Host: %s&lt;br&gt;
+            Remote Address: %s&lt;br&gt;
+            Method: %s&lt;br&gt;
+            Path: %s&lt;br&gt;
+        &lt;/code&gt;
+    `</span>
+    <span class="hljs-keyword">return</span> c.HTML(http.StatusOK, fmt.Sprintf(format, req.Proto, req.Host, req.RemoteAddr, req.Method, req.URL.Path))
+})
+e.Logger.Fatal(e.StartTLS(<span class="hljs-string">":1323"</span>, <span class="hljs-string">"cert.pem"</span>, <span class="hljs-string">"key.pem"</span>))
+}
+</code></pre>
+
+            <p>浏览器输入: <br />
+                <a href="https://localhost:1323/request" rel="nofollow"
+                    target="_blank">https://localhost:1323/request</a></p>
+
+            <p>结果：</p>
+
+
+
+            <pre class="prettyprint"><code class="language-go hljs ">Protocol: HTTP<span class="hljs-number">/2.0</span>
+Host: localhost<span class="hljs-number">:1323</span>
+Remote Address: [:<span class="hljs-number">:1</span>]<span class="hljs-number">:1905</span>
+Method: GET
+Path: /request</code></pre>
+
+            <p><em>如果出现错误：</em> <br />
+                http: TLS handshake error from [::1]:1735: tls: first record does not look like a TLS handshake.</p>
+
+            <p>请检查是否输入的是https</p>
+
+
+
+            <h3 id="golangorgxnethttp2"><strong>golang.org/x/net/http2</strong></h3>
+
+            <p>文档地址： <br />
+                <a href="https://godoc.org/golang.org/x/net/http2" rel="nofollow"
+                    target="_blank">https://godoc.org/golang.org/x/net/http2</a></p>
+
+            <p>获取： <br />
+                get golang.org/x/net/http2</p>
+
+            <p>代码main.go:</p>
+
+
+
+            <pre class="prettyprint"><code class="language-go hljs "><span class="hljs-keyword">package</span> main
+
+<span class="hljs-keyword">import</span> (
+<span class="hljs-string">"fmt"</span>
+<span class="hljs-string">"html"</span>
+<span class="hljs-string">"log"</span>
+<span class="hljs-string">"net/http"</span>
+
+<span class="hljs-string">"golang.org/x/net/http2"</span>
+)
+
+<span class="hljs-keyword">func</span> main() {
+<span class="hljs-keyword">var</span> srv http.Server
+http2.VerboseLogs = <span class="hljs-constant">true</span>
+srv.Addr = <span class="hljs-string">":8080"</span>
+<span class="hljs-comment">// This enables http2 support</span>
+http2.ConfigureServer(&amp;srv, <span class="hljs-constant">nil</span>)
+
+http.HandleFunc(<span class="hljs-string">"/"</span>, <span class="hljs-keyword">func</span>(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, <span class="hljs-string">"Hi tester %q\n"</span>, html.EscapeString(r.URL.Path))
+    ShowRequestInfoHandler(w, r)
+})
+<span class="hljs-comment">// Listen as https ssl server</span>
+<span class="hljs-comment">// NOTE: WITHOUT SSL IT WONT WORK!!</span>
+log.Fatal(srv.ListenAndServeTLS(<span class="hljs-string">"cert.pem"</span>, <span class="hljs-string">"key.pem"</span>))
+}
+<span class="hljs-keyword">func</span> ShowRequestInfoHandler(w http.ResponseWriter, r *http.Request) {
+w.Header().Set(<span class="hljs-string">"Content-Type"</span>, <span class="hljs-string">"text/plain"</span>)
+fmt.Fprintf(w, <span class="hljs-string">"Method: %s\n"</span>, r.Method)
+fmt.Fprintf(w, <span class="hljs-string">"Protocol: %s\n"</span>, r.Proto)
+fmt.Fprintf(w, <span class="hljs-string">"Host: %s\n"</span>, r.Host)
+fmt.Fprintf(w, <span class="hljs-string">"RemoteAddr: %s\n"</span>, r.RemoteAddr)
+fmt.Fprintf(w, <span class="hljs-string">"RequestURI: %q\n"</span>, r.RequestURI)
+fmt.Fprintf(w, <span class="hljs-string">"URL: %#v\n"</span>, r.URL)
+fmt.Fprintf(w, <span class="hljs-string">"Body.ContentLength: %d (-1 means unknown)\n"</span>, r.ContentLength)
+fmt.Fprintf(w, <span class="hljs-string">"Close: %v (relevant for HTTP/1 only)\n"</span>, r.Close)
+fmt.Fprintf(w, <span class="hljs-string">"TLS: %#v\n"</span>, r.TLS)
+fmt.Fprintf(w, <span class="hljs-string">"\nHeaders:\n"</span>)
+r.Header.Write(w)
+}
+</code></pre>
+
+            <p>浏览器输入： <br />
+                <a href="https://localhost:8080/" rel="nofollow" target="_blank">https://localhost:8080/</a></p>
+
+            <p>结果：</p>
+
+
+
+            <pre
+                class="prettyprint"><code class="language-go hljs ">Hi tester <span class="hljs-string">"/"</span>
+Method: GET
+Protocol: HTTP<span class="hljs-number">/2.0</span>
+Host: localhost<span class="hljs-number">:8080</span>
+RemoteAddr: [:<span class="hljs-number">:1</span>]<span class="hljs-number">:2750</span>
+RequestURI: <span class="hljs-string">"/"</span>
+URL: &amp;url.URL{Scheme:<span class="hljs-string">""</span>, Opaque:<span class="hljs-string">""</span>, User:(*url.Userinfo)(<span class="hljs-constant">nil</span>), Host:<span class="hljs-string">""</span>, Path:<span class="hljs-string">"/"</span>, RawPath:<span class="hljs-string">""</span>, ForceQuery:<span class="hljs-constant">false</span>, RawQuery:<span class="hljs-string">""</span>, Fragment:<span class="hljs-string">""</span>}
+Body.ContentLength:<span class="hljs-number"> 0</span> <span class="hljs-number">(-1</span> means unknown)
+Close: <span class="hljs-constant">false</span> (relevant <span class="hljs-keyword">for</span> HTTP<span class="hljs-number">/1</span> only)
+TLS: &amp;tls.ConnectionState{Version<span class="hljs-number">:0</span>x303, HandshakeComplete:<span class="hljs-constant">true</span>, DidResume:<span class="hljs-constant">false</span>, CipherSuite<span class="hljs-number">:0</span>xc02f, NegotiatedProtocol:<span class="hljs-string">"h2"</span>, NegotiatedProtocolIsMutual:<span class="hljs-constant">true</span>, ServerName:<span class="hljs-string">"localhost"</span>, PeerCertificates:[]*x509.Certificate(<span class="hljs-constant">nil</span>), VerifiedChains:[][]*x509.Certificate(<span class="hljs-constant">nil</span>), SignedCertificateTimestamps:[][]<span class="hljs-typename">uint8</span>(<span class="hljs-constant">nil</span>), OCSPResponse:[]<span class="hljs-typename">uint8</span>(<span class="hljs-constant">nil</span>), TLSUnique:[]<span class="hljs-typename">uint8</span><span class="hljs-number">{0</span>xa6,<span class="hljs-number"> 0</span>x3c,<span class="hljs-number"> 0</span>xfe,<span class="hljs-number"> 0</span>x93,<span class="hljs-number"> 0</span>x3c,<span class="hljs-number"> 0</span>x15,<span class="hljs-number"> 0</span>x4f,<span class="hljs-number"> 0</span>x74,<span class="hljs-number"> 0</span>xfc,<span class="hljs-number"> 0</span>x97,<span class="hljs-number"> 0</span>xca,<span class="hljs-number"> 0</span>x73}}
+
+Headers:
+Accept: text/html,application/xhtml+xml,application/xml;q<span class="hljs-number">=0.9</span>,image/webp,image/apng,*<span class="hljs-comment">/*;q=0.8
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+Alexatoolbar-Alx_ns_ph: AlexaToolbar/alx-4.0
+Cookie: _ga=GA1.1.981224509.1509938615
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36</span></code></pre>
+
+
+
+            <h3 id="server-push"><strong>Server Push</strong></h3>
+
+            <p><strong>Server Push是什么</strong></p>
+
+            <p>简单来讲就是当用户的浏览器和服务器在建立链接后，服务器主动将一些资源推送给浏览器并缓存起来，这样当浏览器接下来请求这些资源时就直接从缓存中读取，不会在从服务器上拉了，提升了速率。举一个例子就是： <br />
+                假如一个页面有3个资源文件index.html,index.css,index.js,当浏览器请求index.html的时候，服务器不仅返回index.html的内容，同时将index.css和index.js的内容push给浏览器，当浏览器下次请求这2两个文件时就可以直接从缓存中读取了。
+            </p>
+
+            <p><strong>Server Push原理是什么</strong></p>
+
+            <p>要想了解server push原理，首先要理解一些概念。我们知道HTTP2传输的格式并不像HTTP1使用文本来传输，而是启用了二进制帧(Frames)格式来传输，和server
+                push相关的帧主要分成这几种类型：</p>
+
+            <p>HEADERS frame(请求返回头帧):这种帧主要携带的http请求头信息，和HTTP1的header类似。</p>
+
+            <p>DATA frames(数据帧) :这种帧存放真正的数据content，用来传输。 <br />
+                PUSH_PROMISE frame(推送帧):这种帧是由server端发送给client的帧，用来表示server push的帧，这种帧是实现server push的主要帧类型。</p>
+
+            <p>RST_STREAM(取消推送帧):这种帧表示请求关闭帧，简单讲就是当client不想接受某些资源或者接受timeout时会向发送方发送此帧，和PUSH_PROMISE
+                frame一起使用时表示拒绝或者关闭server push。</p>
+
+            <p>了解了相关的帧类型，下面就是具体server push的实现过程了： <br />
+                由多路复用我们可以知道HTTP2中对于同一个域名的请求会使用一条tcp链接而用不同的stream ID来区分各自的请求。 <br />
+                当client使用stream 1请求index.html时，server正常处理index.html的请求，并可以得知index.html页面还将要会请求index.css和index.js。 <br />
+                server使用stream 1发送PUSH_PROMISE frame给client告诉client我这边可以使用stream 2来推送index.js和stream 3来推送index.css资源。
+                <br />
+                server使用stream 1正常的发送HEADERS frame和DATA frames将index.html的内容返回给client。 <br />
+                client接收到PUSH_PROMISE frame得知stream 2和stream 3来接收推送资源。 <br />
+                server拿到index.css和index.js便会发送HEADERS frame和DATA frames将资源发送给client。 <br />
+                client拿到push的资源后会缓存起来当请求这个资源时会从直接从从缓存中读取。</p>
+
+
+
+            <h3 id="golang18中的server-push"><strong>Golang1.8中的Server Push</strong></h3>
+
+            <p>代码main.go:</p>
+
+
+
+            <pre class="prettyprint"><code class="language-go hljs "><span class="hljs-keyword">package</span> main
+
+<span class="hljs-keyword">import</span> (
+<span class="hljs-string">"fmt"</span>
+<span class="hljs-string">"io/ioutil"</span>
+<span class="hljs-string">"net/http"</span>
+)
+
+<span class="hljs-keyword">var</span> image []<span class="hljs-typename">byte</span>
+
+<span class="hljs-comment">// preparing image</span>
+<span class="hljs-keyword">func</span> init() {
+<span class="hljs-keyword">var</span> err error
+image, err = ioutil.ReadFile(<span class="hljs-string">"./image.png"</span>)
+<span class="hljs-keyword">if</span> err != <span class="hljs-constant">nil</span> {
+    <span class="hljs-built_in">panic</span>(err)
+}
+}
+
+<span class="hljs-comment">// Send HTML and push image</span>
+<span class="hljs-keyword">func</span> handlerHtml(w http.ResponseWriter, r *http.Request) {
+pusher, ok := w.(http.Pusher)
+<span class="hljs-keyword">if</span> ok {
+    fmt.Println(<span class="hljs-string">"Push /image"</span>)
+    pusher.Push(<span class="hljs-string">"/image"</span>, <span class="hljs-constant">nil</span>)
+}
+w.Header().Add(<span class="hljs-string">"Content-Type"</span>, <span class="hljs-string">"text/html"</span>)
+fmt.Fprintf(w, <span class="hljs-string">`&lt;html&gt;&lt;body&gt;&lt;img src="/image"&gt;&lt;/body&gt;&lt;/html&gt;`</span>)
+}
+
+<span class="hljs-comment">// Send image as usual HTTP request</span>
+<span class="hljs-keyword">func</span> handlerImage(w http.ResponseWriter, r *http.Request) {
+w.Header().Set(<span class="hljs-string">"Content-Type"</span>, <span class="hljs-string">"image/png"</span>)
+w.Write(image)
+}
+<span class="hljs-keyword">func</span> main() {
+http.HandleFunc(<span class="hljs-string">"/"</span>, handlerHtml)
+http.HandleFunc(<span class="hljs-string">"/image"</span>, handlerImage)
+fmt.Println(<span class="hljs-string">"start http listening :18443"</span>)
+err := http.ListenAndServeTLS(<span class="hljs-string">":18443"</span>, <span class="hljs-string">"server.crt"</span>, <span class="hljs-string">"server.key"</span>, <span class="hljs-constant">nil</span>)
+fmt.Println(err)
+}
+</code></pre>
+
+            <p>浏览器输入： <br />
+                <a href="https://localhost:18443/" rel="nofollow" target="_blank">https://localhost:18443/</a></p>
+
+            <p>可以使用插件<strong>HTTP/2 and SPDY indicator</strong> <br />
+                chrome://net-internals/#http2</p>
+
+
+
+            <h3 id="echo框架中的server-push"><strong>echo框架中的Server Push</strong></h3>
+
+            <p>index.html</p>
+
+
+
+            <pre class="prettyprint"><code class="language-go hljs ">&lt;!DOCTYPE html&gt;
+&lt;html lang=<span class="hljs-string">"en"</span>&gt;
+&lt;head&gt;
+&lt;meta charset=<span class="hljs-string">"UTF-8"</span>&gt;
+&lt;meta name=<span class="hljs-string">"viewport"</span> content=<span class="hljs-string">"width=device-width, initial-scale=1.0"</span>&gt;
+&lt;meta http-equiv=<span class="hljs-string">"X-UA-Compatible"</span> content=<span class="hljs-string">"ie=edge"</span>&gt;
+&lt;title&gt;HTTP<span class="hljs-number">/2</span> Server Push&lt;/title&gt;
+&lt;link rel=<span class="hljs-string">"stylesheet"</span> href=<span class="hljs-string">"/app.css"</span>&gt;
+&lt;script src=<span class="hljs-string">"/app.js"</span>&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;img class=<span class="hljs-string">"echo"</span> src=<span class="hljs-string">"/echo.png"</span>&gt;
+&lt;h2&gt;The following static files are served via HTTP<span class="hljs-number">/2</span> server push&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;/app.css&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;/app.js&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;/echo.png&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <p>main.go</p>
+
+
+
+            <pre class="prettyprint"><code class="language-go hljs "><span class="hljs-keyword">package</span> main
+
+<span class="hljs-keyword">import</span> (
+<span class="hljs-string">"net/http"</span>
+
+<span class="hljs-string">"github.com/labstack/echo"</span>
+)
+
+<span class="hljs-keyword">func</span> main() {
+e := echo.New()
+e.Static(<span class="hljs-string">"/"</span>, <span class="hljs-string">"static"</span>)
+e.GET(<span class="hljs-string">"/"</span>, <span class="hljs-keyword">func</span>(c echo.Context) (err error) {
+    pusher, ok := c.Response().Writer.(http.Pusher)
+    <span class="hljs-keyword">if</span> ok {
+        <span class="hljs-keyword">if</span> err = pusher.Push(<span class="hljs-string">"/app.css"</span>, <span class="hljs-constant">nil</span>); err != <span class="hljs-constant">nil</span> {
+            <span class="hljs-keyword">return</span>
+        }
+        <span class="hljs-keyword">if</span> err = pusher.Push(<span class="hljs-string">"/app.js"</span>, <span class="hljs-constant">nil</span>); err != <span class="hljs-constant">nil</span> {
+            <span class="hljs-keyword">return</span>
+        }
+        <span class="hljs-keyword">if</span> err = pusher.Push(<span class="hljs-string">"/echo.png"</span>, <span class="hljs-constant">nil</span>); err != <span class="hljs-constant">nil</span> {
+            <span class="hljs-keyword">return</span>
+        }
+    }
+    <span class="hljs-keyword">return</span> c.File(<span class="hljs-string">"index.html"</span>)
+})
+e.Logger.Fatal(e.StartTLS(<span class="hljs-string">":1323"</span>, <span class="hljs-string">"cert.pem"</span>, <span class="hljs-string">"key.pem"</span>))
+}
+</code></pre>
+
+            <p>浏览器输入： <br />
+                <a href="https://localhost:1323/" rel="nofollow" target="_blank">https://localhost:1323/</a></p>
+
+            <p>参考： <br />
+                <a href="http://www.alloyteam.com/2017/01/http2-server-push-research/" rel="nofollow"
+                    target="_blank">http://www.alloyteam.com/2017/01/http2-server-push-research/</a></p>
+
+            <p><img src="https://img-blog.csdn.net/20171122140523708?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvd2FuZ3NodWJvMTk4OQ==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast"
+                    alt="这里写图片描述" title="" /></p>
+        </div>
+    </div>
+</article>

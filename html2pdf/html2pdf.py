@@ -133,8 +133,8 @@ def CreateHTML(url, titletag, contenttag):
     try:
         page = PyQuery(template)
         data = PyQuery(
-            getHTML(url, 5, 3, 1).replace('data-original-src="//', 'src="http://').replace('href="//', 'href="http://').replace(
-                'src="//', 'src="http://'))
+            getHTML(url, 5, 3, 1).replace('data-original-src="//',
+                                          'src="http://').replace('href="//', 'href="http://').replace('src="//', 'src="http://'))
         data(".image-container-fill").remove()
 
         # data = PyQuery(getHTML(url, 5, 3, 1).replace('href="//', 'href="http://').replace('src="//', 'src="http://'))
@@ -143,7 +143,7 @@ def CreateHTML(url, titletag, contenttag):
             title = data(titletag + ":first").text().strip()
         else:
             title = titletag
-        print("Article Title: " + title)
+        # print("Article Title: " + title)
 
         page("title").append(title)
         '''
@@ -160,8 +160,8 @@ def CreateHTML(url, titletag, contenttag):
         for link in data.items("link"):
             page("head").append(link)
 
-        for link in data.items("link"):
-            page("head").append(link)
+        # for script in data.items("script"):
+        #     page("head").append(script)
 
         content = data(contenttag).html()
 
@@ -176,7 +176,7 @@ def CreateHTML(url, titletag, contenttag):
         return None
 
 
-def CreatePDF(url, titletag, contenttag):
+def CreatePDF(url, titletag, contenttag, idx=None):
     # html = CreateHTML("https://studygolang.com/articles/12263", "#title", ".content.markdown-body")
     # html = CreateHTML("https://www.cnblogs.com/nerxious/archive/2012/12/21/2827303.html", ".postTitle", ".postBody")
 
@@ -186,8 +186,12 @@ def CreatePDF(url, titletag, contenttag):
         html = CreateHTML(url, titletag, contenttag)
         if html is None:
             return False
-        title = html("title").text()
+        title = html("title").text().replace("/", "-")
         content = html("body").html()
+
+        if idx is not None:
+            title = str(idx) + "." + title
+
         if len(PyQuery(content).children()) < 2:  # markdown
             filepath = title + ".md"
             content = "# " + title + "\n" + content

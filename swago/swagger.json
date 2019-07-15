@@ -1,0 +1,213 @@
+{
+  "consumes": [
+    "text/plain",
+    "application/json"
+  ],
+  "produces": [
+    "text/plain",
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "The purpose of this application is to test go-swagger in a simple GET requests.",
+    "title": "Testing go-swagger generation",
+    "termsOfService": "there are no TOS at this moment.",
+    "license": {
+      "name": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    },
+    "version": "0.0.1"
+  },
+  "host": "192.168.43.103:9090",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "欢迎信息",
+        "produces": [
+          "text/plain"
+        ],
+        "tags": [
+          "index"
+        ],
+        "operationId": "Index",
+        "responses": {
+          "200": {
+            "description": "欢迎信息"
+          }
+        }
+      }
+    },
+    "/hello/{name}": {
+      "get": {
+        "description": "Returns a simple Hello message",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "tags": [
+          "hello"
+        ],
+        "operationId": "Hello",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Name to be returned",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The hello message"
+          }
+        }
+      }
+    },
+    "/list": {
+      "get": {
+        "description": "Return a list of books",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "list"
+        ],
+        "operationId": "List",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "min",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "max",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "book list",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Book"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/view/{id}": {
+      "get": {
+        "description": "Return a book entity",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "view"
+        ],
+        "operationId": "View",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The book id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    }
+  },
+  "definitions": {
+    "Book": {
+      "description": "A book entity",
+      "type": "object",
+      "required": [
+        "id",
+        "price"
+      ],
+      "properties": {
+        "authors": {
+          "description": "the authors of this book",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Authors"
+        },
+        "id": {
+          "description": "the id for this book",
+          "type": "string",
+          "minLength": 1,
+          "x-go-name": "Id"
+        },
+        "price": {
+          "description": "the price of this book",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 1,
+          "x-go-name": "Price"
+        },
+        "title": {
+          "description": "the title of this book",
+          "type": "string",
+          "minLength": 3,
+          "x-go-name": "Title",
+          "example": "The Golang Programming"
+        }
+      },
+      "x-go-package": "lab/swago/rest"
+    },
+    "BookResponse": {
+      "type": "object",
+      "properties": {
+        "resp": {
+          "$ref": "#/definitions/Book"
+        }
+      },
+      "x-go-package": "lab/swago/rest"
+    },
+    "MyError": {
+      "type": "object",
+      "title": "A MyError is an error.",
+      "properties": {
+        "message": {
+          "description": "The error message\nin: body",
+          "type": "string",
+          "x-go-name": "Message"
+        }
+      },
+      "x-go-package": "lab/swago/rest"
+    }
+  },
+  "responses": {
+    "BookResponse": {
+      "schema": {
+        "$ref": "#/definitions/Book"
+      },
+      "headers": {
+        "resp": {}
+      }
+    },
+    "MyError": {
+      "description": "A MyError is an error."
+    }
+  }
+}
