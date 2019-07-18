@@ -2,7 +2,7 @@
 // @name           预览
 // @namespace      http://tampermonkey.net/
 // @version        0.1
-// @description    try to take over the world!
+// @description    detect code and view the cover
 // @author         xshrim
 // @include        *
 // @grant          GM_setValue
