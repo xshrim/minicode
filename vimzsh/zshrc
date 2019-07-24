@@ -1,0 +1,136 @@
+# Path to your oh-my-zsh installation.
+export ZSH=$HOME/.oh-my-zsh
+
+# Set name of the theme to load.
+# Look in ~/.oh-my-zsh/themes/
+# Optionally, if you set this to "random", it'll load a random theme each
+# time that oh-my-zsh is loaded.
+#ZSH_THEME="robbyrussell"
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to disable bi-weekly auto-update checks.
+# DISABLE_AUTO_UPDATE="true"
+
+# Uncomment the following line to change how often to auto-update (in days).
+# export UPDATE_ZSH_DAYS=13
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+# ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
+# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+# plugins=(comm git zsh-syntax-highlighting zsh-autosuggestions)
+# plugins=(git-prompt comm zsh-syntax-highlighting)
+plugins=(comm zsh-syntax-highlighting zsh-autosuggestions zsh-completions)
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+
+source $ZSH/oh-my-zsh.sh
+
+source /etc/profile
+
+source /etc/bash_completion.d/
+
+# source <(kubectl completion zsh)
+
+#autoload -U +X compinit && compinit
+#autoload -U +X bashcompinit && bashcompinit
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# ssh
+# export SSH_KEY_PATH="~/.ssh/dsa_id"
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+#user history audit
+#PS1="`whoami`@`hostname`:"'[$PWD]'
+#history
+#HISTDIR='/var/log/histaudit'
+#uinfo=`who -u am i 2>/dev/null`
+#UNAME=`echo $uinfo|awk '{print $1}'`
+#UNAME=`who am i 2>/dev/null | awk '{print $1}'`
+#UIP=`echo $uinfo|awk '{print $NF}'|sed -e 's/[()]//g'`
+#if [ "$UIP" = "" ]
+#then
+#    UIP=`hostname`
+#fi
+#if [ ! -d "$HISTDIR" ]
+#then
+#    mkdir $HISTDIR
+#    chmod 777 $HISTDIR
+#fi
+#if [ ! -d "$HISTDIR/$UNAME" ]
+#then
+#    mkdir $HISTDIR/$UNAME
+#    chmod 300 $HISTDIR/$UNAME
+#fi
+#DT=`date +"%Y%m%d_%H%M%S"`
+#export HISTFILE="$HISTDIR/${UNAME}_history"
+#export HISTFILE="$HISTDIR/$UNAME/${UNAME}_${UIP}_history.$DT"
+#chmod 600 $HISTDIR/${UNAME}_history 2>/dev/null
+#export HISTFILE='var/log/histaudit'
+#export HISTSIZE=10000
+#export HISTFILESIZE=50000
+#export HISTTIMEFORMAT="`who am i 2>/dev/null | awk '{print $1" "$NF}'` %F %T ==> "
+#export HISTCONTROL=ignoredups
+#shopt -s histappend
+#typeset -r HISTTIMEFORMAT
+#readonly PROMPT_COMMAND="history -a"
+#chmod 600 $HISTFILE 2>/dev/null
+#usrinfo="["$(whoami)":"$( who am i|awk '{print $1" "$2" "$3" "$4" " $NF}' )"]"
+#uname=$(who am i|awk '{print $1}')
+#export PROMPT_COMMAND='echo [$( date +"%F %T" )] $usrinfo --- {"$( history 1 | sed -r "s|^[ \t]+[0-9]+[ \t]+||" )"} >>/var/log/histaudit.log'
+#export PROMPT_COMMAND='{ thisHistID=`history 1|awk "{print \\$1}"`;lastCommand=`history 1| awk "{\\$1=\"\" ;print}"`;user=`id -un`;whoStr=(`who -u am i`);realUser=${whoStr[0]};logMonth=${whoStr[2]};logDay=${whoStr[3]};logTime=${whoStr[4]};pid=${whoStr[6]};ip=${whoStr[7]};if [ ${thisHistID}x != ${lastHistID}x ];then echo -E `date "+%Y/%m/%d %H:%M:%S"` $user\($realUser\)@$ip[PID:$pid][LOGIN:$logMonth $logDay $logTime] --- $lastCommand ;lastHistID=$thisHistID;fi; } >> $HISTORY_FILE'
+
+#PROXY
+# export http_proxy=http://127.0.0.1:9999/
+# export http_proxy=http://127.0.0.1:9999/
+
+#export PATH=/home/xshrim/gopath/bin:$PATH
+#export PATH=/home/xshrim/source/fabric-samples/scripts/bin:/usr/pgsql-10/bin:$PATH
+
