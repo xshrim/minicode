@@ -1,0 +1,19 @@
+#!/bin/bash
+
+syntax="zsh"
+style="bipolar"
+cmds="*ls* *echo* *cat* *ps* *who* *pwd* *arch* *lspci* *lsusb* *date* *cal* *tree* *iconv* *env* *set* *df* *rpm* *yum* *dnf* *lsattr* *tar* *sort* *grep* *egrep* *recode* *pvs* *pvdisplay* *pvscan* *vgscan* *lvs* *lvdisplay* *vgs* *vgdisplay* *pvcreate* *pvremove* *lvcreate* *lvremove* *lvextend* *lvresize* *lvreduce* *lvrename* *lvconvert* *lvscan* *lvchange* *vgchange* *vgcreate* *vgreduce* *vgextend* *vgrename* *ip* *ping* *ifconfig* *route* *hostname* *iwlist* *host* *nslookup* *whois* *dig* *nmap* *ethtool* *smbclient* *mount* *umount* *tar* *zip* *unzip* *firewall-cmd* *systemctl* *journalctl* *hostnamectl* *dmidecode* *hdparm* *which* *whereis* *locate* *jobs* *uname* *head* *tail* *cut* *sed* *awk* *file* *lsof* *netstat* *vmstat* *iostat* *java* *go* *docker* *python* *python3* *pip* *pip3* *perl* *lua* "
+if [ $# -eq 0 ]
+then
+    highlight -O xterm256 -t 4 -s $style -S $syntax
+else
+    if [[ "$cmds" =~ "*"$1"*" ]]
+    then
+        # $* | highlight -O xterm256 -t 4 -s $style 2> /dev/null || $* | highlight -O xterm256 -t 4 -s $style -S sh
+        $* | highlight -O xterm256 -t 4 -s $style -S $syntax
+    else
+        highlight -O xterm256 -t 4 -s $style $@ 2> /dev/null || highlight -O xterm256 -t 4 -s $style -S $syntax $@
+    fi
+fi
+
+# tail -f xxx.log | perl -pe 's/(ERROR)/\e[1;31m$1\e[0m/g'
