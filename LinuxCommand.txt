@@ -106,13 +106,10 @@ aview
 [说明] 依托强大的aalib将图片转化为ascii字符显示
 [示例] aview
 
-screenfetch
-[说明] 显示炫酷的带linux标志的系统信息
-[示例] screenfetch
-
 ccze
 [说明] 美化日志的输出结果
 [示例] tailf /var/log/syslog | ccze
+
 wall
 [说明] 向所有shell会话发送消息
 [示例] wall 'aa'
@@ -130,8 +127,16 @@ pidof
 [示例]pidof bash
 
 ldd ✧ objdump ✧ pldd /pmap
-[说明] 根据程序路径或者进程号列出其依赖的共享库
-[示例] ldd /usr/bin/ssh ✧ objdump -p /usr/bin/git ✧ pldd 1139 ✧ pmap 1139
+[说明] 根据程序路径或者进程号列出其依赖的共享库和共享库的文件构成
+[示例] ldd /usr/bin/ssh ✧ objdump -p /usr/bin/git ✧ ojbdump -t libzmq.5.0.2 ✧ pldd 1139 ✧ pmap 1139
+
+coredumpctl
+[说明] 程序运行发生错误出现核心转储(core dump)时使用此工具可以打开程序的调试信息
+[示例] coredumpctl gdb <pid> ✧ coredumpctl gdb -1
+
+bat
+[说明] 高亮显示文件或标准输出
+[示例] bat test.go ✧ cat test.go | bat -j go
 
 nl
 [说明] 为输出增加行号
@@ -152,10 +157,6 @@ xargs
 comm
 [说明] 与diff相反，显示两个文件中的相同行，支持交集差集
 [示例] comm a.txt b.txt
-
-objdump
-[说明] 查看目标文件构成
-[示例] ojbdump -t libzmq.5.0.2
 
 seq
 [说明] 以指定增量从首数开始打印数字到尾数
@@ -181,6 +182,10 @@ dmidecode
 [说明] 显示设备序列号等硬件信息
 [示例] dmidecode -t 1
 
+neofetch ✧ screenfetch
+[说明] 显示炫酷的带linux标志的系统信息
+[示例] neofetch
+
 top ✧ htop ✧ glances ✧ dstat ✧ saidar ✧ inxi
 [说明] 各种强大的系统监视工具
 [示例] glances dstat saidar inxi
@@ -188,8 +193,6 @@ top ✧ htop ✧ glances ✧ dstat ✧ saidar ✧ inxi
 dict ✧ sdcv ✧ wd
 [说明] 各种命令行词典工具
 [示例] dict mystery ✧ sdcv mystery ✧ wd -s mystery
-
-
 
 <技巧>
 mkdir -p new_folder/{folder_1,folder_2,folder_3,folder_4,folder_5}
