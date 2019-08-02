@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>数据库</title>
+    <link rel="stylesheet" href="/static/codemirror.min.css">
+    <link rel="stylesheet" href="/static/show-hint.css">
+    <link href="/static/liquibyte.css" rel="stylesheet">
+    <link href="/static/monokai.css" rel="stylesheet">
+    <link href="/static/neat.css" rel="stylesheet">
+    <script src="/static/codemirror.min.js"></script>
+    <script src="/static/sql.js"></script>
+    <script src="/static/show-hint.js"></script>
+    <script src="/static/sql-hint.js"></script>
+    <script>
+
+        // 原生js代替jquery的方法: https://www.cnblogs.com/xiaopen/p/5540884.html
+        function parseParams(data) {
+            // from:
+            // {name: 'zhangsan', age: 100}
+            // to:
+            // "name=zhangsan&age=100"
+            try {
+                var tempArr = [];
+                for (var i in data) {
+                    var key = encodeURIComponent(i);
+                    var value = encodeURIComponent(data[i]);
+                    tempArr.push(key + '=' + value);
+                }
+                var urlParamsStr = tempArr.join('&');
+                return urlParamsStr;
+            } catch (err) {
+                return '';
+            }
+        }
+
+        function getParams(url) {
+            // from:
+            // var urlStr = 'http://www.xxx.com/test?name=zhangshan&age=100#hello';
+            // to:
+            // {name: "zhangshan", age: "100"}
+            try {
+                var index = url.indexOf('?');
+                url = url.match(/\?([^#]+)/)[1];
+                var obj = {}, arr = url.split('&');
+                for (var i = 0; i < arr.length; i++) {
+                    var subArr = arr[i].split('=');
+                    var key = decodeURIComponent(subArr[0]);
+                    var value = decodeURIComponent(subArr[1]);
+                    obj[key] = value;
+                }
+                return obj;
+
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function selectTheme() {
+            var input = document.getElementById("select");
+            var theme = input.options[input.selectedIndex].textContent;
+            console.log(theme);
+            editor.setOption("theme", theme);
+            //location.hash = "#" + theme;
+        }
+
+        function createTable(headers, datas) {
+            var div = document.getElementById("resdiv");
+
+            while (div.firstChild) div.removeChild(div.firstChild);  // 删除所有子元素table
+
+            // 创建表
+            var table = document.createElement("table");
+            //将表格追加到父容器中
+            div.appendChild(table);
+            //设置table的样式
+            table.cellSpacing = 0;
+            table.cellPadding = 0;
+            table.border = "1px";
+
+            // 创建表头
+            var thead = document.createElement("thead");
+            //将标题追加到table中
+            table.appendChild(thead);
+            // 创建tr
+            var tr = document.createElement("tr");
+            // 将tr追加到thead中
+            // 设置tr的样式属性
+            tr.style.height = "30px";
+            tr.style.backgroundColor = "lightgray";
+            thead.appendChild(tr);
+            // 遍历headers中的数据
+            for (var i = 0; i < headers.length; i++) {
+                // 创建th
+                var th = document.createElement("th");
+                th.innerHTML = headers[i];
+                // 将th追加到thead中的tr中
+                tr.appendChild(th);
+            }
+
+            // 创建表行
+            for (var idx in datas) {
+                var tr = document.createElement("tr");
+                // 将tr追加到thead中
+                // 设置tr的样式属性
+                tr.style.height = "30px";
+                //tr.style.backgroundColor = "lightgray";
+                thead.appendChild(tr);
+                for (var i in headers) {
+                    var th = document.createElement("th");
+                    th.innerHTML = datas[idx][headers[i]];
+                    // 将th追加到thead中的tr中
+                    tr.appendChild(th);
+                }
+            }
+
+        }
+
+        function ajax_method(url, data, method, success) {
+            // 异步对象
+            var ajax = new XMLHttpRequest();
+
+            // get 跟post  需要分别写不同的代码
+            if (method == 'get') {
+                // get请求
+                if (data) {
+                    // 如果有值
+                    url += '?';
+                    url += data;
+                } else {
+
+                }
+                // 设置 方法 以及 url
+                ajax.open(method, url);
+
+                // send即可
+                ajax.send();
+            } else {
+                // post请求
+                // post请求 url 是不需要改变
+                ajax.open(method, url);
+
+                // 需要设置请求报文
+                ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+                // 判断data send发送数据
+                if (data) {
+                    // 如果有值 从send发送
+                    ajax.send(data);
+                } else {
+                    // 木有值 直接发送即可
+                    ajax.send();
+                }
+            }
+
+            // 注册事件
+            ajax.onreadystatechange = function () {
+                // 在事件中 获取数据 并修改界面显示
+                if (ajax.readyState == 4 && ajax.status == 200) {
+                    // console.log(ajax.responseText);
+
+                    // 将 数据 让 外面可以使用
+                    // return ajax.responseText;
+
+                    // 当 onreadystatechange 调用时 说明 数据回来了
+                    // ajax.responseText;
+
+                    // 如果说 外面可以传入一个 function 作为参数 success
+                    success(ajax.responseText);
+                }
+            }
+        }
+
+        window.onload = function () {
+            // 初始化代码编辑器
+            var mime = 'text/x-mariadb';
+            // get mime type
+            if (window.location.href.indexOf('mime=') > -1) {
+                mime = window.location.href.substr(window.location.href.indexOf('mime=') + 5);
+            }
+            window.editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+                mode: mime,
+                //theme: "liquibyte",
+                indentWithTabs: true,
+                smartIndent: true,
+                lineNumbers: true,
+                matchBrackets: true,
+                autofocus: true,
+                extraKeys: { "Ctrl-Space": "autocomplete" },
+                hintOptions: {
+                    tables: {
+                        users: ["name", "score", "birthDate"],
+                        countries: ["name", "population", "size"]
+                    }
+                }
+            });
+            //editor.setOption("theme", "liquibyte");
+
+            var rstbtn = document.querySelector("#reset");
+            rstbtn.onclick = function () {
+                //console.log(editor.getValue());  //经过转义的数据
+                //console.log(editor.getTextArea().value); //未经转义的数据
+                editor.setValue('select * from user');
+            }
+
+
+            //do something
+            var smtbtn = document.querySelector("#submit");
+            smtbtn.onclick = function () {
+                // var isql = document.querySelector("#code").value;
+                var isql = editor.getValue();  // textarea已被codemirror接管
+
+                var params = {  // 构建json格式传入数据, 然后使用parseParams函数将数据转换为js原生ajax支持的格式
+                    sql: isql
+                }
+                ajax_method("/query", parseParams(params), "post", function (data) {
+                    if (data !== undefined) {
+                        console.log(data);
+                        // data = '{ "Database": "blockchain" }'
+                        var jobj = JSON.parse(data);
+
+                        var rows;
+                        var fields = new Array();
+
+                        if (Array.isArray(jobj)) {  // 结果转为JSONArray
+                            rows = jobj;
+                        } else {
+                            rows = new Array();
+                            rows.push(jobj);
+                        }
+
+                        for (var key in rows[0]) {  // 从第一条记录中获取key列表
+                            fields.push(key);
+                        }
+
+                        createTable(fields, rows);
+                    }
+                });
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <h1>连接</h1>
+    <div>
+        <!-- rows="5" cols="100" -->
+        <textarea id="code">
+
+        </textarea>
+
+    </div>
+    <div>
+        <select onchange="selectTheme()" id="select">
+            <option selected>default</option>
+            <option>liquibyte</option>
+            <option>monokai</option>
+            <option>neat</option>
+        </select>
+        <button id="submit" type="button">提交</button>
+        <button id="reset" type="button">清空</button>
+    </div>
+    <div id="resdiv">
+    </div>
+</body>
+
+</html>
