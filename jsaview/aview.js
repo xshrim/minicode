@@ -19,6 +19,8 @@
 
 // ==/UserScript==
 
+// test url: http://who.ebeta.org/post/1582.html?page=all
+
 //var $ = unsafeWindow.jQuery;
 var $ = window.jQuery;
 
