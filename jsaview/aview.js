@@ -19,9 +19,11 @@
 
 // ==/UserScript==
 
-var $ = unsafeWindow.jQuery;
+//var $ = unsafeWindow.jQuery;
+var $ = window.jQuery;
 
 // cookie
+/*
 function getCookie(name) {
   var nameEQ = name + "=";
   var ca = document.cookie.split(';');
@@ -44,36 +46,53 @@ function setCookie(c_name, value, expiredays) {
 function delete_cookie( name ) {
       document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
+*/
+
+function mousePosition(ev){
+    ev = ev || window.event;
+    if(ev.pageX || ev.pageY){
+        return {x:ev.pageX, y:ev.pageY};
+    }
+    return {
+        x:ev.clientX + document.body.scrollLeft - document.body.clientLeft,
+        y:ev.clientY + document.body.scrollTop - document.body.clientTop
+    };
+}
 
 function getVideoCode(title){
-    var t = title.match(/[A-Za-z]+\-\d+/);
+    /*
+    var t = title.match(/[A-Za-z]+\-\d+/g);
     if(!t){
-        t = title.match(/heyzo[\-\_]?\d{4}/);
+        t = title.match(/heyzo[\-\_]?\d{4}/g);
     }
     if(!t){
-        t = title.match(/\d{6}[\-\_]\d{3}/);
+        t = title.match(/\d{6}[\-\_]\d{3}/g);
     }
     if(!t){
-        t = title.match(/[A-Za-z]+\d+/);
+        t = title.match(/[A-Za-z]+\d+/g);
     }
     return t;
+    */
+    return title.match(/([A-Za-z0-9]+[\-\_]\d+)|(heyzo[\-\_]?\d{4})|(\d{6}[\-\_]\d{3})|([A-Za-z]+\d+)|(\d{5}[\-\_]\d{4})|(\d{5}[\-\_]\d{3})/g);
 }
 
 function getVideoInfo(id){
-    //pop.innerHTML = "";
-    var info = "<div id='" + id + "' class='item_info'></div>";
-    $(".imgpop")[0].innerHTML = info;
+    $("#imgpoptitle").html(id);
     GM_xmlhttpRequest({
         method: "GET",
         url: "https://avmoo.asia/cn/search/" + id,
         onload: xhr => {
             var xhr_data = $(xhr.responseText);
+
             if(!(xhr_data.find("div.alert").length)){
                 var title = xhr_data.find("div.photo-info span").html();
-                var info_html ="<div class='item_border'><h4>" + title + "</h4></div>";
-                $(".imgpop").append(info_html);
-                var img = xhr_data.find("div.photo-frame img").attr("src").replace("ps.j","pl.j");;
-                $(".imgpop").append("<img src='" + img + "'>");
+                if (title !== undefined) {
+                    $("#imgpopcontenttitle").html("<h4>" + title + "</h4>");
+                }
+                var img_url = xhr_data.find("div.photo-frame img").attr("src");
+                if (img_url !== undefined) {
+                    $("#imgpopcontentimg").attr("src", img_url.replace("ps.j","pl.j"));
+                }
             }else{
                 getUncensored(id);
             }
@@ -82,98 +101,122 @@ function getVideoInfo(id){
 }
 
 function getUncensored(id){
+    $("#imgpoptitle").html(id);
     GM_xmlhttpRequest({
         method: "GET",
         url: "https://avsox.asia/cn/search/" + id,
         onload: xhr => {
             var xhr_data = $(xhr.responseText);
+
             if(!(xhr_data.find("div.alert").length)){
                 var title = xhr_data.find("div.photo-info span").html();
-                var info_html ="<div class='item_border'><h4>" + title + "</h4></div>";
-                $(".imgpop").append(info_html);
+                $("#imgpopcontenttitle").html("<h4>" + title + "</h4>");
                 var details_url = xhr_data.find("a.movie-box").attr("href");
-                GM_xmlhttpRequest({
-                    method: "GET",
-                    url: details_url,
-                    onload: temp => {
-                        var img = $(temp.responseText).find("a.bigImage").attr("href");
-                        $(".imgpop").find(".item_border").append("<img src='" + img + "'>");
-                    }
-                });
-            } else {
-                $(".imgpop").hide();
-                $(".imgpop")[0].innerHTML = "";
+                if (details_url !== undefined) {
+                    GM_xmlhttpRequest({
+                        method: "GET",
+                        url: details_url,
+                        onload: temp => {
+                            var img = $(temp.responseText).find("a.bigImage").attr("href");
+                             $("#imgpopcontentimg").attr("src", img);
+                        }
+                    });
+                }
             }
         }
     })
 }
 
-function showdiv(e) {
-    //var e = event || window.event;
-    var scrollX = document.documentElement.scrollLeft || document.body.scrollLeft;
-    var scrollY = document.documentElement.scrollTop || document.body.scrollTop;
-    var x = e.pageX || e.clientX + scrollX;
-    var y = e.pageY || e.clientY + scrollY;
-    //alert('x: ' + x + '\ny: ' + y);
-    console.log({'x': x, 'y': y});
-    if ( $(".imgpop").length <= 0 ) {
-        //pop = document.createElement("iframe");
-        var pop = document.createElement("div");
-        //pop.attr("id", "imgpop");
-        $(pop).attr("class", "imgpop");
-        document.body.appendChild(pop);
-    }
-    //$(".imgpop")[0].style.cssText = "position:absolute;left:" + x + "px;top:" + y + "px;background:#f0f0f0;z-index:101;width:" + 800 + "px;height:" + 600 + "px;border:solid 2px #afccfe;";
-    $(".imgpop")[0].style.cssText = "position:absolute;left:" + x + "px;top:" + y + "px;background:#f0f0f0;z-index:101;px;border:solid 2px #afccfe;";
-    $(".imgpop")[0].innerHTML = "";
-    $(".imgpop").hide();
+function createPop(left, top, removeable) {
+    $("#imgpop").remove();
+
+    var pop = document.createElement("div");
+    var poptitle = document.createElement("div");
+    //var poptitletext = document.createElement("span");
+    var popcontent = document.createElement("div");
+    var popcontenttitle = document.createElement("div");
+    var popcontentimg = document.createElement("img");
+    poptitle.id="imgpoptitle";
+    popcontent.id="imgpopcontent";
+    popcontenttitle.id="imgpopcontenttitle";
+    popcontentimg.id="imgpopcontentimg";
+    pop.id="imgpop";
+
+    poptitle.style.cssText = "height:30px;width:100%;text-align:center;vertical-align:middle;font-size:14px;font-weight:bold;background:gray;cursor:move;";
+    popcontenttitle.style.cssText = "max-width:800px;";
+    //popcontenttitle.style.cssText = "height:30px;width:100%;background:red;";
+    pop.style.cssText = "position:absolute;left:" + left + "px;top:" + top + "px;background:#f0f0f0;z-index:101;border:solid 2px #afccfe;";
+    pop.appendChild(poptitle);
+
+    popcontent.appendChild(popcontenttitle);
+    popcontent.appendChild(popcontentimg);
+    pop.appendChild(popcontent);
+
+    if(removeable == true){
+			var ismousedown = false;
+			var popleft,poptop;
+			var downX,downY;
+			popleft = parseInt(pop.style.left);
+			poptop = parseInt(pop.style.top);
+			poptitle.onmousedown = function(e){
+                ismousedown = true;
+                downX = e.clientX;
+                downY = e.clientY;
+			}
+			poptitle.onmousemove = function(e){
+				if(ismousedown){
+                    pop.style.top = e.clientY - downY + poptop + "px";
+                    pop.style.left = e.clientX - downX + popleft + "px";
+				}
+			}
+			/*松开鼠标时要重新计算当前窗口的位置*/
+			poptitle.onmouseup = function(){
+				popleft = parseInt(pop.style.left);
+				poptop = parseInt(pop.style.top);
+				ismousedown = false;
+			}
+		}
+
+    return pop;
 }
 
 (function() {
     'use strict';
-    // show();
-    // Your code here...
     var pretarget;
 
+    document.body.onclick = function(event){
+        //if (event.target.id !== "imgpop" && event.target.id !== "imgpoptitle" && event.target.id !== "imgpopcontent" && event.target.parentNode.id !== "imgpop" && event.target.parentNode.id !== "imgpoptitle" && event.target.parentNode.id !== "imgpopcontent") {
+         if ($("#imgpop") !== undefined) {
+             if (event.target.id != "imgpop" && event.target.parentNode.id != "imgpop" && event.target.parentNode.parentNode.id != "imgpop" && event.target.parentNode.parentNode.parentNode.id != "imgpop" && event.target.parentNode.parentNode.parentNode.parentNode.id != "imgpop") {
+            //if ($("#imgpop") != event.target && !$.contains($("#imgpop"), event.target)) {
+                $("#imgpop").remove();
+            }
+        }
+    }
+
     document.body.onmouseover = function(event){
-       var el = event.target;//鼠标每经过一个元素，就把该元素赋值给变量el
-       console.log('当前鼠标在', el, '元素上');//在控制台中打印该变量
-       if (el === pretarget) { // 鼠标移动但元素不变时无动作
+        if (!event.altKey) {
+            return
+        }
+
+       if (event.target === pretarget) { // 鼠标移动但元素不变时无动作
            return
        }
-       showdiv(event);
+        pretarget = event.target;
+        //console.log('当前鼠标在', el, '元素上');//在控制台中打印该变量
 
-       //console.log(el.children.length);
-       if (el.children.length <= 2) {
-           //console.log(el.innerText);
-           var code = getVideoCode(el.innerText);
+        var mousePos = mousePosition(event)
+
+       if (event.target.children.length <= 1) {
+           var code = getVideoCode(event.target.innerText);
            if (code !== null && code !== undefined) {
-               console.log("================================code:", code[0]);
-               getVideoInfo(code[0]);
-               $(".imgpop").show();
-               //$(".imgpop").focus();
-           } else {
-               $(".imgpop").hide();
-               $(".imgpop")[0].innerHTML = "";
+               var pop = createPop(mousePos.x, mousePos.y, true);
+               document.body.appendChild(pop);
+               $.each(code ,function(index,value){
+                   console.log("=====  ", value, "  =====");
+                   getVideoInfo(value);
+               });
            }
        }
     }
-
-    item.mouseenter(
-            function(f){
-                item_name = $(this).attr("title");
-                var id = getVideoCode(item_name);
-                if(id){
-                    if(!(item_list.find("div#"+id).length))
-                        getVideoInfo(id);
-                    showVideoInfo(item_list.find("div#"+id),f.clientX,f.clientY);
-                }
-            }
-        );
-        item.mouseleave(
-            function(){
-                item_name = $(this).attr("title");
-                hiddenVideoInfo(getVideoCode(item_name));
-            }
-        );
-})();
+})(); 
