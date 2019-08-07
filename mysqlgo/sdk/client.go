@@ -12,24 +12,47 @@ import (
 )
 
 var config *Config
+var clients map[string]*Client
 
 type Client struct {
 	Db *sql.DB
 }
 
 func New(kind, host, port, dbname, charset, user, passwd string) (*Client, error) { // 不连接具体库
+	hashkey := Hash(strings.ToLower(kind), host, port, dbname, charset, user, passwd)
+	if client, ok := clients[hashkey]; ok {
+		if err := client.Db.Ping(); err == nil {
+			return client, nil
+		}
+	}
+
 	db, err := sql.Open(strings.ToLower(kind), user+":"+passwd+"@tcp("+host+":"+port+")/"+dbname+"?charset="+charset)
 	if err != nil {
 		return nil, err
 	}
 
-	if db.Ping() != nil {
+	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 
+	clients[hashkey] = &Client{Db: db}
+
 	// db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelSerializable})
 
-	return &Client{Db: db}, nil
+	return clients[hashkey], nil
+}
+
+func (c *Client) Info(sql string) ([]byte, error) {
+	if err := c.Db.Ping(); err != nil {
+		return nil, err
+	}
+
+	query, err := c.Db.Query(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseResult(query)
 }
 
 func (c *Client) Query(sql string) ([]byte, error) {
@@ -93,7 +116,7 @@ func parseResult(query *sql.Rows) ([]byte, error) {
 
 	for query.Next() {
 		if err := query.Scan(scans...); err != nil {
-			fmt.Println(err)
+			return nil, err
 		}
 
 		row := make(map[string]string)

@@ -33,7 +33,8 @@ func main() {
 	// 	http.ServeFile(w, r, "./index.html")
 	// })
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Println("service started at [0.0.0.0:8686]")
+	log.Fatal(http.ListenAndServe(":8686", router))
 
 	// sql := "insert into blockchain.user values(0, '创始', '123456', '1980-01-01 02:00:00', false, NULL)"
 

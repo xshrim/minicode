@@ -20,22 +20,30 @@ var routes = []Route{
 		Index,
 	},
 	Route{
-		"Help",
+		"Home",
 		"GET",
-		"/help",
-		Help,
+		"/home",
+		Home,
 	},
 	Route{
-		"Query",
+		"Exe",
 		"POST",
-		"/query",
-		Query,
+		"/exe",
+		Exe,
+	},
+	Route{
+		"Info",
+		"POST",
+		"/info",
+		Info,
 	},
 }
 
 func NewRouter() *mux.Router {
 
 	config, _ = LoadConfig("./config.json")
+
+	clients = make(map[string]*Client)
 
 	//fmt.Println(config)
 

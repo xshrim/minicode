@@ -1,9 +1,12 @@
 package sdk
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
 
 func LoadConfig(filename string) (*Config, error) {
@@ -24,4 +27,11 @@ func LoadConfig(filename string) (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func Hash(args ...string) string {
+	hash := sha256.New()
+	hash.Write([]byte(strings.Join(args, ":")))
+	md := hash.Sum(nil)
+	return hex.EncodeToString(md)
 }

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>数据库管理</title>
+    <link href="./static/database.ico" rel="icon" type="image/x-icon" />
+    <!--<link href="./static/database.ico" rel="shortcut icon" type="image/x-icon" />-->
+    <link href="./static/comm.css" rel="stylesheet" type="text/css" />
+    <link href="./static/table.css" rel="stylesheet" type="text/css" />
+    <link href="./static/tab.css" rel="stylesheet" type="text/css" />
+    <!-- <link href="./static/button.css" rel="stylesheet" type="text/css" /> -->
+    <link href="./static/hr.css" rel="stylesheet" type="text/css" />
+    <!--<link href="/static/form.css" rel="stylesheet">-->
+    <link href="./static/codemirror.min.css" rel="stylesheet" type="text/css" />
+    <link href="./static/show-hint.css" rel="stylesheet" type="text/css" />
+    <link href="./static/liquibyte.css" rel="stylesheet" type="text/css" />
+    <link href="./static/elegant.css" rel="stylesheet" type="text/css" />
+    <link href="./static/lucario.css" rel="stylesheet" type="text/css" />
+    <link href="./static/shadowfox.css" rel="stylesheet" type="text/css" />
+    <link href="./static/monokai.css" rel="stylesheet" type="text/css" />
+    <link href="./static/neat.css" rel="stylesheet" type="text/css" />
+    <link href="./static/zenburn.css" rel="stylesheet" type="text/css" />
+    <link href="./static/solarized.css" rel="stylesheet" type="text/css" />
+    <script src="./static/codemirror.min.js"></script>
+    <script src="./static/sql.js"></script>
+    <script src="./static/show-hint.js"></script>
+    <script src="./static/sql-hint.js"></script>
+    <script src="./static/comm.js"></script>
+
+</head>
+
+<body>
+    <h3>数据库WEB管理</h3>
+    <div class="smart-green">
+        <div>
+            <label>类型:</label>
+            <input type="text" id="kind" name="kind" value="MySQL" />
+            <label>地址:</label>
+            <input type="text" id="host" name="host" value="127.0.0.1" />
+            <label>端口:</label>
+            <input type="text" id="port" name="port" value="3306" />
+            <label>字符:</label>
+            <input type="text" id="charset" name="charset" value="utf8" />
+            <label>用户:</label>
+            <input type="text" id="user" name="user" value="root" />
+            <label>密码:</label>
+            <input type="password" id="passwd" name="passwd" value="123456" />
+            <label id="connflag">&nbsp;✿&nbsp;</label>
+            <button id="conn" type="button">连接</button>
+
+        </div>
+        <hr class="style-six">
+        <div>
+            <label>数据库:</label>
+            <select id="dbname">
+            </select>
+            <label>数据表:</label>
+            <select id="tbname">
+            </select>
+            <span><img id="loading" src="./static/loading.gif" style="display:none"/></span>
+        </div>
+        <div id="box">
+            <div id="head">
+                <ul>
+                    <li class="working" onclick="tab(this)"><a href="#">概览</a></li>
+                    <li onclick="tab(this)"><a href="#">结构</a></li>
+                    <li onclick="tab(this)"><a href="#">数据</a></li>
+                    <li onclick="tab(this)"><a href="#">执行</a></li>
+                </ul>
+            </div>
+            <div id="content">
+                <div>
+                    <div id="viewdiv">
+
+                    </div>
+                </div>
+                <div class="hide">
+                    <div id="structdiv">
+
+                    </div>
+                </div>
+                <div class="hide">
+                    <div id="datadiv">
+
+                    </div>
+                </div>
+                <div class="hide">
+                    <div>
+                        <!-- rows="5" cols="100" -->
+                        <textarea id="code" class="textarea">
+
+                    </textarea>
+                    </div>
+                    <br>
+                    <div>
+                        <select onchange="selectTheme()" id="select">
+                            <option selected>default</option>
+                            <option>liquibyte</option>
+                            <option>elegant</option>
+                            <option>lucario</option>
+                            <option>shadowfox</option>
+                            <option>monokai</option>
+                            <option>neat</option>
+                            <option>zenburn</option>
+                            <option>solarized dark</option>
+                            <option>solarized light</option>
+                        </select>
+                        <button id="submit" type="button">提交</button>
+                        <button id="reset" type="button">清空</button>
+                        <label id="sinfo"></label>
+                    </div>
+                    <hr class="style-three" style="margin-top: 20px;">
+                    <div id="resdiv">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
