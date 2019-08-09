@@ -1,0 +1,18 @@
+/*
+*:not([class*="icon"]):not(i) {
+    font-family: "YaHei Consolas Hybrid" !important;
+}
+*/
+*:not([class*="icon"]):not([class*="fa "]):not([class*="caret"]){
+    font-family: "文泉驿微米黑" !important;
+}
+
+/*
+属性说明（顺序依次对应）： 阴影的X轴(可以使用负值)    阴影的Y轴(可以使用负值)    阴影模糊值（大小）    阴影的颜色
+*/
+* {
+    -webkit-text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+    -moz-text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+    -o-text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+    text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+}
