@@ -17,3 +17,6 @@ docker-compose run -v $PWD/samples:/scripts k6 run /scripts/es6sample.js
 
 # document
 # https://docs.k6.io/docs/welcome
+
+# sample
+# k6 run -o influxdb=http://localhost:8086/mydb script.js

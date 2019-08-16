@@ -14,6 +14,8 @@ services:
       - GF_AUTH_BASIC_ENABLED=false
     ports:
       - "3000:3000"
+    depends_on:
+      - influxdb
   k6:
     image: xshrim/k6_k6
     ports:
@@ -23,3 +25,6 @@ services:
     volumes:
       - ./sample.js:/scripts/sample.js
     command: 'run /scripts/sample.js' 
+    depends_on:
+      - influxdb
+      - grafana
