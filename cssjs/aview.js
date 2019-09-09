@@ -19,11 +19,12 @@
 
 // ==/UserScript==
 
-// test url: http://who.ebeta.org/post/1582.html?page=all
-
-//var $ = unsafeWindow.jQuery;
-var $ = window.jQuery;
-
+// tampermonkey的脚本和脚本所运行的目标页面是不在一个scope中的， tampermonkey的脚本运行在一个隔离的沙箱中, 因此tampermonkey中定义的变量和函数在目标页面中是不可见的（即在浏览器console中不存在）。
+// 为了将tampermonkey中定义的变量和函数真正注入到目标页面中， 需要使用unsafeWindow。 默认的window对象处于脚本自己的scope中， 而unsafeWindow对象则处于目标页面的scope中。
+// 使用unsafeWindow需要在头部grant unsafeWindow。 不同scope中的对象是不能直接互操作的。
+//var $ = unsafeWindow.jQuery;   // 注入目标页， 仅在目标页中有效
+var $ = window.jQuery;     // 仅在当前tampermonkey脚本中有效
+// unsafeWindow.on = true;  //表示变量on被注入目标页， 可以在目标页中直接使用
 // cookie
 /*
 function getCookie(name) {
@@ -79,7 +80,7 @@ function getVideoCode(title){
 }
 
 function getVideoInfo(id){
-    $("#imgpoptitle").html(id);
+    $("#imgpoptitletext").html(id);
     GM_xmlhttpRequest({
         method: "GET",
         url: "https://avmoo.asia/cn/search/" + id,
@@ -103,7 +104,7 @@ function getVideoInfo(id){
 }
 
 function getUncensored(id){
-    $("#imgpoptitle").html(id);
+    $("#imgpoptitletext").html(id);
     GM_xmlhttpRequest({
         method: "GET",
         url: "https://avsox.asia/cn/search/" + id,
@@ -134,25 +135,61 @@ function createPop(left, top, removeable) {
 
     var pop = document.createElement("div");
     var poptitle = document.createElement("div");
-    //var poptitletext = document.createElement("span");
+    var poptitletext = document.createElement("span");
+    var poptitlebtn = document.createElement("label");
     var popcontent = document.createElement("div");
     var popcontenttitle = document.createElement("div");
+    var popcontenttext = document.createElement("textarea");
     var popcontentimg = document.createElement("img");
+
     poptitle.id="imgpoptitle";
+    poptitletext.id="imgpoptitletext";
+    poptitlebtn.id="imgpoptitlebtn";
     popcontent.id="imgpopcontent";
     popcontenttitle.id="imgpopcontenttitle";
     popcontentimg.id="imgpopcontentimg";
+    popcontenttext.id = "imgpopcontenttext";
     pop.id="imgpop";
 
     poptitle.style.cssText = "height:30px;width:100%;text-align:center;vertical-align:middle;font-size:14px;font-weight:bold;background:gray;cursor:move;";
+    poptitlebtn.innerText = "X";
+    poptitlebtn.style.cssText = "float:right";
+
     popcontenttitle.style.cssText = "max-width:800px;";
+    popcontenttext.style.cssText = "position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;";
     //popcontenttitle.style.cssText = "height:30px;width:100%;background:red;";
     pop.style.cssText = "position:absolute;left:" + left + "px;top:" + top + "px;background:#f0f0f0;z-index:101;border:solid 2px #afccfe;";
+
+    poptitle.appendChild(poptitletext);
+    poptitle.appendChild(poptitlebtn);
     pop.appendChild(poptitle);
 
     popcontent.appendChild(popcontenttitle);
     popcontent.appendChild(popcontentimg);
+    popcontent.appendChild(popcontenttext);
     pop.appendChild(popcontent);
+
+    poptitlebtn.onclick = function(event){
+             $("#imgpop").remove();
+    }
+
+    popcontentimg.onmousedown = function(event){
+        if (event.ctrlKey) {
+             window.open("https://www.javbus.com/" + poptitle.innerText);
+        } else {
+            popcontenttext.value = popcontenttitle.innerText;
+            popcontenttext.select();
+            document.execCommand("copy");
+            popcontenttitle.style.cssText = "max-width:800px;background:green;";
+        }
+    }
+
+    popcontenttitle.onmousedown = function(event) {
+         if (!event.ctrlKey) {
+            return
+        }
+         window.open("https://www.zhongzilou.com/list/" + poptitle.innerText + "/1");
+    }
 
     if(removeable == true){
 			var ismousedown = false;
@@ -221,4 +258,4 @@ function createPop(left, top, removeable) {
            }
        }
     }
-})(); 
+})();
