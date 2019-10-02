@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+</head>
+
+<body>
+    <p><strong>CMD Method</strong></p>
+    <p>curl -X POST -F "path=test" -F "file=@/home/xshrim/a.js" http://127.0.0.1:8080/upload</p>
+    <p><strong>WEB Method</strong></p>
+    <form enctype="multipart/form-data" action="http://localhost:8080/upload" method="post">
+        <input name="path"></input>
+        <input type="file" name="file" />
+        <input type="submit" value="upload" />
+    </form>
+</body>
+
+</html>
