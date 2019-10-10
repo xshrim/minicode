@@ -11,8 +11,22 @@ import (
 	"text/template"
 )
 
+// 使用go module
+// export GOPROXY=https://goproxy.io   // 设置module代理
+// go mod init m        // 初始化module或者从已有项目迁移(生成go.mod)
+// go mod tidy          // 更新依赖
+// go mod vendor        // 将所有依赖库复制到本地vendor目录
+// go run -m=vendor main.go
+// go build -mod=vendor // 利用本地vendor中的库构建或运行
+// go list -u -m all    // 列出所有依赖库
+// go mod edit -fmt     // 格式化go.mod
+
 // 交叉编译:
-//CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o gofs.exe main.go
+// CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o gofs.exe main.go  // windows
+// CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gofs main.go    // linux
+
+// 解决alpine镜像问题, udp问题, 时区问题
+// RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
 const maxUploadSize = 4 * (2 << 30) // 4 * 1GB
 const filePath = "./"
