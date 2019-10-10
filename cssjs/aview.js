@@ -51,6 +51,27 @@ function delete_cookie( name ) {
 }
 */
 
+function getSelectedText(){
+    if(document.Selection){
+        //ie浏览器
+        return document.selection.createRange().text;
+    }else{
+        //标准浏览器
+        return window.getSelection().toString();
+    }
+}
+
+function getWordAtPoint(x, y) {
+  var range = document.caretRangeFromPoint(x, y);
+
+  if (range.startContainer.nodeType === Node.TEXT_NODE) {
+    range.expand('word');
+    return range.toString().trim();
+  }
+
+  return null;
+}
+
 function mousePosition(ev){
     ev = ev || window.event;
     if(ev.pageX || ev.pageY){
@@ -79,8 +100,12 @@ function getVideoCode(title){
     return title.match(/([A-Za-z0-9]+[\-\_]\d+)|(heyzo[\-\_]?\d{4})|(\d{6}[\-\_]\d{3})|([A-Za-z]+\d+)|(\d{5}[\-\_]\d{4})|(\d{5}[\-\_]\d{3})/g);
 }
 
-function getVideoInfo(id){
-    $("#imgpoptitletext").html(id);
+function getVideoInfo(id, content){
+    var contenttitle = $(content).find("div")[0];
+    var contentimg = $(content).find("img")[0];
+    console.log(contenttitle);
+    console.log(contentimg);
+    $("#imgpoptitletext").html($("#imgpoptitletext").html() + " " + id);
     GM_xmlhttpRequest({
         method: "GET",
         url: "https://avmoo.asia/cn/search/" + id,
@@ -90,21 +115,25 @@ function getVideoInfo(id){
             if(!(xhr_data.find("div.alert").length)){
                 var title = xhr_data.find("div.photo-info span").html();
                 if (title !== undefined) {
-                    $("#imgpopcontenttitle").html("<h4>" + title + "</h4>");
+                    $(contenttitle).html("<h4>" + title + "</h4>");
+                    //$("#imgpopcontenttitle").html("<h4>" + title + "</h4>");
                 }
                 var img_url = xhr_data.find("div.photo-frame img").attr("src");
                 if (img_url !== undefined) {
-                    $("#imgpopcontentimg").attr("src", img_url.replace("ps.j","pl.j"));
+                    $(contentimg).attr("src", img_url.replace("ps.j","pl.j"));
+                    //$("#imgpopcontentimg").attr("src", img_url.replace("ps.j","pl.j"));
                 }
             }else{
-                getUncensored(id);
+                getUncensored(id, content);
             }
         }
     })
 }
 
-function getUncensored(id){
-    $("#imgpoptitletext").html(id);
+function getUncensored(id, content){
+    var contenttitle = $(content).find("div")[0];
+    var contentimg = $(content).find("img")[0];
+    $("#imgpoptitletext").html($("#imgpoptitletext").html() + " " + id);
     GM_xmlhttpRequest({
         method: "GET",
         url: "https://avsox.asia/cn/search/" + id,
@@ -113,7 +142,8 @@ function getUncensored(id){
 
             if(!(xhr_data.find("div.alert").length)){
                 var title = xhr_data.find("div.photo-info span").html();
-                $("#imgpopcontenttitle").html("<h4>" + title + "</h4>");
+                $(contenttitle).html("<h4>" + title + "</h4>");
+                //$("#imgpopcontenttitle").html("<h4>" + title + "</h4>");
                 var details_url = xhr_data.find("a.movie-box").attr("href");
                 if (details_url !== undefined) {
                     GM_xmlhttpRequest({
@@ -121,7 +151,8 @@ function getUncensored(id){
                         url: details_url,
                         onload: temp => {
                             var img = $(temp.responseText).find("a.bigImage").attr("href");
-                             $("#imgpopcontentimg").attr("src", img);
+                            $(contentimg).attr("src", img);
+                             //$("#imgpopcontentimg").attr("src", img);
                         }
                     });
                 }
@@ -130,52 +161,28 @@ function getUncensored(id){
     })
 }
 
-function createPop(left, top, removeable) {
-    $("#imgpop").remove();
-
-    var pop = document.createElement("div");
-    var poptitle = document.createElement("div");
-    var poptitletext = document.createElement("span");
-    var poptitlebtn = document.createElement("label");
+function createPopSubContent(pop, code) {
     var popcontent = document.createElement("div");
     var popcontenttitle = document.createElement("div");
     var popcontenttext = document.createElement("textarea");
     var popcontentimg = document.createElement("img");
 
-    poptitle.id="imgpoptitle";
-    poptitletext.id="imgpoptitletext";
-    poptitlebtn.id="imgpoptitlebtn";
-    popcontent.id="imgpopcontent";
-    popcontenttitle.id="imgpopcontenttitle";
-    popcontentimg.id="imgpopcontentimg";
-    popcontenttext.id = "imgpopcontenttext";
-    pop.id="imgpop";
-
-    poptitle.style.cssText = "height:30px;width:100%;text-align:center;vertical-align:middle;font-size:14px;font-weight:bold;background:gray;cursor:move;";
-    poptitlebtn.innerText = "X";
-    poptitlebtn.style.cssText = "float:right";
+    // popcontent.id="imgpopcontent";
+    // popcontenttitle.id="imgpopcontenttitle";
+    // popcontentimg.id="imgpopcontentimg";
+    // popcontenttext.id = "imgpopcontenttext";
 
     popcontenttitle.style.cssText = "max-width:800px;";
     popcontenttext.style.cssText = "position: absolute;top: 0;left: 0;opacity: 0;z-index: -10;";
-    //popcontenttitle.style.cssText = "height:30px;width:100%;background:red;";
-    pop.style.cssText = "position:absolute;left:" + left + "px;top:" + top + "px;background:#f0f0f0;z-index:101;border:solid 2px #afccfe;";
-
-    poptitle.appendChild(poptitletext);
-    poptitle.appendChild(poptitlebtn);
-    pop.appendChild(poptitle);
 
     popcontent.appendChild(popcontenttitle);
     popcontent.appendChild(popcontentimg);
     popcontent.appendChild(popcontenttext);
     pop.appendChild(popcontent);
 
-    poptitlebtn.onclick = function(event){
-             $("#imgpop").remove();
-    }
-
     popcontentimg.onmousedown = function(event){
         if (event.ctrlKey) {
-             window.open("https://www.javbus.com/" + poptitle.innerText);
+             window.open("https://www.javbus.com/" + code); // poptitle.innerText
         } else {
             popcontenttext.value = popcontenttitle.innerText;
             popcontenttext.select();
@@ -188,7 +195,41 @@ function createPop(left, top, removeable) {
          if (!event.ctrlKey) {
             return
         }
-         window.open("https://www.zhongzilou.com/list/" + poptitle.innerText + "/1");
+         window.open("https://www.zhongzilou.com/list/" + code + "/1"); // poptitle.innerText
+    }
+
+    return popcontent;
+}
+
+function createPop(left, top, removeable) {
+    $("#imgpop").remove();
+
+    var pop = document.createElement("div");
+    var poptitle = document.createElement("div");
+    var poptitletext = document.createElement("span");
+    var poptitlebtn = document.createElement("label");
+
+
+    poptitle.id="imgpoptitle";
+    poptitletext.id="imgpoptitletext";
+    poptitlebtn.id="imgpoptitlebtn";
+
+    pop.id="imgpop";
+
+    poptitle.style.cssText = "height:30px;width:100%;text-align:center;vertical-align:middle;font-size:14px;font-weight:bold;background:gray;cursor:move;";
+    poptitlebtn.innerText = "X";
+    poptitlebtn.style.cssText = "float:right";
+
+
+    //popcontenttitle.style.cssText = "height:30px;width:100%;background:red;";
+    pop.style.cssText = "position:absolute;left:" + left + "px;top:" + top + "px;background:#f0f0f0;z-index:101;border:solid 2px #afccfe;";
+
+    poptitle.appendChild(poptitletext);
+    poptitle.appendChild(poptitlebtn);
+    pop.appendChild(poptitle);
+
+    poptitlebtn.onclick = function(event){
+             $("#imgpop").remove();
     }
 
     if(removeable == true){
@@ -219,9 +260,24 @@ function createPop(left, top, removeable) {
     return pop;
 }
 
+function show(text, pos) {
+    if (text == undefined || text == "") {
+        return;
+    }
+    var code = getVideoCode(text);
+    if (code !== null && code !== undefined) {
+        var pop = createPop(pos.x, pos.y, true);
+        document.body.appendChild(pop);
+        $.each(code ,function(index,value){
+            var popcontent = createPopSubContent(pop, value);
+            console.log("=====  ", value, "  =====");
+            getVideoInfo(value, popcontent);
+        });
+    }
+}
+
 (function() {
     'use strict';
-    var pretarget;
 
     document.body.onclick = function(event){
         //if (event.target.id !== "imgpop" && event.target.id !== "imgpoptitle" && event.target.id !== "imgpopcontent" && event.target.parentNode.id !== "imgpop" && event.target.parentNode.id !== "imgpoptitle" && event.target.parentNode.id !== "imgpopcontent") {
@@ -233,29 +289,45 @@ function createPop(left, top, removeable) {
         }
     }
 
+    // 三种获取特定文本的方式
+    /* 通过选中文本获取
+    document.body.onmouseup = function(event){
+         if (!event.altKey) {
+            return
+        }
+
+         var pos = mousePosition(event)
+         var text = getSelectedText()
+         show(text, pos);
+	};
+    */
+
+    /* 通过鼠标所在位置单词获取
+    document.body.onmousemove = function(event){
+        if (!event.altKey) {
+            return
+        }
+
+        var pos = mousePosition(event)
+        var text = getWordAtPoint(event.x, event.y)
+         show(text, pos);
+    }
+    */
+
+    // 通过鼠标所在控件文本获取
     document.body.onmouseover = function(event){
         if (!event.altKey) {
             return
         }
 
-       if (event.target === pretarget) { // 鼠标移动但元素不变时无动作
-           return
-       }
-        pretarget = event.target;
         //console.log('当前鼠标在', el, '元素上');//在控制台中打印该变量
 
-        var mousePos = mousePosition(event)
+        var pos = mousePosition(event)
 
        if (event.target.children.length <= 1) {
-           var code = getVideoCode(event.target.innerText);
-           if (code !== null && code !== undefined) {
-               var pop = createPop(mousePos.x, mousePos.y, true);
-               document.body.appendChild(pop);
-               $.each(code ,function(index,value){
-                   console.log("=====  ", value, "  =====");
-                   getVideoInfo(value);
-               });
-           }
+           var text = event.target.innerText;
+           show(text, pos);
        }
     }
+
 })();
