@@ -1,27 +1,26 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
-	"./codeanalysis"
+	"./analysis"
+	"./notify"
+	"./utils"
 )
 
-func CopyDir(src, dst string) error {
-	cmd := exec.Command("sh", "-c", "cp -a -r "+src+" "+dst)
-	// log.Printf("Running cp -a")
-	return cmd.Run()
-}
-
 func main() {
-
-	codeDir := flag.String("codedir", ".", "要扫描的代码目录")
-	outputFile := flag.String("output", "list-interface-output.txt", "解析结果保存到该文件中")
-	ignoreDir := flag.String("ignore", "", "需要排除的目录,不需要扫描和解析")
+	imode := flag.String("mode", "single", "代码分析模式(single|daemon)")
+	icodeDir := flag.String("codedir", ".", "要扫描的代码目录")
+	ioutputFile := flag.String("output", "", "解析结果保存到该文件中")
+	iignoreDir := flag.String("ignore", "", "无需扫描和解析的目录(代码目录相对路径, 逗号分隔)")
 
 	gopathDir := os.Getenv("GOPATH")
 
@@ -38,59 +37,127 @@ func main() {
 
 	flag.Parse()
 
-	if *codeDir == "" {
+	mode := strings.TrimSpace(*imode)
+	codeDir := strings.TrimSpace(*icodeDir)
+	output := strings.TrimSpace(*ioutputFile)
+	ignoreDir := strings.TrimSpace(*iignoreDir)
+
+	if codeDir == "" {
 		fmt.Println("代码目录不能为空")
 		os.Exit(1)
 	}
 
-	if gopathDir == "" {
-		fmt.Println("GOPATH目录不能为空")
+	codeDir, err := filepath.Abs(codeDir)
+	if err != nil {
+		fmt.Println("代码目录解析出错: ", err.Error())
 		os.Exit(1)
 	}
 
-	tmpDir := ""
-	if !strings.HasPrefix(*codeDir, gopathDir) {
-		// panic(fmt.Sprintf("代码目录%s,必须是GOPATH目录%s的子目录", *codeDir, *gopathDir))
-		tmpDir = path.Join(gopathDir, "/src/tmp/")
+	if output != "" {
+		output, err = filepath.Abs(output)
+		if err != nil {
+			fmt.Println("输出文件解析出错: ", err.Error())
+			os.Exit(1)
+		}
+	}
+
+	originDir := codeDir
+
+	ctx, cancel := context.WithCancel(context.Background()) // 监控和中断上下文
+
+	// 中断协程在程序中断时通过sigfn回调函数发出上下文(ctx)的cancel消息
+	// 目录监控和监控同步协程均传入相同的上下文(ctx), 中断协程发出一次cancel消息, 两个协程均可接收到
+	// 目录监控分析函数
+	aysfn := func() {
+		// TODO 代码分析
+		// TODO 分析结果入库(内存库)
+		// TODO API查询代码分析结果
+		time.Sleep(5 * time.Second)
+	}
+
+	// 目录监控同步函数
+	sycfn := func() {
+		// TODO 目录同步(仅originDir和codeDir不一致时需要同步)
+	}
+
+	// 中断操作回调函数
+	sigfn := func() {
+		cancel()
+	}
+
+	// 代码目录不在gopath下, 代码分析程序将无法正常分析, 需将代码复制到gopath下的临时目录下并进行两个目录的实时同步
+	if !strings.HasPrefix(codeDir, gopathDir) {
+		dir, fpath := filepath.Split(codeDir)
+
+		tmpDir := path.Join(gopathDir, "/src/tmp-"+utils.GetRandomString(6))
 
 		if _, err := os.Stat(tmpDir); !os.IsNotExist(err) {
 			os.RemoveAll(tmpDir)
 		}
 
-		os.Mkdir(tmpDir, os.ModePerm)
+		os.MkdirAll(tmpDir, os.ModePerm)
 
-		CopyDir(*codeDir, tmpDir)
+		utils.CopyDir(codeDir, tmpDir)
 
-		*codeDir = tmpDir
-		fmt.Println(*codeDir)
-	}
+		codeDir = path.Join(tmpDir, fpath)
 
-	var ignoreDirs []string
-	if *ignoreDir != "" {
-		ignoreDirs = strings.Split(*ignoreDir, ",")
-	}
+		originDir := path.Join(dir, path.Base(codeDir))
 
-	for _, dir := range ignoreDirs {
-		if !strings.HasPrefix(dir, *codeDir) {
-			// panic(fmt.Sprintf("需要排除的目录%s,必须是代码目录%s的子目录", dir, *codeDir))
-			// os.Exit(1)
-			print(dir)
+		// defer os.RemoveAll(tmpDir)
+
+		sigfn = func() {
+			cancel()             // 向上下文(ctx)发出cancel消息, 关闭其他协程
+			os.RemoveAll(tmpDir) // 删除临时目录
+		}
+
+		if mode != "single" {
+			sycfn = func() {
+				// 目录同步
+				utils.SyncDir(originDir, codeDir)
+			}
+
+			go notify.Notify(ctx, originDir, sycfn) // 开启目录监控(同步)
 		}
 	}
 
-	config := codeanalysis.Config{
-		CodeDir:    *codeDir,
+	var ignoreDirs []string
+	if ignoreDir != "" {
+		ignoreDirs = strings.Split(ignoreDir, ",")
+	}
+
+	for idx, sdir := range ignoreDirs {
+		ignoreDirs[idx] = path.Join(codeDir, sdir)
+	}
+
+	config := analysis.Config{
+		CodeDir:    codeDir,
+		OriginDir:  originDir,
 		GopathDir:  gopathDir,
-		VendorDir:  "", // path.Join(*codeDir, "vendor"),
+		VendorDir:  path.Join(codeDir, "vendor"),
 		IgnoreDirs: ignoreDirs,
 	}
 
-	result := codeanalysis.AnalysisCode(config)
+	sig := []os.Signal{os.Interrupt, os.Kill, syscall.SIGUSR1, syscall.SIGUSR2}
 
-	result.OutputToFile(*outputFile)
+	if mode != "single" {
+		go notify.Signal(sig, sigfn) // 开启中断监测
 
-	if tmpDir != "" {
-		os.RemoveAll(tmpDir)
+		go notify.Notify(ctx, codeDir, aysfn) // 开启目录监控(分析)
+
+		fmt.Println("后台进程正在进行实时代码分析")
+		select {}
+	} else {
+		aysfn()
+		sigfn()
+		fmt.Println("Finish")
 	}
 
+	os.Exit(1)
+
+	result := analysis.AnalysisCode(config)
+
+	fmt.Println("================================================")
+	result.Output(output)
+
+	fmt.Println(codeDir, originDir)
 }

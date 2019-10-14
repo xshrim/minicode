@@ -1,4 +1,4 @@
-package codeanalysis
+package analysis
 
 import (
 	"fmt"
@@ -16,13 +16,14 @@ import (
 
 type Config struct {
 	CodeDir    string
+	OriginDir  string
 	GopathDir  string
 	VendorDir  string
 	IgnoreDirs []string
 }
 
 type AnalysisResult interface {
-	OutputToFile(logfile string)
+	Output(logfile string)
 }
 
 func AnalysisCode(config Config) AnalysisResult {
@@ -886,47 +887,47 @@ func (this *analysisTool) findInterfaceImpls(interfaceMeta1 *interfaceMeta) []*s
 	return metas
 }
 
-func (this *analysisTool) OutputToFile(logfile string) {
+func (this *analysisTool) Output(out string) {
 
-	file, err := os.Create(logfile)
-	if err != nil {
-		log.Printf("打开文件%s失败\n", logfile)
+	ostdout := os.Stdout
+	if out != "" {
+		file, err := os.OpenFile(out, os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0755)
+		if err != nil {
+			log.Printf("打开文件%s失败\n", out)
+		}
+		os.Stdout = file // 标准输出重定向到文件
+		// os.Stderr = file
+		defer file.Close()
 	}
 
 	for _, interfaceMeta := range this.interfaceMetas {
 
 		string := fmt.Sprintf("interface %s 在文件%s中\n", interfaceMeta.Name, interfaceMeta.FilePath)
-		log.Println(string)
-		file.WriteString(string)
+		fmt.Println(string)
 
 		structMetas := this.findInterfaceImpls(interfaceMeta)
 
 		if len(structMetas) == 0 {
-
 			string = "没有找到实现该接口的struct\n"
-			log.Println(string)
-			file.WriteString(string)
+			fmt.Println(string)
 
 		} else {
-
 			string = fmt.Sprintf("有%d个struct实现了接口\n", len(structMetas))
-			log.Println(string)
-			file.WriteString(string)
+			fmt.Println(string)
 
 			for _, structMeta := range structMetas {
 				string = fmt.Sprintf("struct %s 在文件%s中\n", structMeta.Name, structMeta.FilePath)
-				log.Println(string)
-				file.WriteString(string)
+				fmt.Println(string)
 			}
 
 		}
-
-		log.Printf("\n")
-		file.WriteString("\n")
 	}
 
-	file.Close()
+	os.Stdout = ostdout
 
-	log.Printf("解析结果已保存到%s\n", logfile)
+	//file.Close()
 
+	if out != "" {
+		log.Printf("解析结果已保存到%s\n", out)
+	}
 }

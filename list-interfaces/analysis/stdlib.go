@@ -1,4 +1,4 @@
-package codeanalysis
+package analysis
 
 var stdlibs = []string{
 	"archive/tar",

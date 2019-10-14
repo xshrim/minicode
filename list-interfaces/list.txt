@@ -1,0 +1,9 @@
+interface Stringer 在文件/home/xshrim/gopath/src/tmp-josx5e/m/main.go中
+
+有2个struct实现了接口
+
+struct Person 在文件/home/xshrim/gopath/src/tmp-josx5e/m/entity/user.go中
+
+struct Student 在文件/home/xshrim/gopath/src/tmp-josx5e/m/entity/user.go中
+
+
