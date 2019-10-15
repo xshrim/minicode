@@ -28,8 +28,8 @@ type AnalysisResult interface {
 
 func AnalysisCode(config Config) AnalysisResult {
 	tool := &analysisTool{
-		interfaceMetas:              []*interfaceMeta{},
-		structMetas:                 []*structMeta{},
+		interfaceMetas:              []*InterfaceMeta{},
+		structMetas:                 []*StructMeta{},
 		packagePathPackageNameCache: map[string]string{},
 	}
 	tool.analysis(config)
@@ -120,25 +120,47 @@ func PathExists(path string) bool {
 	return false
 }
 
-type baseInfo struct {
+type BaseInfo struct {
 	// go文件路径
 	FilePath string
 	// 包路径, 例如 git.oschina.net/jscode/list-interface
 	PackagePath string
 }
 
-type interfaceMeta struct {
-	baseInfo
-	Name string
+type InterfaceMeta struct {
+	BaseInfo
+	Name    string
+	DefLine int
+	DefCol  int
 	// interface的方法签名列表,
 	MethodSigns []string
 }
 
-type structMeta struct {
-	baseInfo
-	Name string
+type MethodMeta struct {
+	BaseInfo
+	Name    string
+	Sign    string
+	DefLine int
+	DefCol  int
+}
+
+type StructMeta struct {
+	BaseInfo
+	Name    string
+	DefLine int
+	DefCol  int
 	// struct的方法签名列表
-	MethodSigns []string
+	MethodSigns map[string]MethodMeta
+}
+
+type CustomMeta struct {
+	BaseInfo
+	Name    string
+	Kind    string
+	DefLine int
+	DefCol  int
+	// 自定义类型的方法签名列表
+	MethodSigns map[string]MethodMeta
 }
 
 type importMeta struct {
@@ -159,9 +181,11 @@ type analysisTool struct {
 	currentFileImports []*importMeta
 
 	// 所有的interface
-	interfaceMetas []*interfaceMeta
+	interfaceMetas []*InterfaceMeta
 	// 所有的struct
-	structMetas []*structMeta
+	structMetas []*StructMeta
+	// 所有的自定义类型
+	customMetas []*CustomMeta
 	// package path与package name的映射关系,例如git.oschina.net/jscode/list-interface 对应的pakcage name为 main
 	packagePathPackageNameCache map[string]string
 }
@@ -271,16 +295,22 @@ func (this *analysisTool) visitTypeInFile(path string) {
 
 				if ok {
 
+					pos := fset.Position(typeSpec.Pos())
+
 					interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
 					if ok {
-						this.visitInterface(typeSpec.Name.Name, interfaceType)
-					}
+						this.visitInterface(typeSpec.Name.Name, interfaceType, pos)
+					} else {
 
-					structType, ok := typeSpec.Type.(*ast.StructType)
-					if ok {
-						this.visitStruct(typeSpec.Name.Name, structType)
-					}
+						structType, ok := typeSpec.Type.(*ast.StructType)
+						if ok {
+							this.visitStruct(typeSpec.Name.Name, structType, pos)
+						}
 
+						if !ok {
+							this.visitCustom(typeSpec, pos)
+						}
+					}
 				}
 			}
 		}
@@ -367,12 +397,10 @@ func (this *analysisTool) visitFuncInFile(path string) {
 				typeSpec, ok := spec.(*ast.TypeSpec)
 
 				if ok {
-
 					interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
 					if ok {
 						this.visitInterfaceFunctions(typeSpec.Name.Name, interfaceType)
 					}
-
 				}
 			}
 		}
@@ -383,25 +411,43 @@ func (this *analysisTool) visitFuncInFile(path string) {
 
 		funcDecl, ok := decl.(*ast.FuncDecl)
 		if ok {
-			this.visitFunc(funcDecl)
+			this.visitFunc(funcDecl, fset.Position(funcDecl.Pos()))
 		}
 
 	}
 
 }
 
-func (this *analysisTool) visitStruct(name string, structType *ast.StructType) {
+func (this *analysisTool) visitCustom(spec *ast.TypeSpec, pos token.Position) {
+	customMeta := &CustomMeta{
+		BaseInfo: BaseInfo{
+			FilePath:    this.currentFile,
+			PackagePath: this.currentPackagePath,
+		},
+		Name:        spec.Name.Name,
+		Kind:        fmt.Sprintf("%s", spec.Type),
+		DefLine:     pos.Line,
+		DefCol:      pos.Column,
+		MethodSigns: make(map[string]MethodMeta),
+	}
 
-	strutMeta1 := &structMeta{
-		baseInfo: baseInfo{
+	this.customMetas = append(this.customMetas, customMeta)
+}
+
+func (this *analysisTool) visitStruct(name string, structType *ast.StructType, pos token.Position) {
+
+	structMeta := &StructMeta{
+		BaseInfo: BaseInfo{
 			FilePath:    this.currentFile,
 			PackagePath: this.currentPackagePath,
 		},
 		Name:        name,
-		MethodSigns: []string{},
+		DefLine:     pos.Line,
+		DefCol:      pos.Column,
+		MethodSigns: make(map[string]MethodMeta),
 	}
 
-	this.structMetas = append(this.structMetas, strutMeta1)
+	this.structMetas = append(this.structMetas, structMeta)
 
 }
 
@@ -419,17 +465,19 @@ func (this *analysisTool) structBodyToString(structType *ast.StructType) string 
 
 }
 
-func (this *analysisTool) visitInterface(name string, interfaceType *ast.InterfaceType) {
+func (this *analysisTool) visitInterface(name string, interfaceType *ast.InterfaceType, pos token.Position) {
 
-	interfaceInfo1 := &interfaceMeta{
-		baseInfo: baseInfo{
+	interfaceInfo := &InterfaceMeta{
+		BaseInfo: BaseInfo{
 			FilePath:    this.currentFile,
 			PackagePath: this.currentPackagePath,
 		},
-		Name: name,
+		Name:    name,
+		DefLine: pos.Line,
+		DefCol:  pos.Column,
 	}
 
-	this.interfaceMetas = append(this.interfaceMetas, interfaceInfo1)
+	this.interfaceMetas = append(this.interfaceMetas, interfaceInfo)
 
 }
 
@@ -472,18 +520,60 @@ func (this *analysisTool) funcParamsResultsToString(funcType *ast.FuncType) stri
 
 }
 
-func (this *analysisTool) findStruct(packagePath string, structName string) *structMeta {
+// 返回Struct定义所在行号和列号
+// func (this *analysisTool) locateTypeDefine(stype, name string) (int, int) {
+// 	f, err := os.Open(this.currentFile)
+// 	if err != nil {
+// 		return 0, 0
+// 	}
+// 	defer f.Close()
 
-	for _, structMeta1 := range this.structMetas {
-		if structMeta1.Name == structName && structMeta1.PackagePath == packagePath {
-			return structMeta1
+// 	// Splits on newlines by default.
+// 	scanner := bufio.NewScanner(f)
+
+// 	line := 1
+// 	// https://golang.org/pkg/bufio/#Scanner.Scan
+// 	for scanner.Scan() {
+// 		regstr := "^\\s*type\\s+" + name + "\\s+" + stype + "\\s*{"
+// 		if stype == "func" {
+// 			regstr = "^\\s*func\\s*\\(.*" + name + "\\)\\s*" + "fname"
+// 		}
+// 		if ok, err := regexp.MatchString(regstr, scanner.Text()); ok && err == nil {
+// 			return line, strings.Index(scanner.Text(), " "+name+" ") + 2
+// 		}
+// 		line++
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		// Handle the error
+// 	}
+
+// 	return 0, 0
+// }
+
+func (this *analysisTool) findCustom(packagePath string, customName string) *CustomMeta {
+
+	for _, customMeta := range this.customMetas {
+		if customMeta.Name == customName && customMeta.PackagePath == packagePath {
+			return customMeta
 		}
 	}
 
 	return nil
 }
 
-func (this *analysisTool) findInterfaceMeta(packagePath string, interfaceName string) *interfaceMeta {
+func (this *analysisTool) findStruct(packagePath string, structName string) *StructMeta {
+
+	for _, structMeta := range this.structMetas {
+		if structMeta.Name == structName && structMeta.PackagePath == packagePath {
+			return structMeta
+		}
+	}
+
+	return nil
+}
+
+func (this *analysisTool) findInterfaceMeta(packagePath string, interfaceName string) *InterfaceMeta {
 
 	for _, interfaceMeta := range this.interfaceMetas {
 		if interfaceMeta.Name == interfaceName && interfaceMeta.PackagePath == packagePath {
@@ -494,23 +584,50 @@ func (this *analysisTool) findInterfaceMeta(packagePath string, interfaceName st
 	return nil
 }
 
-func (this *analysisTool) visitFunc(funcDecl *ast.FuncDecl) {
+func (this *analysisTool) visitFunc(funcDecl *ast.FuncDecl, pos token.Position) {
 
 	this.debugFunc(funcDecl)
 
-	packageAlias, structName := this.findStructTypeOfFunc(funcDecl)
+	packageAlias, typeName := this.findTypeOfFunc(funcDecl)
 
-	if structName != "" {
+	if typeName != "" {
 
 		packagePath := ""
 		if packageAlias == "" {
 			packagePath = this.currentPackagePath
 		}
 
-		structMeta := this.findStruct(packagePath, structName)
+		structMeta := this.findStruct(packagePath, typeName)
 		if structMeta != nil {
 			methodSign := this.createMethodSign(funcDecl.Name.Name, funcDecl.Type)
-			structMeta.MethodSigns = append(structMeta.MethodSigns, methodSign)
+			methodMeta := MethodMeta{
+				BaseInfo: BaseInfo{
+					FilePath:    this.currentFile,
+					PackagePath: this.currentPackagePath,
+				},
+				Name:    funcDecl.Name.Name,
+				Sign:    methodSign,
+				DefLine: pos.Line,
+				DefCol:  pos.Column,
+			}
+			structMeta.MethodSigns[methodSign] = methodMeta
+			//] = append(structMeta.MethodSigns, methodSign)
+		} else {
+			customMeta := this.findCustom(packagePath, typeName)
+			if customMeta != nil {
+				methodSign := this.createMethodSign(funcDecl.Name.Name, funcDecl.Type)
+				methodMeta := MethodMeta{
+					BaseInfo: BaseInfo{
+						FilePath:    this.currentFile,
+						PackagePath: this.currentPackagePath,
+					},
+					Name:    funcDecl.Name.Name,
+					Sign:    methodSign,
+					DefLine: pos.Line,
+					DefCol:  pos.Column,
+				}
+				customMeta.MethodSigns[methodSign] = methodMeta
+			}
 		}
 	}
 
@@ -534,7 +651,7 @@ func (this *analysisTool) visitInterfaceFunctions(name string, interfaceType *as
 
 }
 
-func (this *analysisTool) findStructTypeOfFunc(funcDecl *ast.FuncDecl) (packageAlias string, structName string) {
+func (this *analysisTool) findTypeOfFunc(funcDecl *ast.FuncDecl) (packageAlias string, typeName string) {
 
 	if funcDecl.Recv != nil {
 
@@ -545,7 +662,7 @@ func (this *analysisTool) findStructTypeOfFunc(funcDecl *ast.FuncDecl) (packageA
 			ident, ok := t.(*ast.Ident)
 			if ok {
 				packageAlias = ""
-				structName = ident.Name
+				typeName = ident.Name
 			}
 
 			starExpr, ok := t.(*ast.StarExpr)
@@ -553,7 +670,7 @@ func (this *analysisTool) findStructTypeOfFunc(funcDecl *ast.FuncDecl) (packageA
 				ident, ok := starExpr.X.(*ast.Ident)
 				if ok {
 					packageAlias = ""
-					structName = ident.Name
+					typeName = ident.Name
 				}
 
 			}
@@ -684,7 +801,7 @@ func (this *analysisTool) typeToString(t ast.Expr) string {
 
 	ident, ok := t.(*ast.Ident)
 	if ok {
-		return this.addPackagePathWhenStruct(ident.Name)
+		return this.addPackagePathWhenType(ident.Name)
 	}
 
 	starExpr, ok := t.(*ast.StarExpr)
@@ -754,7 +871,7 @@ func (this *analysisTool) selectorExprToString(t ast.Expr) string {
 	return ""
 }
 
-func (this *analysisTool) addPackagePathWhenStruct(fieldType string) string {
+func (this *analysisTool) addPackagePathWhenType(fieldType string) string {
 
 	searchPackages := []string{this.currentPackagePath}
 
@@ -765,6 +882,12 @@ func (this *analysisTool) addPackagePathWhenStruct(fieldType string) string {
 	}
 
 	for _, meta := range this.structMetas {
+		if sliceContains(searchPackages, meta.PackagePath) && meta.Name == fieldType {
+			return meta.PackagePath + "." + fieldType
+		}
+	}
+
+	for _, meta := range this.customMetas {
 		if sliceContains(searchPackages, meta.PackagePath) && meta.Name == fieldType {
 			return meta.PackagePath + "." + fieldType
 		}
@@ -801,7 +924,7 @@ func (this *analysisTool) findAliasByPackagePath(packagePath string) string {
 	return result
 }
 
-func (this *analysisTool) findPackagePathByAlias(alias string, structName string) string {
+func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) string {
 
 	for _, importMeta := range this.currentFileImports {
 		if importMeta.Path == alias {
@@ -828,7 +951,14 @@ func (this *analysisTool) findPackagePathByAlias(alias string, structName string
 		for _, matchedImportMeta := range matchedImportMetas {
 
 			for _, structMeta := range this.structMetas {
-				if structMeta.Name == structName && structMeta.PackagePath == matchedImportMeta.Path {
+				if structMeta.Name == typeName && structMeta.PackagePath == matchedImportMeta.Path {
+					log.Println("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
+					return matchedImportMeta.Path
+				}
+			}
+
+			for _, customMeta := range this.customMetas {
+				if customMeta.Name == typeName && customMeta.PackagePath == matchedImportMeta.Path {
 					log.Println("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
 					return matchedImportMeta.Path
 				}
@@ -875,12 +1005,35 @@ func (this *analysisTool) content(t ast.Expr) string {
 /**
  * 查找interface有哪些实现的Struct
  */
-func (this *analysisTool) findInterfaceImpls(interfaceMeta1 *interfaceMeta) []*structMeta {
-	metas := []*structMeta{}
+func (this *analysisTool) findInterfaceImplStructs(interfaceMeta *InterfaceMeta) []*StructMeta {
+	metas := []*StructMeta{}
 
-	for _, structMeta1 := range this.structMetas {
-		if sliceContainsSlice(structMeta1.MethodSigns, interfaceMeta1.MethodSigns) {
-			metas = append(metas, structMeta1)
+	for _, structMeta := range this.structMetas {
+		methods := make([]string, 0, len(structMeta.MethodSigns))
+		for k, _ := range structMeta.MethodSigns {
+			methods = append(methods, k)
+		}
+		if sliceContainsSlice(methods, interfaceMeta.MethodSigns) {
+			metas = append(metas, structMeta)
+		}
+	}
+
+	return metas
+}
+
+/**
+ * 查找interface有哪些实现的自定义类型
+ */
+func (this *analysisTool) findInterfaceImplCustoms(interfaceMeta *InterfaceMeta) []*CustomMeta {
+	metas := []*CustomMeta{}
+
+	for _, customMeta := range this.customMetas {
+		methods := make([]string, 0, len(customMeta.MethodSigns))
+		for k, _ := range customMeta.MethodSigns {
+			methods = append(methods, k)
+		}
+		if sliceContainsSlice(methods, interfaceMeta.MethodSigns) {
+			metas = append(metas, customMeta)
 		}
 	}
 
@@ -902,10 +1055,11 @@ func (this *analysisTool) Output(out string) {
 
 	for _, interfaceMeta := range this.interfaceMetas {
 
+		log.Println(interfaceMeta)
 		string := fmt.Sprintf("interface %s 在文件%s中\n", interfaceMeta.Name, interfaceMeta.FilePath)
 		fmt.Println(string)
 
-		structMetas := this.findInterfaceImpls(interfaceMeta)
+		structMetas := this.findInterfaceImplStructs(interfaceMeta)
 
 		if len(structMetas) == 0 {
 			string = "没有找到实现该接口的struct\n"
@@ -916,10 +1070,27 @@ func (this *analysisTool) Output(out string) {
 			fmt.Println(string)
 
 			for _, structMeta := range structMetas {
+				log.Println(structMeta)
 				string = fmt.Sprintf("struct %s 在文件%s中\n", structMeta.Name, structMeta.FilePath)
 				fmt.Println(string)
 			}
+		}
 
+		customMetas := this.findInterfaceImplCustoms(interfaceMeta)
+
+		if len(customMetas) == 0 {
+			string = "没有找到实现该接口的自定义类型\n"
+			fmt.Println(string)
+
+		} else {
+			string = fmt.Sprintf("有%d个自定义类型实现了接口\n", len(customMetas))
+			fmt.Println(string)
+
+			for _, customMeta := range customMetas {
+				log.Println(customMeta)
+				string = fmt.Sprintf("自定义类型 %s[%s] 在文件%s中\n", customMeta.Name, customMeta.Kind, customMeta.FilePath)
+				fmt.Println(string)
+			}
 		}
 	}
 

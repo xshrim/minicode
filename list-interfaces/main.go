@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"time"
 
 	"./analysis"
 	"./notify"
@@ -72,7 +71,7 @@ func main() {
 		// TODO 代码分析
 		// TODO 分析结果入库(内存库)
 		// TODO API查询代码分析结果
-		time.Sleep(5 * time.Second)
+		// time.Sleep(5 * time.Second)
 	}
 
 	// 目录监控同步函数
@@ -137,11 +136,17 @@ func main() {
 		IgnoreDirs: ignoreDirs,
 	}
 
+	aysfn = func() {
+		result := analysis.AnalysisCode(config)
+
+		fmt.Println("================================================")
+		result.Output(output)
+	}
+
 	sig := []os.Signal{os.Interrupt, os.Kill, syscall.SIGUSR1, syscall.SIGUSR2}
+	go notify.Signal(sig, sigfn) // 开启中断监测
 
 	if mode != "single" {
-		go notify.Signal(sig, sigfn) // 开启中断监测
-
 		go notify.Notify(ctx, codeDir, aysfn) // 开启目录监控(分析)
 
 		fmt.Println("后台进程正在进行实时代码分析")
@@ -149,15 +154,6 @@ func main() {
 	} else {
 		aysfn()
 		sigfn()
-		fmt.Println("Finish")
+		// fmt.Println("Finish")
 	}
-
-	os.Exit(1)
-
-	result := analysis.AnalysisCode(config)
-
-	fmt.Println("================================================")
-	result.Output(output)
-
-	fmt.Println(codeDir, originDir)
 }
