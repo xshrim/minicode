@@ -14,6 +14,9 @@ import (
 	"strings"
 )
 
+// AST参考
+// https://www.jianshu.com/p/937d649039ec
+
 type Config struct {
 	CodeDir    string
 	OriginDir  string
