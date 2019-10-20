@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,10 +11,12 @@ import (
 
 	"./analysis"
 	"./notify"
-	"./utils"
+	"./xlog"
 )
 
 func main() {
+	xlog.Level = xlog.DEBUG
+
 	imode := flag.String("mode", "single", "代码分析模式(single|daemon)")
 	icodeDir := flag.String("codedir", ".", "要扫描的代码目录")
 	ioutputFile := flag.String("output", "", "解析结果保存到该文件中")
@@ -24,14 +25,12 @@ func main() {
 	gopathDir := os.Getenv("GOPATH")
 
 	if gopathDir == "" {
-		fmt.Println("GOPATH目录不存在")
-		os.Exit(1)
+		xlog.Fatalln("GOPATH目录不存在")
 	}
 
 	if len(os.Args) == 1 {
-		fmt.Println("使用例子\n" +
+		xlog.Fatalln("使用例子\n" +
 			os.Args[0] + " --codedir /appdev/gopath/src/github.com/contiv/netplugin --output /tmp/result")
-		os.Exit(1)
 	}
 
 	flag.Parse()
@@ -42,21 +41,18 @@ func main() {
 	ignoreDir := strings.TrimSpace(*iignoreDir)
 
 	if codeDir == "" {
-		fmt.Println("代码目录不能为空")
-		os.Exit(1)
+		xlog.Fatalln("代码目录不能为空")
 	}
 
 	codeDir, err := filepath.Abs(codeDir)
 	if err != nil {
-		fmt.Println("代码目录解析出错: ", err.Error())
-		os.Exit(1)
+		xlog.Fatalln("代码目录解析出错: ", err.Error())
 	}
 
 	if output != "" {
 		output, err = filepath.Abs(output)
 		if err != nil {
-			fmt.Println("输出文件解析出错: ", err.Error())
-			os.Exit(1)
+			xlog.Fatalln("输出文件解析出错: ", err.Error())
 		}
 	}
 
@@ -74,50 +70,48 @@ func main() {
 		// time.Sleep(5 * time.Second)
 	}
 
-	// 目录监控同步函数
-	sycfn := func() {
-		// TODO 目录同步(仅originDir和codeDir不一致时需要同步)
-	}
-
 	// 中断操作回调函数
 	sigfn := func() {
 		cancel()
 	}
 
 	// 代码目录不在gopath下, 代码分析程序将无法正常分析, 需将代码复制到gopath下的临时目录下并进行两个目录的实时同步
-	if !strings.HasPrefix(codeDir, gopathDir) {
-		dir, fpath := filepath.Split(codeDir)
+	/*
+		if !strings.HasPrefix(codeDir, gopathDir) {
+			dir, fpath := filepath.Split(codeDir)
 
-		tmpDir := path.Join(gopathDir, "/src/tmp-"+utils.GetRandomString(6))
+			tmpDir := path.Join(gopathDir, "/src/tmp-"+utils.GetRandomString(6))
 
-		if _, err := os.Stat(tmpDir); !os.IsNotExist(err) {
-			os.RemoveAll(tmpDir)
-		}
-
-		os.MkdirAll(tmpDir, os.ModePerm)
-
-		utils.CopyDir(codeDir, tmpDir)
-
-		codeDir = path.Join(tmpDir, fpath)
-
-		originDir := path.Join(dir, path.Base(codeDir))
-
-		// defer os.RemoveAll(tmpDir)
-
-		sigfn = func() {
-			cancel()             // 向上下文(ctx)发出cancel消息, 关闭其他协程
-			os.RemoveAll(tmpDir) // 删除临时目录
-		}
-
-		if mode != "single" {
-			sycfn = func() {
-				// 目录同步
-				utils.SyncDir(originDir, codeDir)
+			if _, err := os.Stat(tmpDir); !os.IsNotExist(err) {
+				os.RemoveAll(tmpDir)
 			}
 
-			go notify.Notify(ctx, originDir, sycfn) // 开启目录监控(同步)
+			os.MkdirAll(tmpDir, os.ModePerm)
+
+			utils.CopyDir(codeDir, tmpDir)
+
+			codeDir = path.Join(tmpDir, fpath)
+
+			originDir := path.Join(dir, path.Base(codeDir))
+
+			// defer os.RemoveAll(tmpDir)
+
+			sigfn = func() {
+				cancel()             // 向上下文(ctx)发出cancel消息, 关闭其他协程
+				os.RemoveAll(tmpDir) // 删除临时目录
+			}
+
+			if mode != "single" {
+				// 目录监控同步函数
+				sycfn := func() {
+					// 目录同步
+					utils.SyncDir(originDir, codeDir)
+				}
+
+				go notify.Notify(ctx, originDir, sycfn) // 开启目录监控(同步)
+			}
 		}
-	}
+	*/
 
 	var ignoreDirs []string
 	if ignoreDir != "" {
@@ -139,7 +133,7 @@ func main() {
 	aysfn = func() {
 		result := analysis.AnalysisCode(config)
 
-		fmt.Println("================================================")
+		xlog.Infoln("================================================")
 		result.Output(output)
 	}
 
@@ -149,11 +143,20 @@ func main() {
 	if mode != "single" {
 		go notify.Notify(ctx, codeDir, aysfn) // 开启目录监控(分析)
 
-		fmt.Println("后台进程正在进行实时代码分析")
+		xlog.Infoln("后台进程正在进行实时代码分析")
 		select {}
 	} else {
 		aysfn()
 		sigfn()
 		// fmt.Println("Finish")
 	}
+
+	xlog.Errorln("abc", "ok", "yes")
+	xlog.Errorf("%s->%s", "name", "age")
+	xlog.Debugln("debug")
+
+	// fmt.Println(utils.ColorString(4, "color", "good", "(/home/xshrim)", "[10,2]"))
 }
+
+// go run main.go --codedir /home/xshrim/code/go/m --ignore vendor
+// go run main.go --codedir ./testdata

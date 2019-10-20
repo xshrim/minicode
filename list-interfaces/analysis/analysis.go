@@ -1,17 +1,21 @@
 package analysis
 
 import (
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
+
+	"../utils"
+	"../xlog"
 )
 
 // AST参考
@@ -82,7 +86,7 @@ func findGoPackageNameInDirPath(dirpath string) string {
 	dir_list, e := ioutil.ReadDir(dirpath)
 
 	if e != nil {
-		log.Printf("读取目录%s文件列表失败,%s\n", dirpath, e)
+		xlog.Warnf("读取目录%s文件列表失败,%s\n", dirpath, e)
 		return ""
 	}
 
@@ -104,7 +108,7 @@ func ParsePackageNameFromGoFile(filepath string) string {
 	file, err := parser.ParseFile(fset, filepath, nil, parser.ParseComments)
 
 	if err != nil {
-		log.Printf("解析文件%s失败, %s\n", filepath, err)
+		xlog.Warnf("解析文件%s失败, %s\n", filepath, err)
 		return ""
 	}
 
@@ -113,6 +117,9 @@ func ParsePackageNameFromGoFile(filepath string) string {
 }
 
 func PathExists(path string) bool {
+	if path == "" {
+		return false
+	}
 	_, err := os.Stat(path)
 	if err == nil {
 		return true
@@ -132,6 +139,7 @@ type BaseInfo struct {
 
 type InterfaceMeta struct {
 	BaseInfo
+	Package string
 	Name    string
 	DefLine int
 	DefCol  int
@@ -139,16 +147,36 @@ type InterfaceMeta struct {
 	MethodSigns []string
 }
 
+func (m *InterfaceMeta) String() (string, error) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
 type MethodMeta struct {
 	BaseInfo
+	Package string
 	Name    string
 	Sign    string
 	DefLine int
 	DefCol  int
 }
 
+func (m *MethodMeta) String() (string, error) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
 type StructMeta struct {
 	BaseInfo
+	Package string
 	Name    string
 	DefLine int
 	DefCol  int
@@ -156,14 +184,33 @@ type StructMeta struct {
 	MethodSigns map[string]MethodMeta
 }
 
+func (m *StructMeta) String() (string, error) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
 type CustomMeta struct {
 	BaseInfo
+	Package string
 	Name    string
 	Kind    string
 	DefLine int
 	DefCol  int
 	// 自定义类型的方法签名列表
 	MethodSigns map[string]MethodMeta
+}
+
+func (m *CustomMeta) String() (string, error) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
 }
 
 type importMeta struct {
@@ -197,15 +244,17 @@ func (this *analysisTool) analysis(config Config) {
 
 	this.config = config
 
-	if this.config.CodeDir == "" || !PathExists(this.config.CodeDir) {
-		log.Printf("找不到代码目录%s\n", this.config.CodeDir)
+	if !PathExists(this.config.CodeDir) {
+		xlog.Errorf("找不到代码目录%s\n", this.config.CodeDir)
 		return
 	}
 
-	if this.config.GopathDir == "" || !PathExists(this.config.GopathDir) {
-		log.Printf("找不到GOPATH目录%s\n", this.config.GopathDir)
-		return
-	}
+	/*
+		if !PathExists(this.config.GopathDir) {
+			log.Printf("找不到GOPATH目录%s\n", this.config.GopathDir)
+			return
+		}
+	*/
 
 	for _, lib := range stdlibs {
 		this.mapPackagePath_PackageName(lib, path.Base(lib))
@@ -217,7 +266,7 @@ func (this *analysisTool) analysis(config Config) {
 			if config.IgnoreDirs != nil && HasPrefixInSomeElement(path, config.IgnoreDirs) {
 				// ignore
 			} else {
-				log.Println("解析 " + path)
+				xlog.Infoln("解析 " + path)
 				this.visitTypeInFile(path)
 			}
 		}
@@ -233,7 +282,7 @@ func (this *analysisTool) analysis(config Config) {
 			if config.IgnoreDirs != nil && HasPrefixInSomeElement(path, config.IgnoreDirs) {
 				// ignore
 			} else {
-				log.Println("解析 " + path)
+				xlog.Infoln("解析 " + path)
 				this.visitFuncInFile(path)
 			}
 		}
@@ -246,20 +295,20 @@ func (this *analysisTool) analysis(config Config) {
 }
 
 func (this *analysisTool) initFile(path string) {
-	log.Println("path=", path)
+	xlog.Infoln("path=", path)
 
 	this.currentFile = path
 	this.currentPackagePath = this.filepathToPackagePath(path)
 
 	if this.currentPackagePath == "" {
-		log.Printf("packagePath为空,currentFile=%s\n", this.currentFile)
+		xlog.Warnf("packagePath为空,currentFile=%s\n", this.currentFile)
 	}
 
 }
 
 func (this *analysisTool) mapPackagePath_PackageName(packagePath string, packageName string) {
 	if packagePath == "" || packageName == "" {
-		log.Printf("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n, current_file=%s",
+		xlog.Infof("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n, current_file=%s",
 			packageName, packagePath, this.currentFile)
 		return
 	}
@@ -268,7 +317,7 @@ func (this *analysisTool) mapPackagePath_PackageName(packagePath string, package
 		return
 	}
 
-	log.Printf("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n", packageName, packagePath)
+	xlog.Infof("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n", packageName, packagePath)
 	this.packagePathPackageNameCache[packagePath] = packageName
 
 }
@@ -281,7 +330,7 @@ func (this *analysisTool) visitTypeInFile(path string) {
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 
 	if err != nil {
-		log.Fatalln(err)
+		xlog.Errorln(err)
 		return
 	}
 
@@ -297,21 +346,19 @@ func (this *analysisTool) visitTypeInFile(path string) {
 				typeSpec, ok := spec.(*ast.TypeSpec)
 
 				if ok {
-
 					pos := fset.Position(typeSpec.Pos())
 
 					interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
 					if ok {
-						this.visitInterface(typeSpec.Name.Name, interfaceType, pos)
+						this.visitInterface(file.Name.Name, typeSpec.Name.Name, interfaceType, pos)
 					} else {
-
 						structType, ok := typeSpec.Type.(*ast.StructType)
 						if ok {
-							this.visitStruct(typeSpec.Name.Name, structType, pos)
+							this.visitStruct(file.Name.Name, typeSpec.Name.Name, structType, pos)
 						}
 
 						if !ok {
-							this.visitCustom(typeSpec, pos)
+							this.visitCustom(file.Name.Name, typeSpec, pos)
 						}
 					}
 				}
@@ -326,7 +373,7 @@ func (this *analysisTool) filepathToPackagePath(filepath string) string {
 
 	filepath = path.Dir(filepath)
 
-	if this.config.VendorDir != "" {
+	if PathExists(this.config.VendorDir) {
 		if strings.HasPrefix(filepath, this.config.VendorDir) {
 			packagePath := strings.TrimPrefix(filepath, this.config.VendorDir)
 			packagePath = strings.TrimPrefix(packagePath, "/")
@@ -334,7 +381,7 @@ func (this *analysisTool) filepathToPackagePath(filepath string) string {
 		}
 	}
 
-	if this.config.GopathDir != "" {
+	if PathExists(this.config.GopathDir) {
 		srcdir := path.Join(this.config.GopathDir, "src")
 		if strings.HasPrefix(filepath, srcdir) {
 			packagePath := strings.TrimPrefix(filepath, srcdir)
@@ -343,7 +390,15 @@ func (this *analysisTool) filepathToPackagePath(filepath string) string {
 		}
 	}
 
-	log.Printf("无法确认包路径名, filepath=%s\n", filepath)
+	if PathExists(this.config.CodeDir) {
+		if strings.HasPrefix(filepath, this.config.CodeDir) {
+			packagePath := strings.TrimPrefix(filepath, this.config.CodeDir)
+			packagePath = "./" + strings.TrimPrefix(packagePath, "/")
+			return packagePath
+		}
+	}
+
+	xlog.Warnf("无法确认包路径名, filepath=%s\n", filepath)
 
 	return ""
 
@@ -357,7 +412,7 @@ func (this *analysisTool) visitFuncInFile(path string) {
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 
 	if err != nil {
-		log.Fatal(err)
+		xlog.Errorln(err)
 		return
 	}
 
@@ -373,7 +428,7 @@ func (this *analysisTool) visitFuncInFile(path string) {
 				alias = import1.Name.Name
 			} else {
 				aliasCache, ok := this.packagePathPackageNameCache[packagePath]
-				log.Printf("findAliasInCache,packagePath=%s,alias=%s,ok=%t\n", packagePath, aliasCache, ok)
+				xlog.Infof("findAliasInCache,packagePath=%s,alias=%s,ok=%t\n", packagePath, aliasCache, ok)
 				if ok {
 					alias = aliasCache
 				} else {
@@ -381,7 +436,7 @@ func (this *analysisTool) visitFuncInFile(path string) {
 				}
 			}
 
-			log.Printf("current_file=%s packagePath=%s, alias=%s\n", this.currentFile, packagePath, alias)
+			xlog.Infof("current_file=%s packagePath=%s, alias=%s\n", this.currentFile, packagePath, alias)
 
 			this.currentFileImports = append(this.currentFileImports, &importMeta{
 				Alias: alias,
@@ -414,19 +469,20 @@ func (this *analysisTool) visitFuncInFile(path string) {
 
 		funcDecl, ok := decl.(*ast.FuncDecl)
 		if ok {
-			this.visitFunc(funcDecl, fset.Position(funcDecl.Pos()))
+			this.visitFunc(file.Name.Name, funcDecl, fset.Position(funcDecl.Pos()))
 		}
 
 	}
 
 }
 
-func (this *analysisTool) visitCustom(spec *ast.TypeSpec, pos token.Position) {
+func (this *analysisTool) visitCustom(pname string, spec *ast.TypeSpec, pos token.Position) {
 	customMeta := &CustomMeta{
 		BaseInfo: BaseInfo{
 			FilePath:    this.currentFile,
 			PackagePath: this.currentPackagePath,
 		},
+		Package:     pname,
 		Name:        spec.Name.Name,
 		Kind:        fmt.Sprintf("%s", spec.Type),
 		DefLine:     pos.Line,
@@ -437,13 +493,14 @@ func (this *analysisTool) visitCustom(spec *ast.TypeSpec, pos token.Position) {
 	this.customMetas = append(this.customMetas, customMeta)
 }
 
-func (this *analysisTool) visitStruct(name string, structType *ast.StructType, pos token.Position) {
+func (this *analysisTool) visitStruct(pname, name string, structType *ast.StructType, pos token.Position) {
 
 	structMeta := &StructMeta{
 		BaseInfo: BaseInfo{
 			FilePath:    this.currentFile,
 			PackagePath: this.currentPackagePath,
 		},
+		Package:     pname,
 		Name:        name,
 		DefLine:     pos.Line,
 		DefCol:      pos.Column,
@@ -468,13 +525,14 @@ func (this *analysisTool) structBodyToString(structType *ast.StructType) string 
 
 }
 
-func (this *analysisTool) visitInterface(name string, interfaceType *ast.InterfaceType, pos token.Position) {
+func (this *analysisTool) visitInterface(pname, name string, interfaceType *ast.InterfaceType, pos token.Position) {
 
 	interfaceInfo := &InterfaceMeta{
 		BaseInfo: BaseInfo{
 			FilePath:    this.currentFile,
 			PackagePath: this.currentPackagePath,
 		},
+		Package: pname,
 		Name:    name,
 		DefLine: pos.Line,
 		DefCol:  pos.Column,
@@ -587,7 +645,7 @@ func (this *analysisTool) findInterfaceMeta(packagePath string, interfaceName st
 	return nil
 }
 
-func (this *analysisTool) visitFunc(funcDecl *ast.FuncDecl, pos token.Position) {
+func (this *analysisTool) visitFunc(pname string, funcDecl *ast.FuncDecl, pos token.Position) {
 
 	this.debugFunc(funcDecl)
 
@@ -608,6 +666,7 @@ func (this *analysisTool) visitFunc(funcDecl *ast.FuncDecl, pos token.Position) 
 					FilePath:    this.currentFile,
 					PackagePath: this.currentPackagePath,
 				},
+				Package: pname,
 				Name:    funcDecl.Name.Name,
 				Sign:    methodSign,
 				DefLine: pos.Line,
@@ -651,7 +710,6 @@ func (this *analysisTool) visitInterfaceFunctions(name string, interfaceType *as
 
 	interfaceMeta := this.findInterfaceMeta(this.currentPackagePath, name)
 	interfaceMeta.MethodSigns = methods
-
 }
 
 func (this *analysisTool) findTypeOfFunc(funcDecl *ast.FuncDecl) (packageAlias string, typeName string) {
@@ -685,23 +743,23 @@ func (this *analysisTool) findTypeOfFunc(funcDecl *ast.FuncDecl) (packageAlias s
 
 func (this *analysisTool) debugFunc(funcDecl *ast.FuncDecl) {
 
-	log.Println("func name=", funcDecl.Name)
+	xlog.Debugln("func name=", funcDecl.Name)
 
 	if funcDecl.Recv != nil {
 		for _, field := range funcDecl.Recv.List {
-			log.Println("func recv, name=", field.Names, " type=", field.Type)
+			xlog.Debugln("func recv, name=", field.Names, " type=", field.Type)
 		}
 	}
 
 	if funcDecl.Type.Params != nil {
 		for _, field := range funcDecl.Type.Params.List {
-			log.Println("func param, name=", field.Names, " type=", field.Type)
+			xlog.Debugln("func param, name=", field.Names, " type=", field.Type)
 		}
 	}
 
 	if funcDecl.Type.Results != nil {
 		for _, field := range funcDecl.Type.Results.List {
-			log.Println("func result, type=", field.Type)
+			xlog.Debugln("func result, type=", field.Type)
 		}
 	}
 
@@ -857,7 +915,7 @@ func (this *analysisTool) typeToString(t ast.Expr) string {
 		return " (" + this.typeToString(parenExpr.X) + ")"
 	}
 
-	log.Println("typeToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
+	xlog.Infoln("typeToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
 
 	return ""
 }
@@ -869,7 +927,7 @@ func (this *analysisTool) selectorExprToString(t ast.Expr) string {
 		return ident.Name
 	}
 
-	log.Println("selectorExprToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
+	xlog.Infoln("selectorExprToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
 
 	return ""
 }
@@ -908,30 +966,29 @@ func (this *analysisTool) addPackagePathWhenType(fieldType string) string {
 func (this *analysisTool) findAliasByPackagePath(packagePath string) string {
 	result := ""
 
-	if this.config.VendorDir != "" {
+	if PathExists(this.config.VendorDir) {
 		absPath := path.Join(this.config.VendorDir, packagePath)
 		if PathExists(absPath) {
 			result = findGoPackageNameInDirPath(absPath)
 		}
 	}
 
-	if this.config.GopathDir != "" {
+	if PathExists(this.config.GopathDir) && result == "" {
 		absPath := path.Join(this.config.GopathDir, "src", packagePath)
 		if PathExists(absPath) {
 			result = findGoPackageNameInDirPath(absPath)
 		}
 	}
 
-	log.Println("packagepath=%s, alias=%s\n", packagePath, result)
+	xlog.Infof("packagepath=%s, alias=%s\n", packagePath, result)
 
 	return result
 }
 
 func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) string {
-
 	for _, importMeta := range this.currentFileImports {
 		if importMeta.Path == alias {
-			log.Printf("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, alias)
+			xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, alias)
 			return alias
 		}
 	}
@@ -945,7 +1002,7 @@ func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) 
 	}
 
 	if len(matchedImportMetas) == 1 {
-		log.Println("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMetas[0].Path)
+		xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMetas[0].Path)
 		return matchedImportMetas[0].Path
 	}
 
@@ -955,14 +1012,14 @@ func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) 
 
 			for _, structMeta := range this.structMetas {
 				if structMeta.Name == typeName && structMeta.PackagePath == matchedImportMeta.Path {
-					log.Println("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
+					xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
 					return matchedImportMeta.Path
 				}
 			}
 
 			for _, customMeta := range this.customMetas {
 				if customMeta.Name == typeName && customMeta.PackagePath == matchedImportMeta.Path {
-					log.Println("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
+					xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
 					return matchedImportMeta.Path
 				}
 			}
@@ -970,7 +1027,7 @@ func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) 
 
 	}
 
-	log.Printf("找不到包的全路径，包名为%s，在%s文件, matchedImportMetas=%d", alias, this.currentFile, len(matchedImportMetas))
+	xlog.Warnf("找不到包的全路径，包名为%s，在%s文件, matchedImportMetas=%d", alias, this.currentFile, len(matchedImportMetas))
 
 	return alias
 }
@@ -998,7 +1055,7 @@ func (this *analysisTool) interfaceBodyToString(interfaceType *ast.InterfaceType
 func (this *analysisTool) content(t ast.Expr) string {
 	bytes, err := ioutil.ReadFile(this.currentFile)
 	if err != nil {
-		log.Println("读取文件", this.currentFile, "失败", err)
+		xlog.Errorln("读取文件", this.currentFile, "失败", err)
 		return ""
 	}
 
@@ -1049,59 +1106,115 @@ func (this *analysisTool) Output(out string) {
 	if out != "" {
 		file, err := os.OpenFile(out, os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0755)
 		if err != nil {
-			log.Printf("打开文件%s失败\n", out)
+			xlog.Fatalf("打开文件%s失败\n", out)
 		}
 		os.Stdout = file // 标准输出重定向到文件
 		// os.Stderr = file
 		defer file.Close()
 	}
 
+	// xlog.Infoln(this.interfaceMetas)
+	packages := make(map[string][]*InterfaceMeta)
 	for _, interfaceMeta := range this.interfaceMetas {
-
-		log.Println(interfaceMeta)
-		string := fmt.Sprintf("interface %s 在文件%s中\n", interfaceMeta.Name, interfaceMeta.FilePath)
-		fmt.Println(string)
-
-		structMetas := this.findInterfaceImplStructs(interfaceMeta)
-
-		if len(structMetas) == 0 {
-			string = "没有找到实现该接口的struct\n"
-			fmt.Println(string)
-
+		key := interfaceMeta.FilePath + ":" + interfaceMeta.Package
+		if _, ok := packages[key]; ok {
+			packages[key] = append(packages[key], interfaceMeta)
 		} else {
-			string = fmt.Sprintf("有%d个struct实现了接口\n", len(structMetas))
-			fmt.Println(string)
-
-			for _, structMeta := range structMetas {
-				log.Println(structMeta)
-				string = fmt.Sprintf("struct %s 在文件%s中\n", structMeta.Name, structMeta.FilePath)
-				fmt.Println(string)
-			}
+			packages[key] = []*InterfaceMeta{interfaceMeta}
 		}
+	}
 
-		customMetas := this.findInterfaceImplCustoms(interfaceMeta)
+	for pack, interfaceMetas := range packages {
+		pkg := strings.Split(pack, ":")
+		// fmt.Println("|── " + pkg[1] + "(" + pkg[0] + ")")
+		fmt.Println(utils.ColorString(1, "color", pkg[1], "("+pkg[0]+")", "[1,1]"))
+		for _, interfaceMeta := range interfaceMetas {
+			iloc := "[" + strconv.Itoa(interfaceMeta.DefLine) + "," + strconv.Itoa(interfaceMeta.DefCol) + "]"
+			// fmt.Println("|   |── " + interfaceMeta.Name + "(" + strings.Join(interfaceMeta.MethodSigns, " ") + ")" + iloc)
+			fmt.Println(utils.ColorString(2, "color", interfaceMeta.Name, "("+strings.Join(interfaceMeta.MethodSigns, " ")+")", iloc))
+			/*
+				for _, methodMeta := range interfaceMeta.MethodSigns {
+					fmt.Println("|   |   |── " + methodMeta)
+				}
+			*/
 
-		if len(customMetas) == 0 {
-			string = "没有找到实现该接口的自定义类型\n"
-			fmt.Println(string)
+			structMetas := this.findInterfaceImplStructs(interfaceMeta)
+			for _, structMeta := range structMetas {
+				sloc := "[" + strconv.Itoa(structMeta.DefLine) + "," + strconv.Itoa(structMeta.DefCol) + "]"
+				// fmt.Println("|   |   |── " + structMeta.Name + "(" + structMeta.FilePath + ")" + sloc)
+				fmt.Println(utils.ColorString(3, "color", structMeta.Name, "("+structMeta.FilePath+")", sloc))
 
-		} else {
-			string = fmt.Sprintf("有%d个自定义类型实现了接口\n", len(customMetas))
-			fmt.Println(string)
+				methodMetas := structMeta.MethodSigns
+				for _, methodMeta := range methodMetas {
+					mloc := "[" + strconv.Itoa(methodMeta.DefLine) + "," + strconv.Itoa(methodMeta.DefCol) + "]"
+					// fmt.Println("|   |   |   |── " + methodMeta.Name + "(" + methodMeta.FilePath + ")" + mloc)
+					fmt.Println(utils.ColorString(4, "color", methodMeta.Name, "("+methodMeta.FilePath+")", mloc))
+				}
+			}
 
+			customMetas := this.findInterfaceImplCustoms(interfaceMeta)
 			for _, customMeta := range customMetas {
-				log.Println(customMeta)
-				string = fmt.Sprintf("自定义类型 %s[%s] 在文件%s中\n", customMeta.Name, customMeta.Kind, customMeta.FilePath)
-				fmt.Println(string)
+				cloc := "[" + strconv.Itoa(customMeta.DefLine) + "," + strconv.Itoa(customMeta.DefCol) + "]"
+				// fmt.Println("|   |   |── " + customMeta.Name + "(" + customMeta.FilePath + ")" + cloc)
+				fmt.Println(utils.ColorString(3, "color", customMeta.Name, "("+customMeta.FilePath+")", cloc))
+
+				methodMetas := customMeta.MethodSigns
+				for _, methodMeta := range methodMetas {
+					mloc := "[" + strconv.Itoa(methodMeta.DefLine) + "," + strconv.Itoa(methodMeta.DefCol) + "]"
+					// fmt.Println("|   |   |   |── " + methodMeta.Name + "(" + methodMeta.FilePath + ")" + mloc)
+					fmt.Println(utils.ColorString(4, "color", methodMeta.Name, "("+methodMeta.FilePath+")", mloc))
+				}
 			}
 		}
 	}
+	/*
+		for _, interfaceMeta := range this.interfaceMetas {
+
+			xlog.Debugln(interfaceMeta.String())
+			string := fmt.Sprintf("interface %s 在文件%s中\n", interfaceMeta.Name, interfaceMeta.FilePath)
+			fmt.Println(string)
+
+			structMetas := this.findInterfaceImplStructs(interfaceMeta)
+
+			if len(structMetas) == 0 {
+				string = "没有找到实现该接口的struct\n"
+				fmt.Println(string)
+
+			} else {
+				string = fmt.Sprintf("有%d个struct实现了接口\n", len(structMetas))
+				fmt.Println(string)
+
+				for _, structMeta := range structMetas {
+					log.Println(structMeta.String())
+					string = fmt.Sprintf("struct %s 在文件%s中\n", structMeta.Name, structMeta.FilePath)
+					fmt.Println(string)
+				}
+			}
+
+			customMetas := this.findInterfaceImplCustoms(interfaceMeta)
+
+			if len(customMetas) == 0 {
+				string = "没有找到实现该接口的自定义类型\n"
+				fmt.Println(string)
+
+			} else {
+				string = fmt.Sprintf("有%d个自定义类型实现了接口\n", len(customMetas))
+				fmt.Println(string)
+
+				for _, customMeta := range customMetas {
+					log.Println(customMeta.String())
+					string = fmt.Sprintf("自定义类型 %s[%s] 在文件%s中\n", customMeta.Name, customMeta.Kind, customMeta.FilePath)
+					fmt.Println(string)
+				}
+			}
+		}
+	*/
 
 	os.Stdout = ostdout
 
 	//file.Close()
 
 	if out != "" {
-		log.Printf("解析结果已保存到%s\n", out)
+		xlog.Infof("解析结果已保存到%s\n", out)
 	}
 }
