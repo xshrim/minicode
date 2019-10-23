@@ -114,7 +114,7 @@ func rotate(dir string) string {
 		}
 
 		if s.Size() >= Logsize {
-			seq = fmt.Sprintf(format, num+1/Lognum)
+			seq = fmt.Sprintf(format, num+1%Lognum)
 			clogfile = fmt.Sprintf("%s.%s.%s", prefix, seq, ext)
 		}
 	}
