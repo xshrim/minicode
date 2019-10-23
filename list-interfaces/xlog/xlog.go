@@ -19,17 +19,17 @@ const (
 	TRACE
 )
 
-var Level = INFO
+var Level = INFO // 日志级别
 
-var Prefix = ""
+var Prefix = "" // 日志前缀
 
-var Logpath = "."
+var Logpath = "" // 日志目录
 
-var Logsize = int64(2 << 25)
+var Logsize = int64(2 << 25) // 单日志文件大小上限
 
-var Lognum = 20
+var Lognum = 20 // 日志文件轮换阈值
 
-var Multilog = false
+var Multilog = false // 是否同时输出到文件和标准输出
 
 var xlog *log.Logger
 
