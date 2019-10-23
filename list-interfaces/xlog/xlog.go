@@ -2,9 +2,13 @@ package xlog
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
@@ -19,9 +23,19 @@ var Level = INFO
 
 var Prefix = ""
 
-var output = ""
+var Logpath = "."
+
+var Logsize = int64(2 << 25)
+
+var Lognum = 20
+
+var Multilog = false
 
 var xlog *log.Logger
+
+var mutex sync.Mutex
+
+var clogfile = ""
 
 // var xlog = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 
@@ -31,104 +45,145 @@ func init() {
 
 }
 
-func Error(v ...interface{}) {
+func set() {
+	if Prefix != "" {
+		xlog.SetPrefix(Prefix)
+	}
+
+	if Logpath != "" {
+		dpath, err := filepath.Abs(Logpath)
+		if err != nil {
+			log.Fatalln("Find log path error: ", err)
+		}
+
+		if s, err := os.Stat(dpath); err != nil || !s.IsDir() {
+			log.Fatalln("Log path is not exist or not a directory")
+		}
+
+		fpath := rotate(dpath)
+
+		file, err := os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalln("Open log file error: ", err)
+		}
+
+		if Multilog {
+			xlog.SetOutput(io.MultiWriter(os.Stdout, file))
+		} else {
+			xlog.SetOutput(file)
+		}
+	}
+}
+
+func rotate(dir string) string {
+	prefix := "log"
+
+	format := "%d"
+
+	//format := fmt.Sprintf("log.\%0%vd.log", math.Ceil(math.Log10(float64(Lognum))))
+	switch {
+	case Lognum <= 10:
+		format = "%d"
+	case Lognum <= 100:
+		format = "%02d"
+	case Lognum <= 1000:
+		format = "%03d"
+	case Lognum <= 10000:
+		format = "%04d"
+	case Lognum <= 100000:
+		format = "%05d"
+	default:
+		format = "%09d"
+	}
+
+	seq := fmt.Sprintf(format, 0)
+
+	ext := "log"
+
+	if clogfile == "" {
+		clogfile = fmt.Sprintf("%s.%s.%s", prefix, seq, ext)
+	} else {
+		num, err := strconv.Atoi(strings.Split(clogfile, ".")[1])
+		if err != nil {
+			log.Fatalln("Get log file sequence error: ", err)
+		}
+
+		s, err := os.Stat(clogfile)
+		if err != nil {
+			log.Fatalln("Get log file state error: ", err)
+		}
+
+		if s.Size() >= Logsize {
+			seq = fmt.Sprintf(format, num+1/Lognum)
+			clogfile = fmt.Sprintf("%s.%s.%s", prefix, seq, ext)
+		}
+	}
+
+	return filepath.Join(dir, clogfile)
+}
+
+func run(kind string, v ...interface{}) string {
 	if v == nil || len(v) < 1 {
-		return
+		return ""
 	}
 
-	format, err := v[0].(string)
-	if err != nil || strings.Contains(format, "%") {
+	mutex.Lock()
+	set()
+	mutex.Unlock()
 
+	if len(v) > 1 {
+		if format, ok := v[0].(string); ok || strings.Contains(format, "%") {
+			str := fmt.Sprintf("["+kind+"] "+format, v[1:]...)
+			if !strings.Contains(str, "%!(EXTRA") {
+				xlog.Output(3, str)
+				return str
+			}
+		}
 	}
+
+	v = append([]interface{}{"[" + kind + "]"}, v...)
+	str := fmt.Sprintln(v...)
+
+	xlog.Output(3, str)
+
+	return str
 }
 
-func Errorf(format string, v ...interface{}) {
+func Error(v ...interface{}) {
 	if Level >= ERROR {
-		// log.Printf("[ERROR] "+format, v...)
-		xlog.Output(2, fmt.Sprintf("[ERROR] "+format, v...))
+		run("ERROR", v...)
 	}
 }
 
-func Errorln(v ...interface{}) {
-	if Level >= ERROR {
-		v = append([]interface{}{"[ERROR]"}, v...)
-		// log.Println(v...)
-		xlog.Output(2, fmt.Sprintln(v...))
-	}
-}
-
-func Warnf(format string, v ...interface{}) {
+func Warn(v ...interface{}) {
 	if Level >= WARN {
-		// log.Printf("[WARN] "+format, v...)
-		xlog.Output(2, fmt.Sprintf("[WARN] "+format, v...))
+		run("WARN", v...)
 	}
 }
 
-func Warnln(v ...interface{}) {
-	if Level >= WARN {
-		v = append([]interface{}{"[WARN]"}, v...)
-		log.Println(v...)
-	}
-}
-
-func Infof(format string, v ...interface{}) {
+func Info(v ...interface{}) {
 	if Level >= INFO {
-		// log.Printf("[INFO] "+format, v...)
-		xlog.Output(2, fmt.Sprintf("[INFO] "+format, v...))
+		run("INFO", v...)
 	}
 }
 
-func Infoln(v ...interface{}) {
-	if Level >= INFO {
-		v = append([]interface{}{"[INFO]"}, v...)
-		log.Println(v...)
-	}
-}
-
-func Debugf(format string, v ...interface{}) {
+func Debug(v ...interface{}) {
 	if Level >= DEBUG {
-		// log.Printf("[DEBUG] "+format, v...)
-		xlog.Output(2, fmt.Sprintf("[DEBUG] "+format, v...))
+		run("DEBUG", v...)
 	}
 }
 
-func Debugln(v ...interface{}) {
-	if Level >= DEBUG {
-		v = append([]interface{}{"[DEBUG]"}, v...)
-		log.Println(v...)
-	}
-}
-
-func Tracef(format string, v ...interface{}) {
+func Trace(v ...interface{}) {
 	if Level >= TRACE {
-		// log.Printf("[TRACE] "+format, v...)
-		xlog.Output(2, fmt.Sprintf("[TRACE] "+format, v...))
+		run("TRACE", v...)
 	}
 }
 
-func Traceln(v ...interface{}) {
-	if Level >= TRACE {
-		v = append([]interface{}{"[TRACE]"}, v...)
-		log.Println(v...)
-	}
+func Fatal(v ...interface{}) {
+	run("FATAL", v...)
+	os.Exit(1)
 }
 
-func Fatalf(format string, v ...interface{}) {
-	// log.Fatalf("[FATAL] "+format, v...)
-	xlog.Output(2, fmt.Sprintf("[FATAL] "+format, v...))
-}
-
-func Fatalln(v ...interface{}) {
-	v = append([]interface{}{"[FATAL]"}, v...)
-	log.Fatalln(v...)
-}
-
-func Panicf(format string, v ...interface{}) {
-	// log.Panicf("[PANIC] "+format, v...)
-	xlog.Output(2, fmt.Sprintf("[PANIC] "+format, v...))
-}
-
-func Panicln(v ...interface{}) {
-	v = append([]interface{}{"[PANIC]"}, v...)
-	log.Panicln(v...)
+func Panic(v ...interface{}) {
+	panic(run("PANIC", v...))
 }

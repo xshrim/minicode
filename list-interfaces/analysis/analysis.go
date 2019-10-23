@@ -86,7 +86,7 @@ func findGoPackageNameInDirPath(dirpath string) string {
 	dir_list, e := ioutil.ReadDir(dirpath)
 
 	if e != nil {
-		xlog.Warnf("读取目录%s文件列表失败,%s\n", dirpath, e)
+		xlog.Warn("读取目录%s文件列表失败,%s\n", dirpath, e)
 		return ""
 	}
 
@@ -108,7 +108,7 @@ func ParsePackageNameFromGoFile(filepath string) string {
 	file, err := parser.ParseFile(fset, filepath, nil, parser.ParseComments)
 
 	if err != nil {
-		xlog.Warnf("解析文件%s失败, %s\n", filepath, err)
+		xlog.Warn("解析文件%s失败, %s\n", filepath, err)
 		return ""
 	}
 
@@ -245,7 +245,7 @@ func (this *analysisTool) analysis(config Config) {
 	this.config = config
 
 	if !PathExists(this.config.CodeDir) {
-		xlog.Errorf("找不到代码目录%s\n", this.config.CodeDir)
+		xlog.Error("找不到代码目录%s\n", this.config.CodeDir)
 		return
 	}
 
@@ -266,7 +266,7 @@ func (this *analysisTool) analysis(config Config) {
 			if config.IgnoreDirs != nil && HasPrefixInSomeElement(path, config.IgnoreDirs) {
 				// ignore
 			} else {
-				xlog.Infoln("解析 " + path)
+				xlog.Info("解析 " + path)
 				this.visitTypeInFile(path)
 			}
 		}
@@ -282,7 +282,7 @@ func (this *analysisTool) analysis(config Config) {
 			if config.IgnoreDirs != nil && HasPrefixInSomeElement(path, config.IgnoreDirs) {
 				// ignore
 			} else {
-				xlog.Infoln("解析 " + path)
+				xlog.Info("解析 " + path)
 				this.visitFuncInFile(path)
 			}
 		}
@@ -295,20 +295,20 @@ func (this *analysisTool) analysis(config Config) {
 }
 
 func (this *analysisTool) initFile(path string) {
-	xlog.Infoln("path=", path)
+	xlog.Info("path=", path)
 
 	this.currentFile = path
 	this.currentPackagePath = this.filepathToPackagePath(path)
 
 	if this.currentPackagePath == "" {
-		xlog.Warnf("packagePath为空,currentFile=%s\n", this.currentFile)
+		xlog.Warn("packagePath为空,currentFile=%s\n", this.currentFile)
 	}
 
 }
 
 func (this *analysisTool) mapPackagePath_PackageName(packagePath string, packageName string) {
 	if packagePath == "" || packageName == "" {
-		xlog.Infof("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n, current_file=%s",
+		xlog.Info("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n, current_file=%s",
 			packageName, packagePath, this.currentFile)
 		return
 	}
@@ -317,7 +317,7 @@ func (this *analysisTool) mapPackagePath_PackageName(packagePath string, package
 		return
 	}
 
-	xlog.Infof("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n", packageName, packagePath)
+	xlog.Info("mapPackagePath_PackageName, packageName=%s, packagePath=%s\n", packageName, packagePath)
 	this.packagePathPackageNameCache[packagePath] = packageName
 
 }
@@ -330,7 +330,7 @@ func (this *analysisTool) visitTypeInFile(path string) {
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 
 	if err != nil {
-		xlog.Errorln(err)
+		xlog.Error(err)
 		return
 	}
 
@@ -398,7 +398,7 @@ func (this *analysisTool) filepathToPackagePath(filepath string) string {
 		}
 	}
 
-	xlog.Warnf("无法确认包路径名, filepath=%s\n", filepath)
+	xlog.Warn("无法确认包路径名, filepath=%s\n", filepath)
 
 	return ""
 
@@ -412,7 +412,7 @@ func (this *analysisTool) visitFuncInFile(path string) {
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 
 	if err != nil {
-		xlog.Errorln(err)
+		xlog.Error(err)
 		return
 	}
 
@@ -428,7 +428,7 @@ func (this *analysisTool) visitFuncInFile(path string) {
 				alias = import1.Name.Name
 			} else {
 				aliasCache, ok := this.packagePathPackageNameCache[packagePath]
-				xlog.Infof("findAliasInCache,packagePath=%s,alias=%s,ok=%t\n", packagePath, aliasCache, ok)
+				xlog.Info("findAliasInCache,packagePath=%s,alias=%s,ok=%t\n", packagePath, aliasCache, ok)
 				if ok {
 					alias = aliasCache
 				} else {
@@ -436,7 +436,7 @@ func (this *analysisTool) visitFuncInFile(path string) {
 				}
 			}
 
-			xlog.Infof("current_file=%s packagePath=%s, alias=%s\n", this.currentFile, packagePath, alias)
+			xlog.Info("current_file=%s packagePath=%s, alias=%s\n", this.currentFile, packagePath, alias)
 
 			this.currentFileImports = append(this.currentFileImports, &importMeta{
 				Alias: alias,
@@ -743,23 +743,23 @@ func (this *analysisTool) findTypeOfFunc(funcDecl *ast.FuncDecl) (packageAlias s
 
 func (this *analysisTool) debugFunc(funcDecl *ast.FuncDecl) {
 
-	xlog.Debugln("func name=", funcDecl.Name)
+	xlog.Debug("func name=", funcDecl.Name)
 
 	if funcDecl.Recv != nil {
 		for _, field := range funcDecl.Recv.List {
-			xlog.Debugln("func recv, name=", field.Names, " type=", field.Type)
+			xlog.Debug("func recv, name=", field.Names, " type=", field.Type)
 		}
 	}
 
 	if funcDecl.Type.Params != nil {
 		for _, field := range funcDecl.Type.Params.List {
-			xlog.Debugln("func param, name=", field.Names, " type=", field.Type)
+			xlog.Debug("func param, name=", field.Names, " type=", field.Type)
 		}
 	}
 
 	if funcDecl.Type.Results != nil {
 		for _, field := range funcDecl.Type.Results.List {
-			xlog.Debugln("func result, type=", field.Type)
+			xlog.Debug("func result, type=", field.Type)
 		}
 	}
 
@@ -915,7 +915,7 @@ func (this *analysisTool) typeToString(t ast.Expr) string {
 		return " (" + this.typeToString(parenExpr.X) + ")"
 	}
 
-	xlog.Infoln("typeToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
+	xlog.Info("typeToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
 
 	return ""
 }
@@ -927,7 +927,7 @@ func (this *analysisTool) selectorExprToString(t ast.Expr) string {
 		return ident.Name
 	}
 
-	xlog.Infoln("selectorExprToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
+	xlog.Info("selectorExprToString ", reflect.TypeOf(t), " file=", this.currentFile, " expr=", this.content(t))
 
 	return ""
 }
@@ -980,7 +980,7 @@ func (this *analysisTool) findAliasByPackagePath(packagePath string) string {
 		}
 	}
 
-	xlog.Infof("packagepath=%s, alias=%s\n", packagePath, result)
+	xlog.Info("packagepath=%s, alias=%s\n", packagePath, result)
 
 	return result
 }
@@ -988,7 +988,7 @@ func (this *analysisTool) findAliasByPackagePath(packagePath string) string {
 func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) string {
 	for _, importMeta := range this.currentFileImports {
 		if importMeta.Path == alias {
-			xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, alias)
+			xlog.Info("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, alias)
 			return alias
 		}
 	}
@@ -1002,7 +1002,7 @@ func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) 
 	}
 
 	if len(matchedImportMetas) == 1 {
-		xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMetas[0].Path)
+		xlog.Info("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMetas[0].Path)
 		return matchedImportMetas[0].Path
 	}
 
@@ -1012,14 +1012,14 @@ func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) 
 
 			for _, structMeta := range this.structMetas {
 				if structMeta.Name == typeName && structMeta.PackagePath == matchedImportMeta.Path {
-					xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
+					xlog.Info("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
 					return matchedImportMeta.Path
 				}
 			}
 
 			for _, customMeta := range this.customMetas {
 				if customMeta.Name == typeName && customMeta.PackagePath == matchedImportMeta.Path {
-					xlog.Infof("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
+					xlog.Info("findPackagePathByAlias, alias=%s, packagePath=%s\n", alias, matchedImportMeta.Path)
 					return matchedImportMeta.Path
 				}
 			}
@@ -1027,7 +1027,7 @@ func (this *analysisTool) findPackagePathByAlias(alias string, typeName string) 
 
 	}
 
-	xlog.Warnf("找不到包的全路径，包名为%s，在%s文件, matchedImportMetas=%d", alias, this.currentFile, len(matchedImportMetas))
+	xlog.Warn("找不到包的全路径，包名为%s，在%s文件, matchedImportMetas=%d", alias, this.currentFile, len(matchedImportMetas))
 
 	return alias
 }
@@ -1055,7 +1055,7 @@ func (this *analysisTool) interfaceBodyToString(interfaceType *ast.InterfaceType
 func (this *analysisTool) content(t ast.Expr) string {
 	bytes, err := ioutil.ReadFile(this.currentFile)
 	if err != nil {
-		xlog.Errorln("读取文件", this.currentFile, "失败", err)
+		xlog.Error("读取文件", this.currentFile, "失败", err)
 		return ""
 	}
 
@@ -1106,7 +1106,7 @@ func (this *analysisTool) Output(out string) {
 	if out != "" {
 		file, err := os.OpenFile(out, os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0755)
 		if err != nil {
-			xlog.Fatalf("打开文件%s失败\n", out)
+			xlog.Fatal("打开文件%s失败\n", out)
 		}
 		os.Stdout = file // 标准输出重定向到文件
 		// os.Stderr = file
@@ -1215,6 +1215,6 @@ func (this *analysisTool) Output(out string) {
 	//file.Close()
 
 	if out != "" {
-		xlog.Infof("解析结果已保存到%s\n", out)
+		xlog.Info("解析结果已保存到%s\n", out)
 	}
 }

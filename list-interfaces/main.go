@@ -25,11 +25,11 @@ func main() {
 	gopathDir := os.Getenv("GOPATH")
 
 	if gopathDir == "" {
-		xlog.Fatalln("GOPATH目录不存在")
+		xlog.Fatal("GOPATH目录不存在")
 	}
 
 	if len(os.Args) == 1 {
-		xlog.Fatalln("使用例子\n" +
+		xlog.Fatal("使用例子\n" +
 			os.Args[0] + " --codedir /appdev/gopath/src/github.com/contiv/netplugin --output /tmp/result")
 	}
 
@@ -41,18 +41,18 @@ func main() {
 	ignoreDir := strings.TrimSpace(*iignoreDir)
 
 	if codeDir == "" {
-		xlog.Fatalln("代码目录不能为空")
+		xlog.Fatal("代码目录不能为空")
 	}
 
 	codeDir, err := filepath.Abs(codeDir)
 	if err != nil {
-		xlog.Fatalln("代码目录解析出错: ", err.Error())
+		xlog.Fatal("代码目录解析出错: ", err.Error())
 	}
 
 	if output != "" {
 		output, err = filepath.Abs(output)
 		if err != nil {
-			xlog.Fatalln("输出文件解析出错: ", err.Error())
+			xlog.Fatal("输出文件解析出错: ", err.Error())
 		}
 	}
 
@@ -133,7 +133,7 @@ func main() {
 	aysfn = func() {
 		result := analysis.AnalysisCode(config)
 
-		xlog.Infoln("================================================")
+		xlog.Info("================================================")
 		result.Output(output)
 	}
 
@@ -143,7 +143,7 @@ func main() {
 	if mode != "single" {
 		go notify.Notify(ctx, codeDir, aysfn) // 开启目录监控(分析)
 
-		xlog.Infoln("后台进程正在进行实时代码分析")
+		xlog.Info("后台进程正在进行实时代码分析")
 		select {}
 	} else {
 		aysfn()
@@ -151,9 +151,10 @@ func main() {
 		// fmt.Println("Finish")
 	}
 
-	xlog.Errorln("abc", "ok", "yes")
-	xlog.Errorf("%s->%s", "name", "age")
-	xlog.Debugln("debug")
+	xlog.Error("abc", "ok", "yes")
+	xlog.Error("%s->%s", "name", "age")
+	xlog.Debug("debug")
+	xlog.Error("abcde%v", "12345", "okd")
 
 	// fmt.Println(utils.ColorString(4, "color", "good", "(/home/xshrim)", "[10,2]"))
 }
