@@ -11,6 +11,9 @@ import (
 	"text/template"
 )
 
+// git克隆
+// git clone -b 'v2.3.21' --single-branch --depth 1 <url>
+
 // 使用go module
 // export GOPROXY=https://goproxy.io   // 设置module代理
 // go mod init m        // 初始化module或者从已有项目迁移(生成go.mod)
