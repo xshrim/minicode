@@ -1,0 +1,9 @@
+{
+    "config": "/root/config/config.yaml",
+    "orgname": "Ebtech",
+    "username": "Admin",
+    "orderer": "orderer0.orderer.tebchain",
+    "channel": "",
+    "store": "/root/store",
+    "maxsize": 1048576000
+}

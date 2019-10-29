@@ -1,0 +1,405 @@
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+#
+# The network connection profile provides client applications the information about the target
+# blockchain network that are necessary for the applications to interact with it. These are all
+# knowledge that must be acquired from out-of-band sources. This file provides such a source.
+
+name: "ebchain"
+
+#
+# Describe what the target network is/does.
+#
+description: ""
+
+# 若fabric节点位于容器中, 而通过此配置文件访问fabric网络的代码在物理机上执行, 则需要将下述域名在物理机上的/etc/hosts文件中映射为相应的宿主机ip(如peer0.org1.example.com映射到127.0.0.1上)
+# 或者将全部域名改为ip.
+
+#指定版本
+version: 1.0.0
+
+#客户端定义
+client:
+  # 客户端所属的组织, 必须是organizations定义的组织
+  organization: Ebtech
+  #定义日志服务
+  logging:
+    level: info #debug级别
+
+  # MSP根目录
+  cryptoconfig:
+    # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config
+    path: /root/config/crypto-config
+
+  # 某些SDK支持插件化的KV数据库, 通过指定credentialStore属性实现
+  credentialStore:
+    # 可选, 用于用户证书材料存储, 如果所有的证书材料被嵌入到配置文件, 则不需要
+    path: "/tmp/state-store"
+
+    # 可选, 指定Go SDK实现的CryptoSuite实现
+    cryptoStore:
+      # 指定用于加密密钥存储的底层KV数据库
+      path: /tmp/msp
+
+   # 客户端的BCCSP模块配置
+  BCCSP:
+    security:
+     enabled: true
+     default:
+      provider: "SW"
+     hashAlgorithm: "SHA2"
+     softVerify: true
+     level: 256
+
+  tlsCerts:
+    # 可选, 当连接到peers, orderes时使用系统证书池, 默认为false
+    systemCertPool: false
+
+    # 可选, 客户端和peers与orderes进行TLS握手的密钥和证书
+    client:
+      key:
+        # path: ${GOPATH}/src/github.com/hyperledger/fabric-sdk-go/${CRYPTOCONFIG_FIXTURES_PATH}/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.key
+      cert:
+        #path: ${GOPATH}/src/github.com/hyperledger/fabric-sdk-go/${CRYPTOCONFIG_FIXTURES_PATH}/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.crt
+
+# 如果应用程序创建了通道, 不需要本部分
+channels:
+  # 如果没有定义channel配置或是定义的channel没有信息, 使用默认channel
+  # 如果channel没有定义peers, 使用默认channel的peers
+  # 如果channel没有定义orderes, 使用默认channel的orderes
+  # 如果channel没有定义背书策略, 使用默认channel的背书策略
+  # 如果channel定义了背书策略, 但某些背书策略缺失, 缺失的背书策略会被默认channel填充
+
+  #如果_default没有定义, 必选；如果_default已经定义, 可选。
+  # 通道名称
+  mychannel:
+    # 如果_default peers没有定义, 必选；如果_default peers已经定义, 可选。
+    # 参与组织的peer节点列表
+    peers:
+      peer0.ebtech.tebchain:
+        # 可选。peer节点是否会被发送交易提议只进行查询。peer节点必须安装链码。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        endorsingPeer: true
+
+        # 可选。peer节点必须安装链码。peer节点是否会被发送交易提案只进行查询。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        chaincodeQuery: true
+
+        # 可选。是否可以向peer节点发送不会进行链码查询的提案, 如queryBlock（）, 
+        # queryTransaction（）等。默认值：true。
+        ledgerQuery: true
+
+        # 可选。peer节点是否为SDK事件监听器注册的目标, 所有的peer节点都可以生产事件, 
+        # 但通常只需要连接一个对事件进行监听。默认值：true。
+        eventSource: true
+        # 可选, 应用程序使用下列选项执行通道操作, 如获取通道配置
+      peer1.ebtech.tebchain:
+        # 可选。peer节点是否会被发送交易提议只进行查询。peer节点必须安装链码。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        endorsingPeer: true
+
+        # 可选。peer节点必须安装链码。peer节点是否会被发送交易提案只进行查询。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        chaincodeQuery: true
+
+        # 可选。是否可以向peer节点发送不会进行链码查询的提案, 如queryBlock（）, 
+        # queryTransaction（）等。默认值：true。
+        ledgerQuery: true
+
+        # 可选。peer节点是否为SDK事件监听器注册的目标, 所有的peer节点都可以生产事件, 
+        # 但通常只需要连接一个对事件进行监听。默认值：true。
+        eventSource: true
+        # 可选, 应用程序使用下列选项执行通道操作, 如获取通道配置
+      peer0.ebbank.tebchain:
+        # 可选。peer节点是否会被发送交易提议只进行查询。peer节点必须安装链码。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        endorsingPeer: true
+
+        # 可选。peer节点必须安装链码。peer节点是否会被发送交易提案只进行查询。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        chaincodeQuery: true
+
+        # 可选。是否可以向peer节点发送不会进行链码查询的提案, 如queryBlock（）, 
+        # queryTransaction（）等。默认值：true。
+        ledgerQuery: true
+
+        # 可选。peer节点是否为SDK事件监听器注册的目标, 所有的peer节点都可以生产事件, 
+        # 但通常只需要连接一个对事件进行监听。默认值：true。
+        eventSource: true
+        # 可选, 应用程序使用下列选项执行通道操作, 如获取通道配置
+      peer1.ebbank.tebchain:
+        # 可选。peer节点是否会被发送交易提议只进行查询。peer节点必须安装链码。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        endorsingPeer: true
+
+        # 可选。peer节点必须安装链码。peer节点是否会被发送交易提案只进行查询。
+        # 应用程序还可以使用本属性来决定发送链码安装的请求到哪个peer节点。默认值：true
+        chaincodeQuery: true
+
+        # 可选。是否可以向peer节点发送不会进行链码查询的提案, 如queryBlock（）, 
+        # queryTransaction（）等。默认值：true。
+        ledgerQuery: true
+
+        # 可选。peer节点是否为SDK事件监听器注册的目标, 所有的peer节点都可以生产事件, 
+        # 但通常只需要连接一个对事件进行监听。默认值：true。
+        eventSource: true
+        # 可选, 应用程序使用下列选项执行通道操作, 如获取通道配置
+    policies:
+      #可选, 获取通道配置区块
+      queryChannelConfig:
+        #可选, 成功响应节点的最小数量
+        minResponses: 1
+        # 可选
+        maxTargets: 1
+        # 可选, 查询配置区块的重试选项
+        retryOpts:
+          # 可选, 重试次数
+          attempts: 5
+          # 可选,  第一次重试的后退间隔
+          initialBackoff: 500ms
+          # 可选,  重试的最大后退间隔
+          maxBackoff: 5s
+          backoffFactor: 2.0
+
+# Fabric区块链网络中参与的组织列表
+organizations:
+  Ebtech:
+    mspid: EbtechMSP
+    # 组织的MSP存储位置, 绝对路径或相对cryptoconfig的路径, 如果没有此路径则需要users属性
+    cryptoPath:  peerOrganizations/ebtech.tebchain/users/{username}@ebtech.tebchain/msp
+    # cryptoPath: peerOrganizations/org1.example.com/msp/
+    # cryptoPath: /home/xshrim/code/blockchain/fabric/project/AssetExchange/deploy/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    peers:
+      - peer0.ebtech.tebchain
+      - peer1.ebtech.tebchain
+    # 可选, 证书颁发机构签发×××明, Fabric-CA是一个特殊的证书管理机构, 提供REST API支持动态证书管理, 如登记、撤销、重新登记
+    # 下列部分只为Fabric-CA服务器设置
+    certificateAuthorities:
+      - ca.ebtech.tebchain
+    # users:
+      # Admin:
+        # cert:
+        # pem:
+    
+  Ebbank:
+    mspid: EbbankMSP
+    # 组织的MSP存储位置, 绝对路径或相对cryptoconfig的路径, 如果没有此路径则需要users属性
+    cryptoPath:  peerOrganizations/ebbank.tebchain/users/{username}@ebbank.tebchain/msp
+    # cryptoPath: peerOrganizations/org1.example.com/msp/
+    # cryptoPath: /home/xshrim/code/blockchain/fabric/project/AssetExchange/deploy/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    peers:
+      - peer0.ebbank.tebchain
+      - peer1.ebbank.tebchain
+    # 可选, 证书颁发机构签发×××明, Fabric-CA是一个特殊的证书管理机构, 提供REST API支持动态证书管理, 如登记、撤销、重新登记
+    # 下列部分只为Fabric-CA服务器设置
+    certificateAuthorities:
+      - ca.ebbank.tebchain
+    # users:
+      # Admin:
+        # cert:
+        # pem:
+
+  # Orderer组织名称
+  Orderer:
+      # 组织的MSPID
+      mspID: OrdererMSP
+      # 加载用户需要的密钥和证书, 绝对路径或相对路径, 如果没有此路径则需要users属性
+      cryptoPath: ordererOrganizations/orderer.tebchain/users/Admin@orderer.tebchain/msp
+      # cryptoPath: ordererOrganizations/example.com/msp/
+
+# 发送交易请求或通道创建、更新请求到的orderers列表
+# 如果定义了超过一个orderer, SDK使用哪一个orderer由代码实现时指定
+orderers:
+  # orderer节点, 可以定义多个
+  orderer0.orderer.tebchain:
+    url: orderer0.orderer.tebchain:7050
+    # 以下属性由gRPC库定义, 会被传递给gRPC客户端构造函数
+    grpcOptions:
+      ssl-target-name-override: orderer0.orderer.tebchain
+      # 下列参数用于设置服务器上的keepalive策略, 不兼容的设置会导致连接关闭
+      # 当keep-alive-time被设置为0或小于激活客户端的参数,下列参数失效
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则可不填tlsCACerts属性
+
+    tlsCACerts:
+      # 证书的绝对路径
+      # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
+      path: /root/config/crypto-config/ordererOrganizations/orderer.tebchain/tlsca/tlsca.orderer.tebchain-cert.pem
+    
+      # orderer节点, 可以定义多个
+  orderer1.orderer.tebchain:
+    url: orderer1.orderer.tebchain:7050
+    # 以下属性由gRPC库定义, 会被传递给gRPC客户端构造函数
+    grpcOptions:
+      ssl-target-name-override: orderer1.orderer.tebchain
+      # 下列参数用于设置服务器上的keepalive策略, 不兼容的设置会导致连接关闭
+      # 当keep-alive-time被设置为0或小于激活客户端的参数,下列参数失效
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则可不填tlsCACerts属性
+
+    tlsCACerts:
+      # 证书的绝对路径
+      # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
+      path: /root/config/crypto-config/ordererOrganizations/orderer.tebchain/tlsca/tlsca.orderer.tebchain-cert.pem
+
+# peers节点列表
+peers:
+  # peer节点定义, 可以定义多个
+  peer0.ebtech.tebchain:
+    # URL用于发送背书和查询请求
+    url: peer0.ebtech.tebchain:7051
+
+    grpcOptions:
+      ssl-target-name-override: peer0.ebtech.tebchain
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则必须填写tlsCACerts属性
+
+    tlsCACerts:
+      # 证书的绝对路径
+      # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem 
+      path: /root/config/crypto-config/peerOrganizations/ebtech.tebchain/tlsca/tlsca.ebtech.tebchain-cert.pem
+
+  peer1.ebtech.tebchain:
+    # URL用于发送背书和查询请求
+    url: peer1.ebtech.tebchain:8051
+
+    grpcOptions:
+      ssl-target-name-override: peer1.ebtech.tebchain
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则必须填写tlsCACerts属性
+
+    tlsCACerts:
+      # 证书的绝对路径
+      # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem 
+      path: /root/config/crypto-config/peerOrganizations/ebtech.tebchain/tlsca/tlsca.ebtech.tebchain-cert.pem
+     
+  # peer节点定义, 可以定义多个
+  peer0.ebbank.tebchain:
+    # URL用于发送背书和查询请求
+    url: peer0.ebbank.tebchain:9051
+
+    grpcOptions:
+      ssl-target-name-override: peer0.ebbank.tebchain
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则必须填写tlsCACerts属性
+
+    tlsCACerts:
+      # 证书的绝对路径
+      # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem 
+      path: /root/config/crypto-config/peerOrganizations/ebbank.tebchain/tlsca/tlsca.ebbank.tebchain-cert.pem
+
+  peer1.ebbank.tebchain:
+    # URL用于发送背书和查询请求
+    url: peer1.ebbank.tebchain:10051
+
+    grpcOptions:
+      ssl-target-name-override: peer1.ebbank.tebchain
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则必须填写tlsCACerts属性
+
+    tlsCACerts:
+      # 证书的绝对路径
+      # path: /home/xshrim/code/blockchain/fabric/project/AssetManage/deploy/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem 
+      path: /root/config/crypto-config/peerOrganizations/ebbank.tebchain/tlsca/tlsca.ebbank.tebchain-cert.pem
+      
+certificateAuthorities:
+  ca.ebtech.tebchain:
+    url: ca.ebtech.tebchain:7054
+    grpcOptions:
+      ssl-target-name-override: ca.ebtech.tebchain
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则必须填写tlsCACerts属性
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /root/config/crypto-config/peerOrganizations/ebtech.tebchain/tlsca/tlsca.ebtech.tebchain-cert.pem
+
+    # Fabric-CA supports dynamic user enrollment via REST APIs. A "root" user, a.k.a registrar, is
+    # needed to enroll and invoke new users.
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+    # [Optional] The optional name of the CA.
+    caName: ca.ebtech.tebchain
+    
+  ca.ebbank.tebchain:
+    url: ca.ebbank.tebchain:8054
+    grpcOptions:
+      ssl-target-name-override: ca.ebbank.tebchain
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true      # tls安全传输没启用的时候, 此属性必须设置为true, 否则无法通信, 为false时则必须填写tlsCACerts属性
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /root/config/crypto-config/peerOrganizations/ebbank.tebchain/tlsca/tlsca.ebbank.tebchain-cert.pem
+
+    # Fabric-CA supports dynamic user enrollment via REST APIs. A "root" user, a.k.a registrar, is
+    # needed to enroll and invoke new users.
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+    # [Optional] The optional name of the CA.
+    caName: ca.ebbank.tebchain
+    
+entityMatchers:   
+  peer:
+    - pattern: peer0.ebtech.(\w*)
+      urlSubstitutionExp: localhost:7051
+      sslTargetOverrideUrlSubstitutionExp: peer0.ebtech.tebchain
+      mappedHost: peer0.ebtech.tebchain
+    - pattern: peer1.ebtech.(\w*)
+      urlSubstitutionExp: localhost:8051
+      sslTargetOverrideUrlSubstitutionExp: peer1.ebtech.tebchain
+      mappedHost: peer1.ebtech.tebchain
+    - pattern: peer0.ebbank.(\w*)
+      urlSubstitutionExp: localhost:9051
+      sslTargetOverrideUrlSubstitutionExp: peer0.ebbank.tebchain
+      mappedHost: peer0.ebbank.tebchain
+    - pattern: peer1.ebbank.(\w*)
+      urlSubstitutionExp: localhost:10051
+      sslTargetOverrideUrlSubstitutionExp: peer1.ebbank.tebchain
+      mappedHost: peer1.ebbank.tebchain
+    #- pattern: peer1.ebbank.(\w+)
+      #urlSubstitutionExp: localhost:10051
+      #sslTargetOverrideUrlSubstitutionExp: peer1.ebbank
+      #mappedHost: peer1.ebbank
+  orderer:
+    - pattern: orderer0.orderer.(\w*)
+      urlSubstitutionExp: localhost:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer0.orderer.tebchain
+      mappedHost: orderer0.orderer.tebchain
+    - pattern: orderer1.orderer.(\w*)
+      urlSubstitutionExp: localhost:8050
+      sslTargetOverrideUrlSubstitutionExp: orderer1.orderer.tebchain
+      mappedHost: orderer1.orderer.tebchain
+  certificateAuthority:
+    - pattern: (\w*)ebtech.(\w*)
+      urlSubstitutionExp: localhost:7054
+      mappedHost: ca.ebtech.tebchain
+    - pattern: (\w*)ebbank.(\w*)
+      urlSubstitutionExp: localhost:8054
+      mappedHost: ca.ebbank.tebchain

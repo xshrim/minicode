@@ -1,0 +1,27 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+services:
+  fabrest.ebtech.tebchain:
+    container_name: fabrest.ebtech.tebchain
+    hostname: fabrest.ebtech.tebchain
+    image: fabrest
+    environment:
+      - FABRIC_CONN_CONFIG=/root/config/config.yaml
+      - FABRIC_CONN_ORGNAME=Ebtech
+      - FABRIC_CONN_USERNAME=Admin
+      - FABRIC_CONN_ORDERER=orderer0.orderer.tebchain
+      # - FABRIC_CONN_CHANNEL=mychannel
+      - FABRIC_CONN_STORE=/root/store
+      - FABRIC_CONN_MAXSIZE=104857600
+    ports:
+      - "8080"
+    command: sh -c '/root/fabrest'
+    volumes:
+      - ./config:/root/config
+    network_mode: "host"
+
