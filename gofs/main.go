@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -26,13 +28,56 @@ import (
 
 // 交叉编译:
 // CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o gofs.exe main.go  // windows
-// CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gofs main.go    // linux
+// CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags netgo -o gofs main.go    // linux
 
 // 解决alpine镜像问题, udp问题, 时区问题
 // RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
 const maxUploadSize = 4 * (2 << 30) // 4 * 1GB
-const filePath = "./"
+var dir, host, port string
+
+const html = `
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Document</title>
+  <!-- <script src="./bfi.js"></script> -->
+</head>
+
+<body>
+  <p><strong>CMD Method</strong></p>
+  <p>curl -X POST -F "path=test" -F "file=@/home/xshrim/a.js" http://{{.Host}}:{{.Port}}/upload</p>
+  <p><strong>WEB Method</strong></p>
+  <form enctype="multipart/form-data" action="http://{{.Host}}:{{.Port}}/upload" method="post">
+    <input name="path" placeholder="(Optional) remote storage path" size="30" />
+    <input type="file" name="file" size="30" />
+    <input type="submit" value="upload" />
+  </form>
+</body>
+
+</html>
+`
+
+type Server struct {
+	Host string
+	Port string
+}
+
+func GetLocalIP() string {
+	if addrs, err := net.InterfaceAddrs(); err == nil {
+		for _, address := range addrs {
+			// check the address type and if it is not a loopback the display it
+			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "127.0.0.1"
+}
 
 // upload file
 //curl -X POST -F "path=test" -F "file=@/home/xshrim/a.js" http://127.0.0.1:8080/upload
@@ -44,9 +89,15 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		// h := md5.New()
 		// io.WriteString(h, strconv.FormatInt(crutime, 10))
 		// token := fmt.Sprintf("%x", h.Sum(nil))
-		t, _ := template.ParseFiles("front.html")
+		// t, _ := template.ParseFiles("front.html")
+
+		t, _ := template.New("index").Parse(html)
+
 		// t.Execute(w, token)
-		t.Execute(w, nil)
+		t.Execute(w, &Server{
+			Host: host,
+			Port: port,
+		})
 		return
 	}
 
@@ -78,7 +129,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		fpath = strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/upload"), handler.Filename)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(filePath, fpath, handler.Filename), fileBytes, os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(dir, fpath, handler.Filename), fileBytes, os.ModePerm); err != nil {
 		log.Println("Creating file error: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Failed: "+err.Error())
@@ -92,22 +143,31 @@ func upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := "8080"
+	// var dport = flag.String("port", "2333", "server port")
+	// var dpath = flag.String("dir", "./", "server path")
+	flag.StringVar(&port, "p", "2333", "server port")
+	flag.StringVar(&port, "port", "2333", "server port")
+	flag.StringVar(&dir, "d", "./", "server path")
+	flag.StringVar(&dir, "dir", "./", "server path")
 
-	dir, err := filepath.Abs("./")
+	flag.Parse()
+
+	dir, err := filepath.Abs(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	http.Handle("/", http.FileServer(http.Dir(filePath)))
+	host = GetLocalIP()
+
+	http.Handle("/", http.FileServer(http.Dir(dir)))
+
 	http.HandleFunc("/upload", upload)
 	http.HandleFunc("/upload/", upload)
 
-	if len(os.Args) > 1 {
-		port = os.Args[1]
-	}
-
-	log.Println(fmt.Sprintf("starting file server at folder:<%s> address:<0.0.0.0:%s>", dir, port))
+	log.Println(fmt.Sprintf("serve path: <%s>", dir))
+	log.Println(fmt.Sprintf("browse url: <0.0.0.0:%s>[%s]", port, host))
+	log.Println(fmt.Sprintf("upload url: <0.0.0.0:%s/upload>[%s]", port, host))
+	// log.Println(fmt.Sprintf("starting file server at folder:<%s> address:<0.0.0.0:%s>", dir, port))
 
 	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {

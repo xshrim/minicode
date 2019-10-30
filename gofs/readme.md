@@ -25,8 +25,6 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 docker build -t "fabrest" .  # 构建
 ```
 
-
-
 ## 运行
 
 - standalone模式
@@ -40,6 +38,7 @@ docker build -t "fabrest" .  # 构建
   ```bash
   docker-compose -f ./docker-compose.yaml up
   ```
+
 ## 其他
 
 - 使用go module
