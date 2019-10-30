@@ -1,0 +1,106 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: syslog
+  name: syslogapi
+  namespace: system-ebcpaas
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: syslog
+    spec:
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "ebcpaas"
+        effect: "NoSchedule"
+      nodeSelector:
+        app: ebcpaas
+      containers:
+      - name: syslog-mysql
+        image: mysql:5.7
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "Root@123"
+        - name: MYSQL_DATABASE
+          value: "syslogdb"
+        - name: MYSQL_USER
+          value: "syslogapi"
+        - name: MYSQL_PASSWORD
+          value: "Syslog_1234"
+        resources: {}
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql
+          subPath: data
+          mountPath: /var/lib/mysql
+        workingDir: /
+      - name: syslog-api
+        image: syslogapi:1.3
+        imagePullPolicy: IfNotPresent
+        command: 
+        - /root/syslogapi
+        env:
+        - name: ALERT_RECOVER # 告警事件名
+          value: "RECOVER"
+        - name: ALERT_NODE_NAME # 告警节点名
+          value: "JT-MONITOR-ITM-01"
+        - name: ALERT_DURATION # 重复告警间隔时间
+          value: "1800"
+        - name: LOG_LEVEL # 本地日志级别
+          value: "info"
+        - name: API_TOKEN # paas平台api访问token
+          value: "73c5b38918a8c18e18794f042531f0afc2fc3281"
+        - name: API_URL # cpaas平台api访问url
+          value: "http://106.13.128.140:32001/v1"
+        - name: DBERR_COUNT # mysql断连告警间隔
+          value: "7"
+        - name: MYSQL_CONF # mysql数据库连接配置
+          value: "syslogapi:Syslog_1234@/syslogdb"
+        - name: YW_ALERT # 业务告警开关
+          value: "true"
+        - name: ORG_NAME # 组织名/根账号
+          value: "ebcpaasadmin"
+        - name: EI_NAME # 事件集成名
+          value: "CEGS"
+        - name: BE_NAME # 业务事件名
+          value: "CEGS"
+        - name: ALERT_TAG # 告警标记
+          value: "2OMNIBUS"
+        - name: MODULE_TYPE # 组件类型
+          value: "APP"
+        - name: APP_TAG # 平台标记
+          value: "EBCPAAS"
+        - name: M_IP # 监控平台主机IP
+          value: "25.1.17.22"
+        - name: M_PORT # 监控平台主机端口
+          value: "514"
+        - name: M_NODEIP # 告警节点IP
+          value: "10.108.110.208"
+        - name: CR_TIME # mysql定时心跳检查间隔
+          value: "300"
+        - name: C_HBEAT # cpaas集群心跳告警名称
+          value: "cluster_hbeat"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 10901
+            httpHeaders:
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        resources: {}
+        ports:
+        - containerPort: 10901
+        workingDir: /root
+      #imagePullSecrets:
+      #- name: ebpaas-registry-20.20
+      restartPolicy: Always
+      volumes:
+      - name: mysql
+        hostPath:
+          path: /var/mysql
