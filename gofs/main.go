@@ -44,19 +44,21 @@ const html = `
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>Document</title>
+  <title>File Uploader</title>
   <!-- <script src="./bfi.js"></script> -->
 </head>
 
 <body>
   <p><strong>CMD Method</strong></p>
-  <p>curl -X POST -F "path=test" -F "file=@/home/xshrim/a.js" http://{{.Host}}:{{.Port}}/upload</p>
+  <p>curl -X POST -F "path=test" -F "file=@/home/xshrim/sample.pdf" http://{{.Host}}:{{.Port}}/upload</p>
   <p><strong>WEB Method</strong></p>
-  <form enctype="multipart/form-data" action="http://{{.Host}}:{{.Port}}/upload" method="post">
+  <form enctype="multipart/form-data" action="http://{{.Host}}:{{.Port}}/upload" method="post" target="iiframe">
     <input name="path" placeholder="(Optional) remote storage path" size="30" />
     <input type="file" name="file" size="30" />
     <input type="submit" value="upload" />
   </form>
+  <iframe id="iiframe" name="iiframe" frameborder="0" width="600px" height="50px"></iframe>
+  <!-- <iframe id="iiframe" name="iiframe" frameborder="0" style="display:none;"></iframe> -->
 </body>
 
 </html>
@@ -107,20 +109,20 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	file, handler, err := r.FormFile("file")
 	if err != nil {
-		log.Println("Retrieving file error: ", err.Error())
-		w.WriteHeader(http.StatusNoContent)
-		fmt.Fprintf(w, "Failed: "+err.Error())
+		log.Println("Receive file error: ", err.Error())
+		// w.WriteHeader(http.StatusNoContent)
+		fmt.Fprintf(w, "✘ Failed: "+err.Error())
 		return
 	}
 	defer file.Close()
 
-	log.Println(fmt.Sprintf("Uploading file [filename: %+v, filesize: %+vB, httpheader: %+v", handler.Filename, handler.Size, handler.Header))
+	log.Println(fmt.Sprintf("Receiving file [filename: %+v, filesize: %+vB, httpheader: %+v", handler.Filename, handler.Size, handler.Header))
 
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Println("Retrieving file error: ", err.Error())
+		log.Println("Receive file error: ", err.Error())
 		w.WriteHeader(http.StatusNoContent)
-		fmt.Fprintf(w, "Failed: "+err.Error())
+		fmt.Fprintf(w, "✘ Failed: "+err.Error())
 		return
 	}
 
@@ -129,16 +131,18 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		fpath = strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/upload"), handler.Filename)
 	}
 
+	// fmt.Println(dir, fpath, handler.Filename)
+
 	if err := ioutil.WriteFile(filepath.Join(dir, fpath, handler.Filename), fileBytes, os.ModePerm); err != nil {
-		log.Println("Creating file error: ", err.Error())
+		log.Println("Create file error: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Failed: "+err.Error())
+		fmt.Fprintf(w, "✘ Failed: "+err.Error())
 		return
 	}
 
-	log.Println("Receiving file successfully")
+	log.Println("Receive file successfully")
 
-	fmt.Fprintf(w, "success")
+	fmt.Fprintf(w, "✔ Succeeded")
 
 }
 
