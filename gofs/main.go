@@ -50,14 +50,16 @@ const html = `
 
 <body>
   <p><strong>CMD Method</strong></p>
-  <p>curl -X POST -F "path=test" -F "file=@/home/xshrim/sample.pdf" http://{{.Host}}:{{.Port}}/upload</p>
+  <p>curl -X POST -F "path=bar" -F "file=@/root/foo/sample.pdf" http://{{.Host}}:{{.Port}}/upload</p>
   <p><strong>WEB Method</strong></p>
   <form enctype="multipart/form-data" action="http://{{.Host}}:{{.Port}}/upload" method="post" target="iiframe">
     <input name="path" placeholder="(Optional) remote storage path" size="30" />
     <input type="file" name="file" size="30" />
-    <input type="submit" value="upload" />
+    <input type="submit" value="Upload" />
+    <label> ¦ </label>
+    <a href="http://{{.Host}}:{{.Port}}"><button type="button">Browse</button></a>
   </form>
-  <iframe id="iiframe" name="iiframe" frameborder="0" width="600px" height="50px"></iframe>
+  <iframe id="iiframe" name="iiframe" frameborder="0" width="600px" height="50px" ></iframe>
   <!-- <iframe id="iiframe" name="iiframe" frameborder="0" style="display:none;"></iframe> -->
 </body>
 
