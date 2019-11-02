@@ -132,8 +132,11 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fmt.Println(dir, fpath, handler.Filename)
+	fullpath := filepath.Join(dir, fpath, handler.Filename)
 
-	if err := ioutil.WriteFile(filepath.Join(dir, fpath, handler.Filename), fileBytes, os.ModePerm); err != nil {
+	os.MkdirAll(filepath.Dir(fullpath), os.ModePerm)
+
+	if err := ioutil.WriteFile(fullpath, fileBytes, os.ModePerm); err != nil {
 		log.Println("Create file error: ", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "✘ Failed: "+err.Error())
