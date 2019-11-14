@@ -1,0 +1,18 @@
+#Python:
+*.pyc
+
+#Created by setup.py:
+dist/
+build/
+doc/
+MANIFEST
+
+# created by PKGBUILD:
+src/
+pkg/
+*.tar.xz
+*.tar.gz
+
+
+# Created by pip
+*.egg-info
