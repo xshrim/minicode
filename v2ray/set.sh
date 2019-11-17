@@ -130,6 +130,12 @@ if [ $# -gt 0 ];then
   done
 fi
 
-echo "[${cps}]正在启动v2ray服务..."
+process=$(\ps aux | grep v2ray | grep -v grep)
+if [[ $process != "" ]];then
+  kill -9 $(echo $process | awk '{print $2}')
+  echo "[${cps}]正在重启v2ray服务..."
+else
+  echo "[${cps}]正在启动v2ray服务..."
+fi
 echo "============================================="
 ./v2ray --config config.json
