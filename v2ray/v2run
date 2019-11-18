@@ -134,7 +134,7 @@ if [ $# -gt 0 ];then
   ctag="Proxy"
   link=$1
   strategy=$2   # fast
-  : ${strategy:="fast"}
+  : ${strategy:="first"}
 
   if [ $link == "-h" ] || [ $link == "--help" ];then
     echo "Usage:"
