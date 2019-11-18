@@ -1,0 +1,220 @@
+#!/bin/sh
+
+# v2run
+
+function delay() {
+  rtt=$(\ping -c 2 -w 3 $1 |grep rtt |awk '{print $4}' |awk -F'/' '{print $2}')
+  if [ -z $rtt ]; then
+    echo 10000
+  else
+    echo ${rtt%.*}
+  fi
+}
+
+function createob() {
+  ob='
+{
+  "tag": "proxy",
+  "protocol": "vmess",
+  "settings": {
+    "vnext": [
+      {
+        "address": "",
+        "port": 80,
+        "users": [
+          {
+            "id": "",
+            "alterId": 0,
+            "email": "",
+            "security": "auto"
+          }
+        ]
+      }
+    ],
+    "servers": null,
+    "response": null
+  },
+  "streamSettings": {
+    "network": "ws",
+    "security": null,
+    "tlsSettings": null,
+    "tcpSettings": null,
+    "kcpSettings": null,
+    "wsSettings": {
+      "connectionReuse": true,
+      "path": null,
+      "headers": {
+        "Host": ""
+      }
+    },
+    "httpSettings": null,
+    "quicSettings": null
+  },
+  "mux": {
+    "enabled": true
+  }
+}
+'
+
+  echo $ob 
+}
+
+function config() {
+
+  tag=$(echo $1 | jq '.ps')
+
+  echo "[${tag//\"/}]正在解析配置信息..."
+  echo "$1"
+
+  addr=$(echo $1 | jq '.add')
+
+  port=$(echo $1 | jq '.port' | jq 'tonumber')
+
+  aid=$(echo $1 | jq '.aid' | jq 'tonumber')
+
+  host=$(echo $1 | jq '.host')
+
+  id=$(echo $1| jq '.id')
+
+  net=$(echo $1 | jq '.net')
+
+  adr=$(echo $addr | sed 's/"//g')
+  # 连接失败
+  # if ! \ping -c 1 -w 3 $adr > /dev/null; then
+  #   return 1
+  # fi
+
+  if [ $strategy == "fast" ];then
+    printf "[${tag//\"/}]正在测试网络延迟<$2 -- "
+    rtt=$(delay $adr)
+    printf "$rtt>...\n"
+    if [ $rtt -ge $2 ];then
+      return $2
+    fi
+  else
+    printf "[${tag//\"/}]正在测试网络延迟<"
+    rtt=$(delay $adr)
+    printf "$rtt>...\n"
+    if [ $rtt -eq 10000 ];then
+      return 1
+    fi
+  fi
+  # if [ $(echo "$rtt > $2" | bc) -eq 1 ];then
+  #   return $2
+  # fi
+
+  # jq ".outbounds[0].settings.vnext[0].address=$addr" config.json
+
+  # jq ".outbounds=(.outbounds[] | select(.tag==\"proxy\").settings.vnext[0].address=$addr)" config.json > config.tmp && mv config.tmp config.json
+
+  outbound=$(echo $outbound | jq ".tag=$tag")
+  outbound=$(echo $outbound | jq ".settings.vnext[0].address=$addr")
+  outbound=$(echo $outbound | jq ".settings.vnext[0].port=$port")
+  outbound=$(echo $outbound | jq ".settings.vnext[0].users[0].id=$id")
+  outbound=$(echo $outbound | jq ".settings.vnext[0].users[0].alterId=$aid")
+  outbound=$(echo $outbound | jq ".streamSettings.network=$net")
+  outbound=$(echo $outbound | jq ".streamSettings.wsSettings.headers.Host=$host")
+
+  ctag=${tag//\"/}
+
+  if [ $strategy == "fast" ];then
+    return $rtt
+  else
+    return 0
+  fi
+}
+
+if [ ! -f config.json ];then
+  echo "未找到config.json文件"
+  exit 1
+fi
+
+if [ $# -gt 0 ];then
+
+  newob=false
+  ctag="Proxy"
+  link=$1
+  strategy=$2   # fast
+  : ${strategy:="fast"}
+
+  if [ $link == "-h" ] || [ $link == "--help" ];then
+    echo "Usage:"
+    echo "  v2run <subscribe link / vmess url> <strategy>"
+    echo "Examples:" 
+    echo "  v2run                                      # run v2ray with existed configuration"
+    echo "  v2run -h/--help                            #v2run help"
+    echo "  v2run vmess://eyJhZGQiOiIxMjIuMT...        # use this vmess url and run v2ray"
+    echo "  v2run https://portal.caipin.pro/... fast   # choose fastest link and run v2ray"
+    echo "  v2run https://portal.caipin.pro/... first  # choose first link and run v2ray"
+    exit 0
+  fi
+
+  sed -i '/\/\//d' config.json
+
+  if ! type jq &>/dev/null;then
+    if [ ! -f $(dirname $0)"/jq" ];then
+      echo "[Download]正在下载jq命令行工具..."
+      wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq || (echo "无法下载jq命令行工具" && exit 1)
+      chmod a+x jq
+    fi
+    export PATH=$(dirname $0):$PATH
+  fi
+
+  # jq ".outbounds|length" config.json
+  if [[ $(jq -r ".outbounds[0].protocol" config.json) == "vmess" ]];then
+    outbound=$(jq ".outbounds[0]" config.json)
+    ctag=$(echo $outbound | jq -r ".tag")
+    jqarg=".outbounds[0]=$outbound"
+  else
+    newob=true
+    outbound=$(createob)
+    minrtt=10000
+    jqarg=".outbounds |=[$outbound]+."
+  fi
+
+  if [[ $link == "https://"* ]];then
+    echo "[HTTPS]正在获取订阅信息..."
+    data=$(curl -k -s "$1" | base64 -d)
+  elif [[ $link == "vmess://"* ]];then
+    echo "[VMESS]正在获取订阅信息..."
+    data=($1)
+  fi
+
+  echo "[${ctag}]正在选择最优线路..."
+  if [ $strategy == "fast" ];then
+    caddr=$(jq -r ".outbounds[0].settings.vnext[0].address" config.json)
+    if [ -n $caddr ];then
+      minrtt=$(delay $caddr)
+    fi
+  fi
+  for vmess in ${data[@]}
+  do
+    cfg=$(echo $vmess | sed "s/vmess:\/\///g" | base64 -d)
+    if [ $strategy == "fast" ];then
+      config "$cfg" "$minrtt"
+      minrtt=$?
+    else
+      if config "$cfg";then
+        break
+      fi
+    fi
+  done
+
+  echo "[${ctag}]正在更新配置信息..."
+  # 将outbound插入到outbounds第一个元素位置
+  if [ $newob == true ];then
+    jq ".outbounds |=[$outbound]+." config.json > config.tmp && \mv config.tmp config.json
+  else
+    jq ".outbounds[0]=$outbound" config.json > config.tmp && \mv config.tmp config.json
+  fi
+fi
+
+process=$(\ps aux | grep v2ray | grep -v grep)
+if [[ $process != "" ]];then
+  kill -9 $(echo $process | awk '{print $2}')
+  echo "[${ctag}]正在重启v2ray服务..."
+else
+  echo "[${ctag}]正在启动v2ray服务..."
+fi
+echo "================================================================="
+./v2ray --config config.json
