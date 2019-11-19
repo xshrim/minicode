@@ -129,7 +129,6 @@ if [ ! -f config.json ];then
 fi
 
 if [ $# -gt 0 ];then
-
   newob=false
   ctag="Proxy"
   link=$1
@@ -228,6 +227,8 @@ if [ $# -gt 0 ];then
   else
     jq ".outbounds[0]=$outbound" config.json > config.tmp && \mv config.tmp config.json
   fi
+else
+  ctag=$(jq -r ".outbounds[0].tag" config.json)
 fi
 
 process=$(\ps aux | grep v2ray | grep -v grep)
