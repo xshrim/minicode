@@ -76,6 +76,8 @@ function config() {
 
   net=$(echo $1 | jq '.net')
 
+  tls=$(echo $1 | jq '.tls')
+
   adr=$(echo $addr | sed 's/"//g')
 
   # 连接失败
@@ -102,9 +104,9 @@ function config() {
   #   return $2
   # fi
 
-  # jq ".outbounds[0].settings.vnext[0].address=$addr" config.json
+  # jq ".outbounds[0].settings.vnext[0].address=$addr" $cfgfile
 
-  # jq ".outbounds=(.outbounds[] | select(.tag==\"proxy\").settings.vnext[0].address=$addr)" config.json > config.tmp && mv config.tmp config.json
+  # jq ".outbounds=(.outbounds[] | select(.tag==\"proxy\").settings.vnext[0].address=$addr)" $cfgfile > config.tmp && mv config.tmp $cfgfile
 
   outbound=$(echo $outbound | jq ".tag=$ps")
   outbound=$(echo $outbound | jq ".settings.vnext[0].address=$addr")
@@ -113,6 +115,13 @@ function config() {
   outbound=$(echo $outbound | jq ".settings.vnext[0].users[0].alterId=$aid")
   outbound=$(echo $outbound | jq ".streamSettings.network=$net")
   outbound=$(echo $outbound | jq ".streamSettings.wsSettings.headers.Host=$host")
+
+  if [ -n $tls ]
+  then
+    outbound=$(echo $outbound | jq ".streamSettings.security=$tls")
+    outbound=$(echo $outbound | jq ".streamSettings.tlsSettings.allowInsecure=true")
+    outbound=$(echo $outbound | jq ".streamSettings.tlsSettings.serverName=$addr")
+  fi
 
   ctag=${ps//\"/}
 
@@ -123,7 +132,9 @@ function config() {
   fi
 }
 
-if [ ! -f config.json ];then
+cfgfile=$(dirname $0)/config.json
+
+if [ ! -f $cfgfile ];then
   echo "未找到config.json文件"
   exit 1
 fi
@@ -149,7 +160,7 @@ if [ $# -gt 0 ];then
     exit 0
   fi
 
-  sed -i '/\/\//d' config.json
+  sed -i '/\/\//d' $cfgfile
 
   if ! type jq &>/dev/null;then
     if [ ! -f $(dirname $0)"/jq" ];then
@@ -160,9 +171,9 @@ if [ $# -gt 0 ];then
     export PATH=$(dirname $0):$PATH
   fi
 
-  # jq ".outbounds|length" config.json
-  if [[ $(jq -r ".outbounds[0].protocol" config.json) == "vmess" ]];then
-    outbound=$(jq ".outbounds[0]" config.json)
+  # jq ".outbounds|length" $cfgfile
+  if [[ $(jq -r ".outbounds[0].protocol" $cfgfile) == "vmess" ]];then
+    outbound=$(jq ".outbounds[0]" $cfgfile)
     ctag=$(echo $outbound | jq -r ".tag")
   else
     newob=true
@@ -180,7 +191,7 @@ if [ $# -gt 0 ];then
 
   if [ "$strategy" == "fast" ];then
     echo "[${ctag}]正在选择最优线路..."
-    caddr=$(jq -r ".outbounds[0].settings.vnext[0].address" config.json)
+    caddr=$(jq -r ".outbounds[0].settings.vnext[0].address" $cfgfile)
     if [ -n $caddr ];then
       minrtt=$(delay $caddr)
     fi
@@ -223,20 +234,21 @@ if [ $# -gt 0 ];then
   echo "[${ctag}]正在更新配置信息..."
   # 将outbound插入到outbounds第一个元素位置
   if [ $newob == true ];then
-    jq ".outbounds |=[$outbound]+." config.json > config.tmp && \mv config.tmp config.json
+    jq ".outbounds |=[$outbound]+." $cfgfile > config.tmp && \mv config.tmp $cfgfile
   else
-    jq ".outbounds[0]=$outbound" config.json > config.tmp && \mv config.tmp config.json
+    jq ".outbounds[0]=$outbound" $cfgfile > config.tmp && \mv config.tmp $cfgfile
   fi
 else
-  ctag=$(jq -r ".outbounds[0].tag" config.json)
+  ctag=$(jq -r ".outbounds[0].tag" $cfgfile)
 fi
 
-process=$(\ps aux | grep v2ray | grep -v grep)
+process=$(\ps aux | grep v2ray | grep -v grep | grep -v v2run)
 if [[ $process != "" ]];then
+  echo $process
   kill -9 $(echo $process | awk '{print $2}')
   echo "[${ctag}]正在重启v2ray服务..."
 else
   echo "[${ctag}]正在启动v2ray服务..."
 fi
 echo "================================================================="
-./v2ray --config config.json
+$(dirname $0)/v2ray --config $cfgfile

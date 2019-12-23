@@ -42,18 +42,18 @@
   ],
   "outbounds": [
     {
-      "tag": "proxy",
+      "tag": "极游B-HK(1.0)",
       "protocol": "vmess",
       "settings": {
         "vnext": [
           {
-            "address": "122.190.3.99",
-            "port": 80,
+            "address": "itunes.apple.com.ajax.microsoft.com.www.bing.com.hkt08.zhileshu.com",
+            "port": 443,
             "users": [
               {
                 "id": "071805EA-6DA9-B9EE-384F-75DDFA3975C8",
                 "alterId": 0,
-                "email": "t@t.tt",
+                "email": "",
                 "security": "auto"
               }
             ]
@@ -64,15 +64,18 @@
       },
       "streamSettings": {
         "network": "ws",
-        "security": null,
-        "tlsSettings": null,
+        "security": "tls",
+        "tlsSettings": {
+          "allowInsecure": true,
+          "serverName": "itunes.apple.com.ajax.microsoft.com.www.bing.com.hkt08.zhileshu.com"
+        },
         "tcpSettings": null,
         "kcpSettings": null,
         "wsSettings": {
           "connectionReuse": true,
           "path": null,
           "headers": {
-            "Host": "s-us.caipin.pro"
+            "Host": "itunes.apple.com.ajax.microsoft.com.www.bing.com.hkt08.zhileshu.com"
           }
         },
         "httpSettings": null,

@@ -1,0 +1,161 @@
+# server
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: xos
+  name: xos
+spec:
+  ports:
+  - name: default
+    port: 2333
+    protocol: TCP
+    targetPort: 2333
+    nodePort: 32222
+  selector:
+    app: xos
+  sessionAffinity: None
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xos
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: xos
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: xos
+    spec:
+      containers:
+      - image: xo
+        imagePullPolicy: Always
+        args:
+        - gofs
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 2
+          successThreshold: 1
+          tcpSocket:
+            port: 2333
+          timeoutSeconds: 2
+        name: xos
+        ports:
+        - containerPort: 2333
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 2
+          successThreshold: 2
+          tcpSocket:
+            port: 2333
+          timeoutSeconds: 2
+        resources: 
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {}
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+
+# client
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: xoc
+  name: xoc
+spec:
+  ports:
+  - name: default
+    port: 2334
+    protocol: TCP
+    targetPort: 2334
+  selector:
+    app: xoc
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xoc
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: xoc
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: xoc
+    spec:
+      containers:
+      - image: xo
+        imagePullPolicy: Always
+        args:
+        - tail
+        - -f
+        - /dev/null
+        name: xoc
+        ports:
+        - containerPort: 2334
+          name: http
+          protocol: TCP
+        resources: 
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {}
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
