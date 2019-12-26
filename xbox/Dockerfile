@@ -33,10 +33,11 @@ RUN set -ex \
     fio \
     fping \
     git \
+    highlight \
     httpie \
     htop \
     iftop \
-    iperf \
+    iperf3 \
     iproute2 \
     ipset \
     iptables \
@@ -45,6 +46,7 @@ RUN set -ex \
     ipvsadm \
     libc6-compat \
     liboping \
+    jq \
     mtr \
     mysql-client \
     net-snmp-tools \
@@ -65,6 +67,7 @@ RUN set -ex \
     postgresql-client \
     tree \
     samba \
+    samba-client \
     scapy \
     socat \
     sqlite \

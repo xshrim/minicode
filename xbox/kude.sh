@@ -190,7 +190,7 @@ cid=${cid#*docker://}
 cid=${cid:0:12}
 
 echo "====================================================================================================================================="
-echo "Namespace: "$ns "HostName: "$hname "HostAddr:"$haddr "PodName:"$cname "PodAddr:"$caddr "containerID:"$cid
+echo "Namespace: "$namespace "HostName: "$hname "HostAddr:"$haddr "PodName:"$cname "PodAddr:"$caddr "containerID:"$cid
 echo "====================================================================================================================================="
 
 if [ -z "$image" ];
