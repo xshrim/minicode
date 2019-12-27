@@ -18,6 +18,29 @@ spec:
   type: NodePort
 
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xossh
+  namespace: ingress-nginx
+data:
+  "2233": xshrim/xossh:2233
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xossh
+  namespace: xshrim
+spec:
+  selector:
+    app: xos
+  ports:
+    - port: 2233
+      targetPort: 22
+  type: LoadBalancer
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -42,7 +65,7 @@ spec:
       containers:
       - image: xo
         imagePullPolicy: Always
-        args:
+        command:
         - gofs
         livenessProbe:
           failureThreshold: 3
@@ -56,6 +79,9 @@ spec:
         ports:
         - containerPort: 2333
           name: http
+          protocol: TCP
+        - containerPort: 22
+          name: ssh
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
