@@ -22,30 +22,38 @@ RUN set -ex \
     curl \
     docker \
     dhcping \
+    dfc \
+    dos2unix \
     drill \
     etcd \
     etcd-ctl \
     ethtool \
     exa \
     expect \
+    fabric \
     file\
     figlet \
     fio \
     fping \
     git \
+    glances \
     highlight \
     httpie \
     htop \
+    libc6-compat \
+    liboping \
+    lua5.1 \
     iftop \
     iperf3 \
     iproute2 \
     ipset \
     iptables \
     iptraf-ng \
+    iptstate \
     iputils \
     ipvsadm \
-    libc6-compat \
-    liboping \
+    ioping \
+    iozone \
     jq \
     mtr \
     mysql-client \
@@ -53,25 +61,30 @@ RUN set -ex \
     netcat-openbsd \
     nftables \
     nfs-utils \
+    nethogs \
     nginx \
     ngrep \
     nmap \
     nmap-nping \
+    ntop \
+    nuttcp \
     openssl \
     openssh \
     openssh-client \
-    redis \
-    sshpass \
     py-crypto \
-    python3 \
     postgresql-client \
     tree \
+    redis \
+    rsync \
     samba \
     samba-client \
     scapy \
     socat \
     sqlite \
     strace \
+    sshpass \
+    speedtest \
+    speedtest-cli \
     tcpdump \
     tcptraceroute \
     util-linux \
@@ -80,7 +93,7 @@ RUN set -ex \
 
 #py2-virtualenv \
 # apparmor issue #14140 
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump && echo 'alias python="python3"' >> /etc/profile && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config && ssh-keygen -t rsa -P "" -f /etc/ssh/ssh_host_rsa_key && ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key && ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key && echo "root:root" | chpasswd
+RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump && echo 'alias iperf="iperf3"' >> /etc/profile && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config && ssh-keygen -t rsa -P "" -f /etc/ssh/ssh_host_rsa_key && ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key && ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key && echo "root:root" | chpasswd
 
 # Installing ctop - top-like container monitor
 #RUN wget https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64 -O /usr/local/bin/ctop && chmod +x /usr/local/bin/ctop

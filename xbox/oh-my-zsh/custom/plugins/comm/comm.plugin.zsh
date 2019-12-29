@@ -625,7 +625,7 @@ alias vi='vim'
 #   sudo chmod ug+s $(which fping)
 # fi
 
-type fping &>/dev/null && alias ping='fping -e'
+# type fping &>/dev/null && alias ping='fping -e'
 
 type pycp &>/dev/null && alias cp='pycp -g'
 
@@ -676,7 +676,6 @@ alias dpush='docker push'
 #alias jobs='jobs -l'
 #alias cp='rsync -avP --progress'
 #alias mv='rsync -avP --progress --remove-source-files'
-#alias ping='fping -e'
 #alias sudo='sudo env PATH=$PATH'
 #alias history='history -fi'
 
