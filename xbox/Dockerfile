@@ -73,6 +73,7 @@ RUN set -ex \
     openssh-client \
     py-crypto \
     postgresql-client \
+    qperf \
     tree \
     redis \
     rsync \
