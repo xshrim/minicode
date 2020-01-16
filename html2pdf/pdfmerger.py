@@ -11,6 +11,9 @@
    合并后的pdf文件的输出文件名：merged-out.pdf
    是否从pdf文件中导入书签的值：True
 '''
+
+# gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=merged.pdf $(ls .)
+
 import os, re, sys
 from functools import cmp_to_key
 from PyPDF2 import PdfFileReader, PdfFileWriter, PdfFileMerger
