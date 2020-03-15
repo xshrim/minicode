@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title> webssh</title>
+
+
+  <link href="/static/css/xterm.min.css" rel="stylesheet" type="text/css" />
+  <style>
+    body {
+      padding-bottom: 30px;
+    }
+
+    .terminal {
+      border: #000 solid 5px;
+      font-family: cursive;
+      font-size: 15px;
+    }
+
+    .reverse-video {
+      color: #000;
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="terms"></div>
+</body>
+
+<script src="/static/js/xterm.min.js"></script>
+<script src="/static/js/fit.min.js"></script>
+<script>
+  document.getElementById('terms').style.height = window.innerHeight + 'px';
+
+  var socket = new WebSocket('ws://' + window.location.host + '/ws/1');
+  //var socket = new WebSocket('ws://127.0.0.1:8080/ws/1');
+
+  socket.onopen = function () {
+    var term = new Terminal({ cursorBlink: true, cols: 250, rows: 35 });
+    term.open(document.getElementById('terms'));
+    // var fit = new window.FitAddon.FitAddon;
+    // Terminal.applyAddon(fit);
+    // term.fit();
+    // term.resize(200, 35)
+
+    term.on('data', function (data) {
+      console.log(data);
+      socket.send(JSON.stringify({ type: 'cmd', cmd: data }));
+    });
+
+    term.on('resize', size => {
+      socket.send(JSON.stringify({ type: 'resize', cols: size.cols, rows: size.rows }));
+    })
+
+    socket.onmessage = function (msg) {
+      console.log(msg);
+      console.log(msg.data);
+      term.write(msg.data);
+    };
+    socket.onerror = function (e) {
+      console.log(e);
+    };
+
+    socket.onclose = function (e) {
+      console.log(e);
+      term.destroy();
+    };
+  };
+
+</script>
+
+</html>

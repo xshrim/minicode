@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title> go webssh 例子</title>
+
+
+  <link href="/static/css/xterm.min.css" rel="stylesheet" type="text/css" />
+  <style>
+    body {
+      padding-bottom: 30px;
+    }
+
+    .terminal {
+      border: #000 solid 5px;
+      font-family: cursive;
+      font-size: 15px;
+    }
+
+    .reverse-video {
+      color: #000;
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="terms"></div>
+</body>
+
+<script src="/static/js/xterm.min.js"></script>
+<script>
+  var socket = new WebSocket('ws://' + window.location.host + '/ws/1');
+
+  socket.onopen = function () {
+
+    var term = new Terminal();
+    term.open(document.getElementById('terms'));
+
+    term.on('data', function (data) {
+      console.log(data);
+      socket.send(data);
+    });
+
+    socket.onmessage = function (msg) {
+      console.log(msg);
+      console.log(msg.data);
+      term.write(msg.data);
+    };
+    socket.onerror = function (e) {
+      console.log(e);
+    };
+
+    socket.onclose = function (e) {
+      console.log(e);
+      term.destroy();
+    };
+  };
+
+</script>
+
+</html>
