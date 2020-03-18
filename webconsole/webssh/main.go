@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/hequan2017/go-webssh/core"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/hequan2017/go-webssh/core"
 )
 
 func Cors() gin.HandlerFunc {
@@ -46,12 +47,12 @@ func Cors() gin.HandlerFunc {
 
 func main() {
 	r := gin.Default()
-    r.Static("/static", "./static")
-    r.LoadHTMLGlob("web/**/*.html")
+	r.Static("/static", "./static")
+	r.LoadHTMLGlob("web/**/*.html")
 	r.Use(Cors())
-    r.GET("/", func(c *gin.Context) {
-        c.HTML(http.StatusOK, "index.html", nil)
-    })
-	r.GET("/ws/:id", core.WsSsh)
-	_ = r.Run() // listen and serve on 0.0.0.0:8080
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+	r.GET("/ws/:info", core.WsSsh)
+	_ = r.Run(":2222") // listen and serve on 0.0.0.0:2222
 }

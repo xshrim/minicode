@@ -2,6 +2,8 @@ package core
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -9,6 +11,13 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
+
+type Info struct {
+	Ip     string `json:"ip"`
+	Port   string `json:"port"`
+	User   string `json:"user"`
+	Passwd string `json:"passwd"`
+}
 
 var upGrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -36,10 +45,22 @@ func WsSsh(c *gin.Context) {
 	//if handleError(c, err) {
 	//	return
 	//}
-	user := c.DefaultPostForm("user", "xshrim")
-	passwd := c.DefaultPostForm("passwd", " ")
-	ip := c.DefaultPostForm("ip", "127.0.0.1")
-	port := c.DefaultPostForm("port", "22")
+	var info Info
+	idata := c.Param("info")
+	cinfo, err := base64.StdEncoding.DecodeString(idata)
+	if handleError(c, err) {
+		return
+	}
+
+	err = json.Unmarshal(cinfo, &info)
+	if handleError(c, err) {
+		return
+	}
+
+	// user := c.DefaultPostForm("user", "xshrim")
+	// passwd := c.DefaultPostForm("passwd", " ")
+	// ip := c.DefaultPostForm("ip", "127.0.0.1")
+	// port := c.DefaultPostForm("port", "22")
 
 	cols, err := strconv.Atoi(c.DefaultQuery("cols", "120"))
 	if wshandleError(wsConn, err) {
@@ -58,7 +79,7 @@ func WsSsh(c *gin.Context) {
 	//	return
 	//}
 
-	client, err := NewSshClient(user, passwd, ip, port)
+	client, err := NewSshClient(info.User, info.Passwd, info.Ip, info.Port)
 	if wshandleError(wsConn, err) {
 		return
 	}

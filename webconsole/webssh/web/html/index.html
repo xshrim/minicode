@@ -4,8 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title> webssh</title>
-
-
+  <link rel="shortcut icon" href="static/img/logo.png">
   <link href="/static/css/xterm.min.css" rel="stylesheet" type="text/css" />
   <style>
     body {
@@ -23,53 +22,106 @@
       background: #f0f0f0;
     }
   </style>
+  <script src="/static/js/xterm.min.js"></script>
+  <script src="/static/js/fit.min.js"></script>
+  <script>
+    var socket;
+    function start(data) {
+      document.getElementById('terms').style.height = window.innerHeight + 'px';
+
+      socket = new WebSocket('ws://' + window.location.host + '/ws/' + data);
+      //var socket = new WebSocket('ws://127.0.0.1:8080/ws/1');
+
+      socket.onopen = function () {
+        var term = new Terminal({ cursorBlink: true, cols: 250, rows: 35 });
+        term.open(document.getElementById('terms'));
+        // var fit = new window.FitAddon.FitAddon;
+        // Terminal.applyAddon(fit);
+        // term.fit();
+        // term.resize(200, 35)
+
+        term.on('data', function (data) {
+          // console.log(data);
+          socket.send(JSON.stringify({ type: 'cmd', cmd: data }));
+        });
+
+        term.on('resize', size => {
+          socket.send(JSON.stringify({ type: 'resize', cols: size.cols, rows: size.rows }));
+        })
+
+        socket.onmessage = function (msg) {
+          console.log("<msg>:", msg);
+          console.log(msg.data);
+          term.write(msg.data);
+        };
+        socket.onerror = function (e) {
+          console.log("<error>:", e);
+        };
+
+        socket.onclose = function (e) {
+          console.log("<close>:", e);
+          term.destroy();
+        };
+      };
+    }
+
+    function conn() {
+      var ip = document.getElementById("ip").value;
+      var port = document.getElementById("port").value;
+      var user = document.getElementById("user").value;
+      var passwd = document.getElementById("passwd").value;
+
+      if (ip == "" || port == "" || user == "" || passwd == "") {
+        console.log("(ip, port, user, passwd) values are required!");
+        return
+      }
+
+      if (socket !== undefined && socket != null && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+        socket.close();
+      }
+
+      var info = {
+        ip: ip,
+        port: port,
+        user: user,
+        passwd: passwd
+      }
+
+      // 连接信息json化后进行base64
+      var data = btoa(JSON.stringify(info))
+      // console.log(data);
+      start(data);
+    }
+
+    function btnfunc() {
+      var btn = document.getElementById("connect");
+      btn.onclick = function () {
+        conn();
+      }
+    }
+
+    window.onload = function () {
+      btnfunc();
+      conn(); // 页面打开后自动进行默认连接
+    }
+  </script>
 </head>
 
 <body>
-
+  <div id="form">
+    <label>地址:</label>
+    <input id="ip" value="127.0.0.1" />
+    <label>端口:</label>
+    <input id="port" value="22" />
+    <label>用户:</label>
+    <input id="user" value="xshrim" />
+    <label>密码:</label>
+    <input id="passwd" value=" " />
+    <button id="connect">
+      连接
+    </button>
+  </div>
   <div id="terms"></div>
 </body>
-
-<script src="/static/js/xterm.min.js"></script>
-<script src="/static/js/fit.min.js"></script>
-<script>
-  document.getElementById('terms').style.height = window.innerHeight + 'px';
-
-  var socket = new WebSocket('ws://' + window.location.host + '/ws/1');
-  //var socket = new WebSocket('ws://127.0.0.1:8080/ws/1');
-
-  socket.onopen = function () {
-    var term = new Terminal({ cursorBlink: true, cols: 250, rows: 35 });
-    term.open(document.getElementById('terms'));
-    // var fit = new window.FitAddon.FitAddon;
-    // Terminal.applyAddon(fit);
-    // term.fit();
-    // term.resize(200, 35)
-
-    term.on('data', function (data) {
-      console.log(data);
-      socket.send(JSON.stringify({ type: 'cmd', cmd: data }));
-    });
-
-    term.on('resize', size => {
-      socket.send(JSON.stringify({ type: 'resize', cols: size.cols, rows: size.rows }));
-    })
-
-    socket.onmessage = function (msg) {
-      console.log(msg);
-      console.log(msg.data);
-      term.write(msg.data);
-    };
-    socket.onerror = function (e) {
-      console.log(e);
-    };
-
-    socket.onclose = function (e) {
-      console.log(e);
-      term.destroy();
-    };
-  };
-
-</script>
 
 </html>
