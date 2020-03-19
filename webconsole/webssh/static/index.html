@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>webssh</title>
+  <link rel="shortcut icon" href="static/img/logo.png">
+  <link href="/static/css/xterm.min.css" rel="stylesheet" type="text/css" />
+  <style>
+    body {
+      padding-bottom: 30px;
+    }
+
+    .terminal {
+      border: #000 solid 5px;
+      font-family: cursive;
+      font-size: 15px;
+    }
+
+    .reverse-video {
+      color: #000;
+      background: #f0f0f0;
+    }
+
+    /* 渐变 color1 - color2 - color1 */
+    hr.style-one {
+      border: 0;
+      height: 1px;
+      background: #333;
+      background-image: linear-gradient(to right, #ccc, #333, #ccc);
+    }
+
+    /* 透明渐变 - color - transparent */
+    hr.style-two {
+      border: 0;
+      height: 1px;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+    }
+
+    /* 双线 */
+    hr.style-three {
+      border: 0;
+      border-bottom: 1px dashed #ccc;
+      background: #999;
+    }
+
+    /* 单线阴影 */
+    hr.style-four {
+      height: 12px;
+      border: 0;
+      box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 云朵状 */
+    hr.style-five {
+      border: 0;
+      height: 0;
+      /* Firefox... */
+      box-shadow: 0 0 10px 1px black;
+    }
+
+    hr.style-five:after {
+      /* Not really supposed to work, but does */
+      content: "\00a0";
+      /* Prevent margin collapse */
+    }
+
+    /* 内嵌 */
+    hr.style-six {
+      border: 0;
+      height: 0;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* 晕状 */
+    hr.style-seven {
+      height: 30px;
+      border-style: solid;
+      border-color: black;
+      border-width: 1px 0 0 0;
+      border-radius: 20px;
+    }
+
+    hr.style-seven:before {
+      display: block;
+      content: "";
+      height: 30px;
+      margin-top: -31px;
+      border-style: solid;
+      border-color: black;
+      border-width: 0 0 1px 0;
+      border-radius: 20px;
+    }
+
+    /* 文字插入式 */
+    hr.style-eight {
+      padding: 0;
+      border: none;
+      border-top: medium double #333;
+      color: #333;
+      text-align: center;
+    }
+
+    hr.style-eight:after {
+      content: "gb";
+      display: inline-block;
+      position: relative;
+      top: -0.7em;
+      font-size: 1.5em;
+      padding: 0 0.25em;
+      background: white;
+    }
+
+    /* 分隔线统一样式 */
+    hr {
+      margin: 5px 0;
+    }
+
+    img {
+      height: 17px;
+      width: 17px;
+      vertical-align: middle;
+      margin-right: 0px;
+    }
+
+    label {
+      /* display: block; */
+      margin: 0px 2px 5px;
+      color: #5E5E5E;
+    }
+
+    label>span {
+      float: left;
+      margin-top: 10px;
+      color: #5E5E5E;
+    }
+
+    #msg {
+      width: 100px;
+      font: normal 12px/12px Arial, Helvetica, sans-serif;
+      margin-left: 30px;
+      color: rgb(240, 110, 23);
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -o-text-overflow: ellipsis;
+      white-space: nowrap;
+
+      /* display: block; */
+
+    }
+
+    button {
+      width: 60px;
+      height: 25px;
+      background-color: #9DC45F;
+      border-radius: 3px;
+      -webkit-border-radius: 5px;
+      -moz-border-border-radius: 5px;
+      border: none;
+      /* padding: 10px 25px 10px 25px; */
+      color: #FFF;
+      font: bold 14px/14px Arial, Helvetica, sans-serif;
+      text-shadow: 1px 1px 1px #949494;
+    }
+
+    button:hover {
+      background-color: #80A24A;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    textarea,
+    select {
+      color: #555;
+      height: 25px;
+      width: 110px;
+      line-height: 15px;
+      /* width: 100%; */
+      padding: 0px 0px 0px 10px;
+      margin-top: 2px;
+      margin-right: 20px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      /* border: 1px solid #E5E5E5; */
+      background: #FBFBFB;
+      outline: 0;
+      font: bold 14px/14px Arial, Helvetica, sans-serif;
+      /* -webkit-box-shadow: inset 1px 1px 2px rgba(238, 238, 238, 0.2);
+      box-shadow: inset 1px 1px 2px rgba(238, 238, 238, 0.2); */
+      -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+      -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+      -o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+      transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+    }
+
+    input:focus {
+      border-color: #66afe9;
+      outline: 0;
+      -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6)
+    }
+  </style>
+  <script src="/static/js/xterm.min.js"></script>
+  <script src="/static/js/fit.min.js"></script>
+  <script>
+    var socket;
+    function start(data) {
+      document.getElementById('terms').style.height = window.innerHeight + 'px';
+
+      socket = new WebSocket('ws://' + window.location.host + '/ws/' + data);
+
+      socket.onopen = function () {
+        var term = new Terminal({ cursorBlink: true, cols: 250, rows: 35 });
+        term.open(document.getElementById('terms'));
+        // var fit = new window.FitAddon.FitAddon;
+        // Terminal.applyAddon(fit);
+        // term.fit();
+        // term.resize(200, 35)
+
+        term.on('data', function (data) {
+          // console.log(data);
+          socket.send(JSON.stringify({ type: 'cmd', cmd: data }));
+        });
+
+        term.on('resize', size => {
+          socket.send(JSON.stringify({ type: 'resize', cols: size.cols, rows: size.rows }));
+        })
+
+        socket.onmessage = function (msg) {
+          // console.log("<msg>:", msg);
+          term.write(msg.data);
+        };
+        socket.onerror = function (e) {
+          // console.log("<error>:", e);
+          var msg = document.getElementById("msg");
+          msg.innerText = e.reason;
+        };
+
+        socket.onclose = function (e) {
+          // console.log("<close>:", e);
+          var msg = document.getElementById("msg");
+          msg.innerText = e.reason;
+          term.destroy();
+        };
+      };
+    }
+
+    function disconn() {
+      if (socket !== undefined && socket != null && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+        socket.close();
+      }
+    }
+
+    function conn() {
+      var host = document.getElementById("host").value;
+      var port = document.getElementById("port").value;
+      var user = document.getElementById("user").value;
+      var passwd = document.getElementById("passwd").value;
+
+      if (host == "" || port == "" || user == "" || passwd == "") {
+        console.log("(host, port, user, passwd) values are required!");
+        return
+      }
+
+      var info = {
+        host: host,
+        port: port,
+        user: user,
+        passwd: passwd
+      }
+
+      // 连接信息json化后进行base64
+      var data = btoa(JSON.stringify(info))
+      // console.log(data);
+      start(data);
+    }
+
+    function btnfunc() {
+      var cbtn = document.getElementById("connect");
+      cbtn.onclick = function () {
+        disconn();
+        conn();
+      }
+
+      var dbtn = document.getElementById("disconnect");
+      dbtn.onclick = function () {
+        disconn();
+      }
+    }
+
+    window.onload = function () {
+      btnfunc();
+      conn(); // 页面打开后自动进行默认连接
+    }
+  </script>
+</head>
+
+<body>
+  <div id="form">
+    <img src="static/img/host.png"></img>
+    <label>地址:</label>
+    <input id="host" type="text" value="127.0.0.1" />
+    <img src="static/img/port.png"></img>
+    <label>端口:</label>
+    <input id="port" type="text" value="22" />
+    <img src="static/img/user.png"></img>
+    <label>用户:</label>
+    <input id="user" type="text" value="root" />
+    <img src="static/img/key.png"></img>
+    <label>密码:</label>
+    <input id="passwd" type="password" value="admin" />
+    <button id="connect">
+      连接
+    </button>
+    <button id="disconnect">
+      断开
+    </button>
+    <span id="msg"></span>
+  </div>
+  <hr class="style-six">
+  <div id="terms"></div>
+</body>
+
+</html>

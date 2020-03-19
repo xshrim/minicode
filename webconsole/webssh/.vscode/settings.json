@@ -1,3 +1,9 @@
 {
-  "go.inferGopath": false
+  "go.inferGopath": false,
+  "spellright.language": [],
+  "spellright.documentTypes": [
+    "markdown",
+    "latex",
+    "plaintext"
+  ]
 }

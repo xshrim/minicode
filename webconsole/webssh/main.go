@@ -48,7 +48,8 @@ func Cors() gin.HandlerFunc {
 func main() {
 	r := gin.Default()
 	r.Static("/static", "./static")
-	r.LoadHTMLGlob("web/**/*.html")
+	// r.LoadHTMLGlob("web/**/*.html")
+	r.LoadHTMLGlob("static/*.html")
 	r.Use(Cors())
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)

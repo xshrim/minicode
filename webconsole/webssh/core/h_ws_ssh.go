@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -13,7 +14,7 @@ import (
 )
 
 type Info struct {
-	Ip     string `json:"ip"`
+	Host   string `json:"host"`
 	Port   string `json:"port"`
 	User   string `json:"user"`
 	Passwd string `json:"passwd"`
@@ -37,6 +38,16 @@ func WsSsh(c *gin.Context) {
 	if handleError(c, err) {
 		return
 	}
+	defer func() {
+		if err := recover(); err != nil {
+			// 这里可以对异常进行一些处理和捕获
+			// wsConn.Close()
+			if handleError(c, fmt.Errorf("%v", err)) {
+				return
+			}
+		}
+	}()
+
 	defer wsConn.Close()
 
 	//cIp := c.ClientIP()
@@ -79,7 +90,7 @@ func WsSsh(c *gin.Context) {
 	//	return
 	//}
 
-	client, err := NewSshClient(info.User, info.Passwd, info.Ip, info.Port)
+	client, err := NewSshClient(info.User, info.Passwd, info.Host, info.Port)
 	if wshandleError(wsConn, err) {
 		return
 	}
