@@ -46,6 +46,8 @@ spec:
               value: root
             - name: PASSWD
               value: abcde@123
+            - name: SSL
+              value: "true"
           ports:
             - containerPort: 2222
               protocol: TCP
