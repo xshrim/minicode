@@ -246,6 +246,10 @@
           msg.innerText = e.reason;
           term.destroy();
         };
+
+        socket.onpong = function (e) {
+          console.log('[pingpong] response took', (new Date().getTime() - lastPing) + 'ms');
+        }
       };
     }
 

@@ -182,6 +182,29 @@ func (ssConn *SshConn) SendComboOutput(wsConn *websocket.Conn, exitCh chan bool)
 	}
 }
 
+// 保证中间代理存在时websocket链接不会自动断开
+// (另一种方式是设置nginx的proxy_read_timeout, proxy_connect_timeout, proxy_send_timeout自动断开超时时间)
+func (ssConn *SshConn) KeepAlive(wsConn *websocket.Conn, exitCh chan bool) {
+	//tells other go routine quit
+	defer setQuit(exitCh)
+
+	//every 5s write pingmessage bytes to keep websocket alive
+	tick := time.NewTicker(time.Second * time.Duration(10))
+	//for range time.Tick(120 * time.Millisecond){}
+	defer tick.Stop()
+	for {
+		select {
+		case <-tick.C:
+			if err := wsConn.WriteMessage(websocket.PingMessage, []byte("")); err != nil {
+				logrus.WithError(err).Error("ssh sending pingmessage to webSocket failed")
+				return
+			}
+		case <-exitCh:
+			return
+		}
+	}
+}
+
 func (ssConn *SshConn) SessionWait(quitChan chan bool) {
 	if err := ssConn.Session.Wait(); err != nil {
 		logrus.WithError(err).Error("ssh session wait failed")
