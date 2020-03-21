@@ -46,6 +46,8 @@ spec:
               value: root
             - name: PASSWD
               value: abcde@123
+            - name: TIMEOUT
+              value: "600"
             - name: SSL
               value: "true"
           ports:

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,9 +15,14 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func NewSshClient(user, passwd, ip, port string) (*ssh.Client, error) {
+func NewSshClient(user, passwd, ip, port, timeout string) (*ssh.Client, error) {
+	tt, err := strconv.Atoi(timeout)
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ssh.ClientConfig{
-		Timeout:         time.Second * 5,
+		Timeout:         time.Second * time.Duration(tt),
 		User:            user,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), //这个可以， 但是不够安全
 		//HostKeyCallback: hostKeyCallBackFunc(h.Host),

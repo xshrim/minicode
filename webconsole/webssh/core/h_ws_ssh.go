@@ -14,10 +14,11 @@ import (
 )
 
 type Info struct {
-	Host   string `json:"host"`
-	Port   string `json:"port"`
-	User   string `json:"user"`
-	Passwd string `json:"passwd"`
+	Host    string `json:"host"`
+	Port    string `json:"port"`
+	User    string `json:"user"`
+	Passwd  string `json:"passwd"`
+	Timeout string `json:"timeout"`
 }
 
 var upGrader = websocket.Upgrader{
@@ -81,6 +82,7 @@ func WsSsh(c *gin.Context) {
 	if wshandleError(wsConn, err) {
 		return
 	}
+
 	//idx, err := parseParamID(c)
 	//if wshandleError(wsConn, err) {
 	//	return
@@ -90,7 +92,7 @@ func WsSsh(c *gin.Context) {
 	//	return
 	//}
 
-	client, err := NewSshClient(info.User, info.Passwd, info.Host, info.Port)
+	client, err := NewSshClient(info.User, info.Passwd, info.Host, info.Port, info.Timeout)
 	if wshandleError(wsConn, err) {
 		return
 	}

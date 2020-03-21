@@ -18,6 +18,10 @@ if [ "$PASSWD" ]; then
   sed -i "s/admin/$PASSWD/g" /root/static/index.html
 fi
 
+if [ "$TIMEOUT" ]; then
+  sed -i "s/300/$TIMEOUT/g" /root/static/index.html
+fi
+
 if [ "$SSL" == "true" ]; then
   sed -i "s#ws://#wss://#g" /root/static/index.html
 fi
