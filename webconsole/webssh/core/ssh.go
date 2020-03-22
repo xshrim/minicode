@@ -103,7 +103,7 @@ func runCommand(client *ssh.Client, command string) (stdout string, err error) {
 		//log.Print(err)
 		return
 	}
-	stdout = string(buf.Bytes())
+	stdout = buf.String()
 
 	return
 }

@@ -205,17 +205,18 @@
     }
   </style>
   <script src="/static/js/xterm.min.js"></script>
-  <script src="/static/js/fit.min.js"></script>
+  <!-- <script src="/static/js/fit.min.js"></script> -->
   <script>
     var socket;
     function start(data) {
-      document.getElementById('terms').style.height = window.innerHeight + 'px';
+      var termdiv = document.getElementById('terms');
+      termdiv.style.height = window.innerHeight + 'px';
 
       socket = new WebSocket('ws://' + window.location.host + '/ws/' + data);
 
       socket.onopen = function () {
-        var term = new Terminal({ cursorBlink: true, cols: 250, rows: 35 });
-        term.open(document.getElementById('terms'));
+        var term = new Terminal({ cursorBlink: true, cols: 320, rows: Math.floor((window.innerHeight - 30) / 20) });
+        term.open(termdiv);
         // var fit = new window.FitAddon.FitAddon;
         // Terminal.applyAddon(fit);
         // term.fit();
@@ -297,8 +298,20 @@
       }
     }
 
+    // function keyfunc() {
+    //   document.οnkeyup = function (e) {	//对整个页面文档监听
+    //     var keyNum = window.event ? e.keyCode : e.which;		//获取被按下的键值
+    //     //判断如果用户按下了回车键（keycody=13）
+    //     if (keyNum == 13) {
+    //       disconn();
+    //       conn();
+    //     }
+    //   }
+    // }
+
     window.onload = function () {
       btnfunc();
+      // keyfunc();
       conn(); // 页面打开后自动进行默认连接
     }
   </script>

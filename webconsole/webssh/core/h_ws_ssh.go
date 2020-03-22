@@ -112,7 +112,6 @@ func WsSsh(c *gin.Context) {
 	// most messages are ssh output, not webSocket input
 	go ssConn.ReceiveWsMsg(wsConn, logBuff, quitChan)
 	go ssConn.SendComboOutput(wsConn, quitChan)
-	go ssConn.KeepAlive(wsConn, quitChan)
 	go ssConn.SessionWait(quitChan)
 
 	<-quitChan
