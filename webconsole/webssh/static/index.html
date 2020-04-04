@@ -7,15 +7,32 @@
   <link rel="shortcut icon" href="static/img/logo.png">
   <link href="/static/css/xterm.min.css" rel="stylesheet" type="text/css" />
   <style>
-    body {
+    /* body {
       padding-bottom: 30px;
+    } */
+
+    * {
+      -webkit-text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+      -moz-text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+      -o-text-shadow: 0.03em 0.03em 0.03em #999999 !important;
+      text-shadow: 0.03em 0.03em 0.03em #999999 !important;
     }
 
     .terminal {
       border: #000 solid 5px;
-      font-family: cursive;
-      font-size: 15px;
+      /* font-family: arial;
+      font-size: 15px; */
+      font: 15px/15px "文泉译微米黑", "微软雅黑", Arial, Helvetica, sans-serif;
     }
+
+    .terminal span {
+      word-wrap: break-word;
+      word-break: break-all;
+    }
+
+    /* .terminal .xterm-rows div {
+      white-space: wrap !important;
+    } */
 
     .reverse-video {
       color: #000;
@@ -205,22 +222,76 @@
     }
   </style>
   <script src="/static/js/xterm.min.js"></script>
-  <!-- <script src="/static/js/fit.min.js"></script> -->
+  <script src="/static/js/fit.min.js"></script>
   <script>
+    // import * as fit from "/static/js/fit.min.js";
     var socket;
-    function start(data) {
-      var termdiv = document.getElementById('terms');
-      termdiv.style.height = window.innerHeight + 'px';
+    var term;
+    var termdiv;
 
-      socket = new WebSocket('ws://' + window.location.host + '/ws/' + data);
+    function trimStr(str) {
+      // str = str.replace(/\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u0008|\u0009|\u000a|\u000b|\u000c|\u000d|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001b|\u001c|\u001d|\u001e|\u001f/g, "");
+      return str.replace(/(^\s*)|(\s*$)/g, "");
+    }
+
+    function css(element, property) {
+      return window.getComputedStyle(element, null).getPropertyValue(property);
+    }
+
+    function getFontInfo(element) {
+      size = css(termdiv, 'font-size');
+      family = css(termdiv, 'font-family');
+      weight = css(termdiv, 'font-weight');
+      return weight + " " + size + " " + family;
+    }
+
+    function getTextWidth(text, font) {
+      // re-use canvas object for better performance
+      var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+      var context = canvas.getContext("2d");
+      context.font = font;
+      var metrics = context.measureText(text);
+      return metrics.width;
+    }
+
+    function getLineHeight(element) {
+      var lh = css(element, "line-height");
+      if (lh == "normal") {
+        lh = 20;
+      }
+      return parseInt(lh);
+    }
+
+    function start(info) {
+      termdiv = document.getElementById('terms');
+      //termdiv.style.width = (window.innerWidth - 30) + 'px';
+      //termdiv.style.height = (window.innerHeight - 30) + 'px';
+
+      // textWidth = Math.ceil(getTextWidth("h", getFontInfo(terminal)));
+      // lineHeight = Math.ceil(getLineHeight(terminal));
+
+      // info["cols"] = cols;
+      // info["rows"] = rows;
+
+      // 连接信息json化后进行base64
+      socket = new WebSocket('ws://' + window.location.host + '/ws/' + btoa(JSON.stringify(info)));
 
       socket.onopen = function () {
-        var term = new Terminal({ cursorBlink: true, cols: 320, rows: Math.floor((window.innerHeight - 30) / 20) });
+        term = new Terminal({ cursorBlink: true, tabStopWidth: 4, screenKeys: true });
         term.open(termdiv);
+        //term.fit()
+        // const { cols, rows } = term.proposeGeometry();
+        // const { offsetWidth, offsetHeight } = term.element;
+
+        // charWidth = Math.ceil(term.element.offsetWidth / 80);
+        // charHeight = Math.ceil(term.element.offsetHeight / 30);
+        // rendererType: "dom", fontSize: 14, 
         // var fit = new window.FitAddon.FitAddon;
         // Terminal.applyAddon(fit);
         // term.fit();
-        // term.resize(200, 35)
+
+        // var cols = Math.ceil((window.innerWidth - 30) / charWidth)
+        // var rows = Math.ceil(window.innerHeight / charHeight)
 
         term.on('data', function (data) {
           // console.log(data);
@@ -229,7 +300,21 @@
 
         term.on('resize', size => {
           socket.send(JSON.stringify({ type: 'resize', cols: size.cols, rows: size.rows }));
-        })
+        });
+
+        term.on("selection", function () {
+          if (term.hasSelection()) {
+            this.copy = term.getSelection();
+            //alert(this.copy);
+          }
+        });
+
+        term.attachCustomKeyEventHandler(function (ev) {
+          //粘贴 ctrl+v
+          if (ev.keyCode == 86 && ev.ctrlKey) {
+            websocket.send(new TextEncoder().encode("\x00" + this.copy));
+          }
+        });
 
         socket.onmessage = function (msg) {
           // console.log("<msg>:", msg);
@@ -251,6 +336,10 @@
         socket.onpong = function (e) {
           console.log('[pingpong] response took', (new Date().getTime() - lastPing) + 'ms');
         }
+
+        var cols = Math.ceil(window.innerWidth / 9) - 8;
+        var rows = Math.ceil((window.innerHeight - 80) / 15);
+        term.resize(cols, rows);
       };
     }
 
@@ -279,10 +368,7 @@
         timeout: "300"
       }
 
-      // 连接信息json化后进行base64
-      var data = btoa(JSON.stringify(info))
-      // console.log(data);
-      start(data);
+      start(info);
     }
 
     function btnfunc() {
@@ -313,6 +399,15 @@
       btnfunc();
       // keyfunc();
       conn(); // 页面打开后自动进行默认连接
+    }
+
+    window.onresize = function () {
+      //termdiv.style.width = (window.innerWidth - 30) + 'px';
+      //termdiv.style.height = (window.innerHeight - 80) + 'px';
+
+      var cols = Math.ceil(window.innerWidth / 9) - 8;
+      var rows = Math.ceil((window.innerHeight - 80) / 15);
+      term.resize(cols, rows);
     }
   </script>
 </head>
