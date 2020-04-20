@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>OAuth API</title>
+  <link rel="shortcut icon" href="/ido/static/img/logo.png">
+  <link href="/ido/static/css/custom.css" rel="stylesheet" type="text/css" />
+  <style>
+
+  </style>
+  <script src="/ido/static/js/custom.js"></script>
+  <script>
+
+  </script>
+</head>
+
+<body>
+  <!-- TODO: 页面重新设计 -->
+  <div id="umodal" class="modal">
+    <input id="user" type="text" value="" placeholder="用户名" />
+  </div>
+
+  <div id="box">
+    <div id="head">
+      <ul>
+        <li class="working" onclick="tab(this)"><a href="#">应用授权</a></li>
+        <li onclick="tab(this)"><a href="#">关联同步</a></li>
+        <li onclick="tab(this)"><a href="#">API调试</a></li>
+      </ul>
+    </div>
+    <div id="content">
+      <div>
+        <div id="authdiv">
+          <label id="serv" title="单击注册应用&#xA;重定向URI: http://localhost:8888/ido/redirect">应用:</label>
+          <select id="app">
+            <option value="gitlab" data-apidoc="https://docs.gitlab.com/ce/api/issues.html"
+              data-regapp="http://gitlab.ebcpaas.com/profile/applications" data-url="http://gitlab.ebcpaas.com/oauth"
+              data-client="43f144e7d75396712cbc1b25475cf17d657851a93c569af347b9e07eaa47b4d5" data-scope="api"
+              data-secret="6d1d39a992ba9ea4de9f2df9ae4e5b600f4acd241aa54485debf2b64b4f13855">
+              GitLab</option>
+            <option value="mstodo"
+              data-apidoc="https://docs.microsoft.com/en-us/graph/api/resources/outlooktask?view=graph-rest-beta"
+              data-regapp="https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps"
+              data-url="https://login.microsoftonline.com/common/oauth2/v2.0"
+              data-client="6f1be4d1-11ab-4226-a6fe-49fa6888127d" data-scope="offline_access tasks.readwrite.shared"
+              data-secret="z=oo0uYrz0ENf?ebuLWJj:B3z5aZ@mfG">MsTodo</option>
+          </select>
+          <label>编号:</label>
+          <input id="client" type="text" value="" />
+          <label>权限:</label>
+          <input id="scope" type="text" value="" />
+          <label>凭证:</label>
+          <input id="secret" type="password" value="" />
+          <button id="auth">
+            授权
+          </button>
+          <hr class=" style-six">
+          <div>
+            <i>TODO: 展示已授权应用</i>
+          </div>
+        </div>
+
+      </div>
+      <div class="hide">
+        <button id="link">提交</button>
+        <hr class=" style-six">
+        <div id="flowdiv">
+          <textarea id="flow"></textarea>
+        </div>
+      </div>
+      <div class="hide">
+        <div id="apidiv">
+          <!-- <label id="req" title="浏览官方API文档">请求:</label> -->
+          <span class="reqspan">
+            <select id="reqapp">
+              <option value="gitlab">GitLab</option>
+              <option value="mstodo">MsTodo</option>
+            </select>
+            <select id="reqmethod">
+              <option value="get">GET</option>
+              <option value="post">POST</option>
+              <option value="put">PUT</option>
+              <option value="patch">PATCH</option>
+              <option value="delete">DELETE</option>
+            </select>
+            <input type="text" id="requrl" placeholder="请求地址" />
+            <span>
+              <image id="loading" src="/ido/static/img/loading.gif"></image>
+            </span>
+            <span id="extend" title="添加请求体">
+              <image src="/ido/static/img/add.png"></image>
+            </span>
+          </span>
+          <!-- <input id="request" type="text" value="" /> -->
+          <button id="send">
+            发送
+          </button>
+          <hr class=" style-six">
+          <div id="result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div id="rmodal" class="modal">
+    <textarea id="reqbody" placeholder="请求体"></textarea>
+  </div>
+
+</body>
+
+</html>

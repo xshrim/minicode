@@ -1,0 +1,50 @@
+@token1 = Bearer EwBgA8l6BAAUO9chh8cJscQLmU+LSWpbnr0vmwwAAWRSVzgQmxi+3YvyyQzSXgPpeGmDMc94Qnnq1Af/wCa7kvWCo6C8RhCYqj7+F0omP8n79i1TekWyD+c8b2aNTEmya6VAlMGwFefkAsEh9Ft+r7oRmiS7F9nR9sdEonwuG5s636V+PyKIgDjy15zaghkIYbqd5Etc+pIpDAqWewAOHYRZp7K5MNyCr+EKnen19lWkH+4fit76FtM2LqQd4ZGbS7CImrs7AXdbQoWyXrvuyycuE/AHdY8NjT+pe7CqeCUvo4s3Iyasm36+/6z1QGI6T8QAHW7/EsoJDjaje+RtvsQGwuGMjXYZmAylXPSLGCvI5tQaxk5NVIGPBiMw53ADZgAACJEl6Bvt16RIMAIRMcWzZwsOpu4Xx/X27/8Ttjkjq8BysMu3GVQt/P2N4Dp5Mdzn1qq4AfRPQbTf4DlhRqwGcIvXCNG0aC0zdtw6DMhHRBWs0pyN2haggzLCxHtX7hcJFje42H4FwQgxzYXEnmkcIm/Mzs5hjfKq/9oYe+7mvdt4wxngw4rd2fACrGO/ZpFk10exqLyh9z/9GvaJhWtpmrKyD53ysNC8DgjPb9hYtbSnUyFuFLz2bYPiK040U7WaK7FFWsaE26nE3lChw7M9RxwxQnS3Cf1W2Vph685RpS74QAibAMIiDMgXI3Jub0yvySmjK72VCVTnkuljaOxB706gkHtdLipDSyF6v26cwS8V7sgGmFozkfRUg+HodvzbtkU6UYcwh5BHEMggZ9ps09rYPFwL1x72yKM9mPrqUUjTSxjVDgOpfFy4dw+7VgZxt6HYrF672elPjQg7UHmipJ/cMoWy+cKYyLyI/+s6hj2IAnnwnbngl+SRGXt9trr4p9btsFIzFVOy6nDlxc8257WAWt7/S3xFGvNWdi24kSfplVH4fE1c+qkZ6VZRpQaDNLSDQqlqpq14hEW6dFCWQDbXPDHCWddX8X71+FXf8DrGLKvUh77hC6tNEAczAPtNixsW6MQ2tZihOKRZh5qkZY/UmgAuYMDvo3AVQTijGO92OiSv8cCc3KXJdOGzaDlJBb2oqYjfeaGJCgMhOQB9wMkTYwKmQv9fpi/v9OiQyprLzOsPZddZfBOSdmoC
+@token2 = Bearer 454ccd2050941cbe1cccf0b78684614bf5782d66ea68c2663a43ff1935facd55
+
+GET https://graph.microsoft.com/beta/me/outlook/taskFolders
+Authorization: {{token1}}
+
+###
+
+POST https://graph.microsoft.com/beta/me/outlook/tasks
+Prefer: outlook.timezone="Pacific Standard Time"
+Content-type: application/json
+Content-length: 276
+Authorization: {{token1}}
+
+{
+  "subject": "Shop for children's weekend",
+  "startDateTime": {
+      "dateTime": "2016-05-03T09:00:00",
+      "timeZone": "Eastern Standard Time"
+  },
+  "dueDateTime":  {
+      "dateTime": "2016-05-05T16:00:00",
+      "timeZone": "Eastern Standard Time"
+  }
+}
+
+###
+
+
+GET https://graph.microsoft.com/beta/me/outlook/taskFolders/AQMkADAwATM3ZmYAZS1kODZjLWIyYmUtMDACLTAwCgAuAAADdvFsCNQw-UeXoYYu0hDVSQEAGilIVJVqXEiBEWJxE7P9-wAAAgESAAAA/tasks
+Authorization: {{token1}}
+
+###
+
+GET http://gitlab.ebcpaas.com/api/v4/groups/ebcpaas/issues?author_username=xshrim
+Content-Type: application/json
+Authorization: Bearer b772fef9309659bd167caad715d35aa782b8802d666fec7c9332cb514a274f94
+
+###
+
+GET http://gitlab.ebcpaas.com/api/v4/users/2/events?target_type=issue
+Content-Type: application/json
+Private-Token: rNNA9nEP92dvziPBsw43
+//Authorization: Bearer b772fef9309659bd167caad715d35aa782b8802d666fec7c9332cb514a274f94
+
+###
+
+GET http://gitlab.ebcpaas.com/api/v4/events?target_type=issue
+Content-Type: application/json
+Authorization: Bearer f3fecc819d17d8eba8fd16b360e34222db00bab4a304107173ada421a3124557
