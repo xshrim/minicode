@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqlconf
+  namespace: baas
+  labels:
+    app: baas
+    role: mysqlconf
+data:
+  mysql-1.cnf: |
+    [mysqld]
+    server_id = 1
+    log-bin= mysql-bin
+
+    replicate-ignore-db=mysql
+    replicate-ignore-db=sys
+    replicate-ignore-db=information_schema
+    replicate-ignore-db=performance_schema
+
+    read-only=0
+    relay_log=mysql-relay-bin
+    log-slave-updates=on
+    auto-increment-offset=1
+    auto-increment-increment=2
+
+    !includedir /etc/mysql/conf.d/
+  mysql-2.cnf: |
+    [mysqld]
+    server_id = 2
+    log-bin= mysql-bin
+
+    replicate-ignore-db=mysql
+    replicate-ignore-db=sys
+    replicate-ignore-db=information_schema
+    replicate-ignore-db=performance_schema
+
+    read-only=0
+    relay_log=mysql-relay-bin
+    log-slave-updates=on
+    auto-increment-offset=2
+    auto-increment-increment=2
+
+    !includedir /etc/mysql/conf.d/

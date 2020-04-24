@@ -1,0 +1,305 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-scripts
+  namespace: mysql-ha
+data:
+  common.sh: |
+    #!/bin/bash
+    update_data() {
+      local svc=${HOSTNAME%-*}
+      local token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      local ns=${POD_NAMESPACE}
+      local url=https://${KUBERNETES_SERVICE_HOST}/apis/apps/v1/namespaces/${ns}/statefulsets/${svc}
+      curl -kfsSL -H "Authorization: Bearer ${token}" ${url} > /ha-info/state.json
+    }
+    get_data() {
+      if [ ! -f /ha-info/state.json ]; then
+        return
+      fi
+      cat /ha-info/state.json
+    }
+    get_replicas() {
+      get_data | grep '"replicas":' | head -n 1 | awk '{print $2}' | tr -d ","
+    }
+    get_ready_replicas() {
+      get_data | grep '"readyReplicas":' | awk '{print $2}' | tr -d ","
+    }
+    get_current_replicas() {
+      get_data | grep '"currentReplicas":' | awk '{print $2}' | tr -d ","
+    }
+    sync_done() {
+      echo "Sync has been done."
+      # Infinite blocking
+      while true; do
+        sleep 3600
+      done
+    }
+  init-cluster.sh: |
+    #!/bin/sh
+    if [[ -f /var/lib/mysql/CLUSTER_WAS_INIT ]]; then
+      exit 0
+    fi
+    echo Initialize cluster configuration...
+    source /scripts/common.sh
+    SERVER_ID=$(hostname | grep -oE '[^-]+$')
+    cat > /etc/mysql/conf.d/master-to-master.cnf <<EOF
+    [mysql]
+    no-auto-rehash
+    [mysqld]
+    skip-host-cache
+    skip-name-resolve
+    server_id=1${SERVER_ID}
+    log-bin=mysql-bin
+    auto_increment_increment=2
+    auto_increment_offset=$((${SERVER_ID}+1))
+    EOF
+    echo Initialize cluster configuration successful.
+  sync-ha.sh: |
+    #!/bin/bash
+    set -e
+    if [ -f /var/lib/mysql/CLUSTER_WAS_INIT ]; then
+      sync_done
+    fi
+    source /scripts/common.sh
+    echo "Waiting all replicas up..."
+    while [ `get_current_replicas` -ne `get_ready_replicas` ]
+    do
+      sleep 5
+    done
+    get_another_host() {
+      local svc=${HOSTNAME%-*}
+      local server_id=$(hostname | grep -oE '[^-]+$')
+      local another_id
+      if [[ $server_id == 0 ]]; then
+        another_id=1
+      else
+        another_id=0
+      fi
+      echo "${svc}-${another_id}"
+    }
+    get_binlog_file() {
+      local host=$1
+      mysql -h $host -p"${MYSQL_ROOT_PASSWORD}" -e 'show master status\G;' | grep 'File' | awk '{print $2}'
+    }
+    get_binlog_pos() {
+      local host=$1
+      mysql -h $host -p"${MYSQL_ROOT_PASSWORD}" -e 'show master status\G;' | grep 'Position' | awk '{print $2}'
+    }
+    ensure_db() {
+      while ! mysql -p"${MYSQL_ROOT_PASSWORD}" -e 'SELECT 1' > /dev/null; do
+        sleep 5
+      done
+      mysql -p"${MYSQL_ROOT_PASSWORD}" -e "GRANT RELOAD, SUPER, REPLICATION SLAVE ON *.* TO 'root'@'%' identified by '${MYSQL_ROOT_PASSWORD}'"
+    }
+    wait_db() {
+      local host=$1
+      while ! mysql -h $host -p"${MYSQL_ROOT_PASSWORD}" -e 'SELECT 1' > /dev/null; do
+        sleep 5
+      done
+    }
+    sync_core() {
+      local mainHost=$1
+      local targetHost=$2
+      local file=$3
+      local pos=$4
+      echo Synchionize "${mainHost}" "file=${file}" "pos=${pos}"
+      mysql -h "${mainHost}" -p"${MYSQL_ROOT_PASSWORD}" -e "CHANGE MASTER TO MASTER_HOST='${targetHost}', 
+        MASTER_USER='root',
+        MASTER_PASSWORD='${MYSQL_ROOT_PASSWORD}',
+        MASTER_LOG_FILE='${file}',
+        MASTER_LOG_POS=${pos};"
+      mysql -h "${mainHost}" -p"${MYSQL_ROOT_PASSWORD}" -e 'start slave;'
+    }
+    sync_db() {
+      local svc=${HOSTNAME%-*}
+      local right_fqdn=`get_another_host`.${svc}.${POD_NAMESPACE}.svc.cluster.local
+      local left_fqdn=${HOSTNAME}.${svc}.${POD_NAMESPACE}.svc.cluster.local
+      echo "Wait db $right_fqdn ..."
+      wait_db $right_fqdn
+      local left_file=`get_binlog_file ${left_fqdn}`
+      local left_pos=`get_binlog_pos ${left_fqdn}`
+      local right_file=`get_binlog_file ${right_fqdn}`
+      local right_pos=`get_binlog_pos ${right_fqdn}`
+      echo Sync right -> left ...
+      sync_core "$left_fqdn" "$right_fqdn" "$right_file" "$right_pos"
+      echo Sync left -> right ...
+      sync_core "$right_fqdn" "$left_fqdn" "$left_file" "$left_pos"
+    }
+    echo "Ensuring db..."
+    ensure_db
+    server_id=$(hostname | grep -oE '[^-]+$')
+    if [[ $server_id -eq 0 ]]; then
+      sync_db
+      echo "master-$server_id synchionize suffessful."
+    else
+      echo "master-$server_id are ready."
+    fi
+    touch /var/lib/mysql/CLUSTER_WAS_INIT
+    sync_done
+  sync-ha-metadata.sh: |
+    #!/bin/sh
+    if [ -f /var/lib/mysql/CLUSTER_WAS_INIT ]; then
+      sync_done
+    fi
+    # apk add curl
+    source /scripts/common.sh
+    while [ ! -f /var/lib/mysql/CLUSTER_WAS_INIT ]
+    do
+      update_data
+      sleep 3
+    done
+    sync_done
+
+---
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: mysql-mm
+  namespace: mysql-ha
+spec:
+  serviceName: mysql-mm
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mysql-mm
+  template:
+    metadata:
+      labels:
+        app: mysql-mm
+    spec:
+      serviceAccountName: cluster-helper
+      initContainers:
+        - name: init-cluster
+          image: alpine:cust
+          command:
+            - /scripts/init-cluster.sh
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: mysql-conf
+              mountPath: /etc/mysql/conf.d
+            - name: ha-metadata
+              mountPath: /ha-info
+              readOnly: true
+      containers:
+        - name: mysql
+          image: mysql:5.7
+          env:
+            - name: "MYSQL_ROOT_PASSWORD"
+              value: "gdkj@123"
+            - name: "MYSQL_ROOT_HOST"
+              value: "%"
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: mysql-conf
+              mountPath: /etc/mysql/conf.d
+            - name: mysql-sock
+              mountPath: /var/run/mysqld
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          ports:
+            - containerPort: 3306
+        - name: sync-ha
+          image: mysql:5.7
+          command:
+            - /scripts/sync-ha.sh
+          env:
+            - name: "MYSQL_ROOT_PASSWORD"
+              value: "gdkj@123"
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: mysql-sock
+              mountPath: /var/run/mysqld
+            - name: ha-metadata
+              mountPath: /ha-info
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+        - name: sync-ha-metadata
+          image: alpine:cust
+          command:
+            - /scripts/sync-ha-metadata.sh
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: ha-metadata
+              mountPath: /ha-info
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: scripts
+          configMap:
+            name: mysql-scripts
+            defaultMode: 0755
+        # - name: ha-metadata
+        #   emptyDir: {}
+        # - name: mysql-conf
+        #   emptyDir: {}
+        # - name: mysql-sock
+        #   emptyDir: {}
+        # - name: mysql-data
+        #   emptyDir: {}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        storageClassName: nas
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+    - metadata:
+        name: mysql-sock
+      spec:
+        storageClassName: nas
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: mysql-conf
+      spec:
+        storageClassName: nas
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: ha-metadata
+      spec:
+        storageClassName: nas
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-mm
+  namespace: mysql-ha
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: mysql-mm

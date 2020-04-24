@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-1
+  namespace: baas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas
+      cluster: mysqlmm
+      role: mysql-1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: baas
+        cluster: mysqlmm
+        role: mysql-1
+    spec:
+      tolerations:
+        - key: app
+          operator: Equal
+          value: ebtech.baas
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - ebtech.baas
+      containers:
+        - env:
+            - name: MYSQL_DATABASE
+              value: baas_api
+            - name: MYSQL_ROOT_PASSWORD
+              value: gdkj@123
+            - name: TZ
+              value: Asia/Shanghai
+          image: mysql:latest
+          imagePullPolicy: IfNotPresent
+          name: mysql
+          ports:
+            - containerPort: 3306
+              name: 3306tcp
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            capabilities: {}
+          terminationMessagePolicy: File
+          tty: true
+          volumeMounts:
+            - mountPath: /etc/mysql/my.cnf
+              name: mysqlconfvol
+              subPath: my.cnf
+            - mountPath: /var/lib/mysql
+              name: rootpath
+              subPath: mysql-1
+            - mountPath: /var/lib/mysql-files
+              name: rootpath
+              subPath: mysql-files-1
+          # - mountPath: docker-entrypoint-initdb.d/init.sql
+          #   name: rootpath
+          #   subPath: config/init.sql
+          workingDir: /root/
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+        - name: mysqlconfvol
+          configMap:
+            name: mysqlconf
+            items:
+              - key: mysql-1.cnf
+                path: my.cnf
+        - name: rootpath
+          nfs:
+            path: /ebcpass_baas_daw__01_nfs/baas/stable
+            server: 25.14.1.1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-2
+  namespace: baas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas
+      cluster: mysqlmm
+      role: mysql-2
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: baas
+        cluster: mysqlmm
+        role: mysql-2
+    spec:
+      tolerations:
+        - key: app
+          operator: Equal
+          value: ebtech.baas
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - ebtech.baas
+      containers:
+        - env:
+            - name: MYSQL_DATABASE
+              value: baas_api
+            - name: MYSQL_ROOT_PASSWORD
+              value: gdkj@123
+            - name: TZ
+              value: Asia/Shanghai
+          image: mysql:latest
+          imagePullPolicy: IfNotPresent
+          name: mysql
+          ports:
+            - containerPort: 3306
+              name: 3306tcp
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            capabilities: {}
+          terminationMessagePolicy: File
+          tty: true
+          volumeMounts:
+            - mountPath: /etc/mysql/my.cnf
+              name: mysqlconfvol
+              subPath: my.cnf
+            - mountPath: /var/lib/mysql
+              name: rootpath
+              subPath: mysql-2
+            - mountPath: /var/lib/mysql-files
+              name: rootpath
+              subPath: mysql-files-2
+          # - mountPath: docker-entrypoint-initdb.d/init.sql
+          #   name: rootpath
+          #   subPath: config/init.sql
+          workingDir: /root/
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+        - name: mysqlconfvol
+          configMap:
+            name: mysqlconf
+            items:
+              - key: mysql-2.cnf
+                path: my.cnf
+        - name: rootpath
+          nfs:
+            path: /ebcpass_baas_daw__01_nfs/baas/stable
+            server: 25.14.1.1
