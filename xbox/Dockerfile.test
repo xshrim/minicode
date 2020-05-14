@@ -1,0 +1,13 @@
+FROM alpine:latest
+
+MAINTAINER xshrim <xshrim@gmail.com>
+
+WORKDIR /root
+
+ADD tools/helm /root/
+
+ADD tools/kustomize /root/
+
+ADD webssh /root/
+
+CMD ["/bin/sh"]

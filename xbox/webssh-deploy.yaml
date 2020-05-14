@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: webssh
+  name: webssh
+  namespace: xshrim
+spec:
+  ports:
+    - name: "2222"
+      port: 2222
+      protocol: TCP
+      targetPort: 2222
+  selector:
+    app: webssh
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webssh
+  namespace: xshrim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webssh
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: webssh
+    spec:
+      containers:
+        - image: webssh:1.0
+          imagePullPolicy: IfNotPresent
+          name: webssh
+          env:
+            - name: HOST
+              value: 25.2.20.2
+            - name: PORT
+              value: "16022"
+            - name: USER
+              value: root
+            - name: PASSWD
+              value: abcde@123
+            - name: TIMEOUT
+              value: "600"
+            - name: SSL
+              value: "true"
+          ports:
+            - containerPort: 2222
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          tty: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

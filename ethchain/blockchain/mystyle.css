@@ -1,0 +1,97 @@
+table {
+    border-collapse: collapse;
+    border: 1px solid #28d2ac;
+}
+
+caption {
+    font-size: 13px;
+    font-weight: bold;
+    color: #9c27b0;
+    padding: 4px;
+}
+
+th {
+    padding: 8px;
+    color: #00c4ff;
+}
+
+td {
+    padding: 8px;
+    color: #005aff;
+}
+
+tr:nth-child(odd) {
+    background-color: #ebffff;
+}
+
+tr:nth-child(even) {
+    background-color: #fff8f8;
+}
+
+tr:nth-child(1) {
+    background-color: #FF9800;
+}
+
+tr:nth-child(1) th {
+    color: #fff;
+}
+
+h1 {
+    color: #f00;
+}
+
+h2 {
+    color: #28d2ac;
+}
+
+h3 {
+    margin-top: 60px;
+    color: #a20000;
+    border-bottom: 1px dotted;
+    padding-bottom: 10px;
+    margin-bottom: -45px;
+}
+
+h4 {
+    color: #ff1574;
+    background-color: #e6e6e6;
+    padding: 6px;
+    margin-top: 60px;
+}
+
+h5 {
+    color: #795548;
+}
+
+a {
+    color: #008c06;
+}
+
+.cataul>li {
+    color: #00b990;
+}
+
+.conheaddiv p {
+    color: #9C27B0;
+}
+
+.cataieveul>li,
+.cataifunul>li,
+.cataistrul>li {
+    float: left;
+    margin: 15px;
+    width: 200px;
+    height: 55px;
+}
+
+.evecomm,
+.funcomm,
+.strheaddiv {
+    margin-bottom: -22px;
+}
+
+.clear:after {
+    content: " ";
+    display: block;
+    clear: both;
+}

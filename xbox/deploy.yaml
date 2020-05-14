@@ -7,10 +7,15 @@ metadata:
   name: xos
 spec:
   ports:
-  - name: default
+  - name: gofs
     port: 2333
     protocol: TCP
     targetPort: 2333
+    nodePort: 33333
+  - name: webssh
+    port: 2222
+    protocol: TCP
+    targetPort: 2222
     nodePort: 32222
   selector:
     app: xos
@@ -63,10 +68,16 @@ spec:
         app: xos
     spec:
       containers:
-      - image: xo
+      - name: xos
+        image: xo
         imagePullPolicy: Always
-        command:
-        - gofs
+        #command:
+        #- gofs
+        #command:
+        #- /root/webssh
+        #command:
+        #- bash
+        #- /root/run.sh
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -75,10 +86,25 @@ spec:
           tcpSocket:
             port: 2333
           timeoutSeconds: 2
-        name: xos
+        env:
+        - name: HOST
+          value: 127.0.0.1
+        - name: PORT
+          value: "22"
+        - name: USER
+          value: root
+        - name: PASSWD
+          value: admin
+        - name: TIMEOUT
+          value: "600"
+        - name: SSL
+          value: "true"
         ports:
         - containerPort: 2333
-          name: http
+          name: gofs
+          protocol: TCP
+        - containerPort: 2222
+          name: webssh
           protocol: TCP
         - containerPort: 22
           name: ssh
@@ -93,8 +119,8 @@ spec:
           timeoutSeconds: 2
         resources: 
           limits:
-            cpu: 200m
-            memory: 128Mi
+            cpu: 500m
+            memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities: {}

@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+rm -rf ethbase/*
+geth --datadir "/home/xshrim/lab/ethlab/ethbase" init genesis.json

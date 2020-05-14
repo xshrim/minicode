@@ -14,13 +14,16 @@ mandatory=()
 
 function usage() {
 echo "USAGE:
+  kude -k|-d [<arguments>]
   kude [<options>] podname
 
 OPTIONS:
   -c [test] kubernetes连接上下文(可选)
-  -d [log, logf, inspect, describe, wide, yaml, json] 非交互式指令(可选)
+  -d [args] 执行docker命令
+  -e [log, logf, inspect, describe, wide, yaml, json] 非交互式指令(可选)
   -f [./kube/config] kubeonfig文件路径(可选)
   -i [0] 匹配pod内容器index(可选)
+  -k [args] 执行kubectl命令
   -m [xo] 自定义工具容器(可选)
   -n [default] 查询的kubernetes命名空间(可选)
   -o [xos] podname模糊匹配(可选)
@@ -36,36 +39,58 @@ EXAMPLES:
 # 命令在带kubectl的主机运行
 # 不带ssh相关参数的命令默认已经配置了免密登录
 
+# 直接执行docker或kubectl命令
+kude -d ps -a     #相当于docker ps -a
+kude -k get pod   #相当于kubectl get pod
+
 # 最简, 所有命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式
 kude xos
 
 # xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式
-kude -n xshrin xos
+kude -n xshrim xos
 
 # xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间进入交互模式并chroot到该容器的文件系统
 kude -n xshrim -i 0 -r xos
 
 # 所有命名空间中寻找名称带xos字段的pod下的第二个容器并显示容器日志
-kude -d log -i 1 xos
+kude -e log -i 1 xos
 
 # 所有命名空间中寻找名称带xos字段的pod并显示其描述信息
-kude -d describe xos
+kude -e describe xos
 
 # 所有命名空间中寻找名称带xos字段的pod并将其配置以json格式输出
-kude -d json xos
+kude -e json xos
 
 # xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式, 目标主机ssh账号密码端口指定, Debug容器使用netshoot
 kude -n xshrim -u root -p 22 -s admin123 -m netshoot xos
 "
 }
 
+# 依赖docker和kubectl
+if ! type docker &>/dev/null || ! type kubectl &>/dev/null;
+then
+  echo "docker and kubectl required"
+  exit 1
+fi
+
+args=$@
+if [ $# -gt 0 ] && [ $1 == "-k" ]; then
+  kubectl ${args#-k }
+  exit 0
+fi
+
+if [ $# -gt 0 ] && [ $1 == "-d" ]; then
+  docker ${args#-d }
+  exit 0
+fi
+
 while [ $# -gt 0 ] && [ "$1" != "--" ]; do
-  while getopts "c:d:f:i:m:n:o:p:s:t:u:hrv" opt; do
+  while getopts "c:e:f:i:m:n:o:p:s:t:u:hrv" opt; do
     case $opt in
       c) 
         context="--context $OPTARG"
         ;;
-      d) 
+      e) 
         darg=$OPTARG
         image=""
         ;;
@@ -112,6 +137,7 @@ while [ $# -gt 0 ] && [ "$1" != "--" ]; do
         ;;
     esac
   done
+
   shift $((OPTIND-1))
 
   while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
@@ -119,7 +145,7 @@ while [ $# -gt 0 ] && [ "$1" != "--" ]; do
     shift
   done
 done
-
+  
 if [ "$1" == "--" ]; then
   shift
   mandatory=("${mandatory[@]}" "$@")
@@ -135,10 +161,10 @@ then
   kubecfg=$HOME/.kube/config
 fi
 
-if ! type docker &>/dev/null || ! type kubectl &>/dev/null;
+kc=""
+if [ -n "$kubecfg" ];
 then
-  echo "docker and kubectl required"
-  exit 1
+  kc="--kubeconfig $kubecfg"
 fi
 
 if [ -z "$namespace" ];
@@ -148,13 +174,8 @@ else
   ns="-n $namespace"
 fi
 
-kc=""
-if [ -n "$kubecfg" ];
-then
-  kc="--kubeconfig $kubecfg"
-fi
-
 pods=$(kubectl $kc $context get pod $ns 2>/dev/null | grep $pod)
+
 if [ $? -ne 0 ] || [ ${#pods[@]} -eq 0 ] ;
 then 
   echo "No resources found"
@@ -163,8 +184,8 @@ fi
 
 if [ ${#pods[@]} -eq 1 ];
 then
-  podname=$(echo $pods | awk '{print $2}')
-  namespace=$(echo $pods | awk '{print $1}')
+  podname=$(echo $pods | awk '{print $1}')
+  # namespace=$(echo $pods | awk '{print $1}')
   ns="-n $namespace"
 else
   echo "Warning: more than one pod! selected the first one."
@@ -173,7 +194,7 @@ else
   ns="-n $namespace"
 fi
 
-podinfo=$(kubectl $kc $context get pod $podname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,ID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $podname)
+podinfo=$(kubectl $kc $context get pod $podname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[0].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $podname)
 
 if [ $? -ne 0 ];
 then
@@ -183,28 +204,41 @@ fi
 
 hname=$(echo $podinfo | awk '{print $1}')
 haddr=$(echo $podinfo | awk '{print $2}')
-cname=$(echo $podinfo | awk '{print $3}')
+pname=$(echo $podinfo | awk '{print $3}')
 caddr=$(echo $podinfo | awk '{print $4}')
-cid=$(echo $podinfo | awk '{print $5}')
+cname=$(echo $podinfo | awk '{print $5}')
+cid=$(echo $podinfo | awk '{print $6}')
 cid=${cid#*docker://}
 cid=${cid:0:12}
 
-echo "====================================================================================================================================="
-echo "Namespace: "$namespace "HostName: "$hname "HostAddr:"$haddr "PodName:"$cname "PodAddr:"$caddr "containerID:"$cid
-echo "====================================================================================================================================="
+echo "==============================================================================================================================================="
+echo "Namespace: "${ns#-n } "HostName: "$hname "HostIP:"$haddr "PodName:"$pname "PodIP:"$caddr "CName:"$cname "CID:"$cid
+echo "==============================================================================================================================================="
 
 if [ -z "$image" ];
 then
   if [ $darg == "log" ];
   then
-    cmd="docker logs $cid"
+    if [ $(hostname) == $hname ];
+    then
+      cmd="docker logs $cid"
+    else
+      kubectl $kc $context logs $podname $cname $ns
+      exit 0
+    fi
   elif [ $darg == "logf" ];
   then
-    cmd="docker logs -f $cid"
-  elif [ $darg == "inspect" ];
+    if [ $(hostname) == $hname ];
+    then
+      cmd="docker logs -f $cid"
+    else
+      kubectl $kc $context logs -f $podname $cname $ns
+      exit 0
+    fi
+  elif [ $darg == "inspect" ] || [ $darg == "insp" ];
   then
     cmd="docker inspect $cid"
-  elif [ $darg == "describe" ];
+  elif [ $darg == "describe" ]  || [ $darg == "desc" ];
   then
     kubectl $kc $context describe pod $podname $ns
     exit 0
@@ -219,6 +253,10 @@ then
   elif [ $darg == "json" ];
   then
     kubectl $kc $context get pod $podname $ns -o json
+    exit 0
+  elif [ $darg == "exec" ];
+  then
+    kubectl $kc $context exec -it $podname -c $cname sh $ns
     exit 0
   fi
 else
