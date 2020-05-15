@@ -5,19 +5,24 @@ image=xo
 port=16022
 timeout=60
 user=root
+#passwd=root
 idx=0
 context=""
+kubeargs=""
 chroot=""
+task=""
 vol=""
 
 mandatory=()
 
 function usage() {
-echo "USAGE:
+  echo "**USAGE**:
   kude -k|-d [<arguments>]
+  kude -x [<command>] [<ipaddrs>]
   kude [<options>] podname
 
-OPTIONS:
+**OPTIONS**:
+  -a [args] 为kubectl的proxy, cp等命令提供参数
   -c [test] kubernetes连接上下文(可选)
   -d [args] 执行docker命令
   -e [log, logf, inspect, describe, wide, yaml, json] 非交互式指令(可选)
@@ -31,17 +36,33 @@ OPTIONS:
   -s [admin123] 目标主机ssh密码(可选)
   -t [60] 目标主机ssh连接超时时间(可选)
   -u [root] 目标主机ssh账号(可选)
+  -x [cmd] 目标主机上需要执行的命令
   -r Debug容器中是否需要chroot到目标容器的文件系统
   -v Debug容器中是否需要挂载目标主机的docker.sock文件
   -h 使用说明
 
-EXAMPLES:
+**REFERENCES**:
+# Linux: https://community.linuxmint.com/tutorial/view/244 https://man.linuxde.net/
+# Docker: https://docs.docker.com/engine/reference/commandline/cli/
+# Kubectl: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
+
+**EXAMPLES**:
 # 命令在带kubectl的主机运行
 # 不带ssh相关参数的命令默认已经配置了免密登录
 
 # 直接执行docker或kubectl命令
 kude -d ps -a     #相当于docker ps -a
 kude -k get pod   #相当于kubectl get pod
+
+# 进行docker镜像推送并删除临时tag
+kude -x 'dpush xshrim/xo foo.bar.com/xshrim'
+
+# 远程到目标主机执行命令
+kude -x 'ls /etc' 127.0.0.1
+kude -p 22 -s admin -x 'ls /etc' 127.0.0.1
+
+# 执行本机命令
+kude -x 'scp test root@10.0.0.10:/root/test'
 
 # 最简, 所有命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式
 kude xos
@@ -61,14 +82,74 @@ kude -e describe xos
 # 所有命名空间中寻找名称带xos字段的pod并将其配置以json格式输出
 kude -e json xos
 
+# 所有命名空间中寻找名称带xos字段的pod并进入命令行交互模式
+kude -e exe xos
+
+# 所有命名空间中寻找名称带xos字段的pod并执行命令(不进入交互模式)
+kude -e exec xos -a 'ls /root'
+
+# 所有命名空间中寻找名称带xos字段的pod并进行远程文件复制
+kude -e cp -a 'test :/root/' xos
+kude -e cp -a ':/root/test .' xos
+
 # xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式, 目标主机ssh账号密码端口指定, Debug容器使用netshoot
 kude -n xshrim -u root -p 22 -s admin123 -m netshoot xos
 "
 }
 
+function dockerpush() {
+  # lrepo=${1%/*}
+  limg=${1#*/}
+  rrepo=${2%/*}
+  rlib=${2#*/}
+
+  if [ "$rlib" == "" ] || [ "$rlib" == "$rrepo" ]; then
+    if [[ "$rrepo" =~ "." ]]; then
+      rlib="library"
+    else
+      rlib=$rrepo
+      rrepo="docker.io"
+    fi
+  fi
+
+  docker tag $1 $rrepo/$rlib/$limg
+  docker push $rrepo/$rlib/$limg
+  docker rmi -f $rrepo/$rlib/$limg
+}
+
+function lexecmd() {
+  lcmd=$1
+  if [ "$lcmd" == "dpush" ]; then
+    dockerpush "${@:2}"
+  else
+    $@
+  fi
+}
+
+function execmd() {
+  ecmd=$1
+  ipaddr=$2
+
+  if [ "$ipaddr" == "" ]; then
+    lexecmd $ecmd
+  else
+    if [ -n "$user" ]; then
+      user="root"
+    fi
+    if [ -n "$passwd" ]; then
+      passwd="root"
+    fi
+
+    if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+      sshpass -p $passwd ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$ipaddr "$ecmd"
+    else
+      ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$ipaddr "$ecmd"
+    fi
+  fi
+}
+
 # 依赖docker和kubectl
-if ! type docker &>/dev/null || ! type kubectl &>/dev/null;
-then
+if ! type docker &>/dev/null || ! type kubectl &>/dev/null; then
   echo "docker and kubectl required"
   exit 1
 fi
@@ -85,90 +166,103 @@ if [ $# -gt 0 ] && [ $1 == "-d" ]; then
 fi
 
 while [ $# -gt 0 ] && [ "$1" != "--" ]; do
-  while getopts "c:e:f:i:m:n:o:p:s:t:u:hrv" opt; do
+  while getopts "a:c:e:f:i:m:n:o:p:s:t:u:x:hrv" opt; do
     case $opt in
-      c) 
-        context="--context $OPTARG"
-        ;;
-      e) 
-        darg=$OPTARG
-        image=""
-        ;;
-      f) 
-        kubeconfig=$OPTARG
-        ;;
-      i)
-        idx=$OPTARG
-        ;;
-      m) 
-        image=$OPTARG
-        ;;
-      n) 
-        namespace=$OPTARG
-        ;;
-      o) 
-        pod=$OPTARG
-        ;;
-      p) 
-        port=$OPTARG
-        ;;
-      s) 
-        passwd=$OPTARG
-        ;;
-      t) 
-        timeout=$OPTARG
-        ;;
-      u) 
-        user=$OPTARG
-        ;;
-      r)
-        chroot="-c 'chroot /proc/1/root/'"
-        ;;
-      v)
-        vol="-v /var/run/docker.sock:/var/run/docker.sock"
-        ;;
-      h)
-        usage
-        exit 0
-        ;;
-      \?) 
-        echo "Invalid option: -$OPTARG" >&2; 
-        exit 1
-        ;;
+    a)
+      kubeargs="$OPTARG"
+      ;;
+    c)
+      context="--context $OPTARG"
+      ;;
+    e)
+      darg=$OPTARG
+      image=""
+      ;;
+    f)
+      kubeconfig=$OPTARG
+      ;;
+    i)
+      idx=$OPTARG
+      ;;
+    m)
+      image=$OPTARG
+      ;;
+    n)
+      namespace=$OPTARG
+      ;;
+    o)
+      pod=$OPTARG
+      ;;
+    p)
+      port=$OPTARG
+      ;;
+    s)
+      passwd=$OPTARG
+      ;;
+    t)
+      timeout=$OPTARG
+      ;;
+    u)
+      user=$OPTARG
+      ;;
+    x)
+      task=$OPTARG
+      ;;
+    r)
+      chroot="-c 'chroot /proc/1/root/'"
+      ;;
+    v)
+      vol="-v /var/run/docker.sock:/var/run/docker.sock"
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
     esac
   done
 
-  shift $((OPTIND-1))
+  shift $((OPTIND - 1))
 
   while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
     mandatory=("${mandatory[@]}" "$1")
     shift
   done
 done
-  
+
 if [ "$1" == "--" ]; then
   shift
   mandatory=("${mandatory[@]}" "$@")
 fi
 
-if [ -z "$pod" ] && [ ${#mandatory[@]} -gt 0 ];
-then
+if [ -n "$task" ]; then
+  if [ ${#mandatory[@]} -eq 0 ]; then
+    execmd "$task"
+  else
+    for ip in ${mandatory[*]}; do
+      execmd "$task" $ip
+    done
+  fi
+  exit 0
+fi
+
+if [ -z "$pod" ] && [ ${#mandatory[@]} -gt 0 ]; then
   pod=${mandatory[0]}
 fi
 
-if [ -n "$kubecfg" ] && [ -f "$HOME/.kube/config" ];
-then
+if [ -n "$kubecfg" ] && [ -f "$HOME/.kube/config" ]; then
   kubecfg=$HOME/.kube/config
 fi
 
 kc=""
-if [ -n "$kubecfg" ];
-then
+if [ -n "$kubecfg" ]; then
   kc="--kubeconfig $kubecfg"
 fi
 
-if [ -z "$namespace" ];
-then
+if [ -z "$namespace" ]; then
   ns="--all-namespaces"
 else
   ns="-n $namespace"
@@ -176,14 +270,12 @@ fi
 
 pods=$(kubectl $kc $context get pod $ns 2>/dev/null | grep $pod)
 
-if [ $? -ne 0 ] || [ ${#pods[@]} -eq 0 ] ;
-then 
+if [ $? -ne 0 ] || [ ${#pods[@]} -eq 0 ]; then
   echo "No resources found"
   exit 1
 fi
 
-if [ ${#pods[@]} -eq 1 ];
-then
+if [ ${#pods[@]} -eq 1 ]; then
   podname=$(echo $pods | awk '{print $1}')
   # namespace=$(echo $pods | awk '{print $1}')
   ns="-n $namespace"
@@ -196,8 +288,7 @@ fi
 
 podinfo=$(kubectl $kc $context get pod $podname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[0].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $podname)
 
-if [ $? -ne 0 ];
-then
+if [ $? -ne 0 ]; then
   echo "$podname[$idx] container not found"
   exit 1
 fi
@@ -215,53 +306,67 @@ echo "==========================================================================
 echo "Namespace: "${ns#-n } "HostName: "$hname "HostIP:"$haddr "PodName:"$pname "PodIP:"$caddr "CName:"$cname "CID:"$cid
 echo "==============================================================================================================================================="
 
-if [ -z "$image" ];
-then
-  if [ $darg == "log" ];
-  then
-    if [ $(hostname) == $hname ];
-    then
+if [ -z "$image" ]; then
+  if [ $darg == "log" ]; then
+    if [ $(hostname) == $hname ]; then
       cmd="docker logs $cid"
     else
       kubectl $kc $context logs $podname $cname $ns
       exit 0
     fi
-  elif [ $darg == "logf" ];
-  then
-    if [ $(hostname) == $hname ];
-    then
+  elif [ $darg == "logf" ]; then
+    if [ $(hostname) == $hname ]; then
       cmd="docker logs -f $cid"
     else
       kubectl $kc $context logs -f $podname $cname $ns
       exit 0
     fi
-  elif [ $darg == "inspect" ] || [ $darg == "insp" ];
-  then
+  elif [ $darg == "inspect" ] || [ $darg == "insp" ]; then
     cmd="docker inspect $cid"
-  elif [ $darg == "describe" ]  || [ $darg == "desc" ];
-  then
+  elif [ $darg == "describe" ] || [ $darg == "desc" ]; then
     kubectl $kc $context describe pod $podname $ns
     exit 0
-  elif [ $darg == "wide" ];
-  then
+  elif [ $darg == "wide" ]; then
     kubectl $kc $context get pod $podname $ns -o wide
     exit 0
-  elif [ $darg == "yaml" ];
-  then
+  elif [ $darg == "yaml" ]; then
     kubectl $kc $context get pod $podname $ns -o yaml
     exit 0
-  elif [ $darg == "json" ];
-  then
+  elif [ $darg == "json" ]; then
     kubectl $kc $context get pod $podname $ns -o json
     exit 0
-  elif [ $darg == "exec" ];
-  then
+  elif [ $darg == "exe" ]; then
     kubectl $kc $context exec -it $podname -c $cname sh $ns
     exit 0
+  elif [ $darg == "exec" ]; then
+    kubectl $kc $context exec $podname -c $cname $kubeargs $ns
+    exit 0
+  elif [ $darg == "attach" ]; then
+    kubectl $kc $context attach $podname -c $cname $ns
+    exit 0
+  elif [ $darg == "cp" ]; then
+    prearg=$(echo "$kubeargs" | awk -F ':' '{print $1}')
+    sufarg=$(echo "$kubeargs" | awk -F ':' '{print $2}')
+    if [ "$prearg" == "" ]; then
+      prearg="$podname:"$prearg
+    else
+      sufarg="$podname:"$sufarg
+    fi
+    kubectl $kc $context cp $prearg$sufarg $ns
+    exit 0
+  # elif [ $darg == "proxy" ]; then
+  #   kubectl $kc $context proxy $kubeargs
+  #   exit 0
+  # elif [ $darg == "auth" ]; then
+  #   echo $kubeargs
+  #   kubectl $kc $context auth $kubeargs $ns
+  #   exit 0
+  # elif [ $darg == "pf" ]; then
+  #   kubectl $kc $context port-forward $kubeargs $ns
+  #   exit 0
   fi
 else
-  if [ $image == "xo" ];
-  then
+  if [ $image == "xo" ]; then
     imgsh="$image zsh $chroot"
   else
     imgsh="$image sh $chroot"
@@ -270,10 +375,4 @@ else
   cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $imgsh"
 fi
 
-if [ -n "$passwd" ] && type sshpass &>/dev/null;
-then
-  echo $passwd
-  sshpass -p $passwd ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$haddr "$cmd"
-else
-  ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$haddr "$cmd"
-fi
+execmd "$cmd" $haddr
