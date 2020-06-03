@@ -11,6 +11,8 @@ context=""
 kubeargs=""
 chroot=""
 task=""
+rbac=false
+savepath=""
 vol=""
 
 mandatory=()
@@ -63,6 +65,10 @@ kude -p 22 -s admin -x 'ls /etc' 127.0.0.1
 
 # 执行本机命令
 kude -x 'scp test root@10.0.0.10:/root/test'
+
+# 获取Kubernetes RBAC结构图
+kude -b u demouser
+kude -b -n kube-system rolebinding
 
 # 最简, 所有命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式
 kude xos
@@ -166,13 +172,19 @@ if [ $# -gt 0 ] && [ $1 == "-d" ]; then
 fi
 
 while [ $# -gt 0 ] && [ "$1" != "--" ]; do
-  while getopts "a:c:e:f:i:m:n:o:p:s:t:u:x:hrv" opt; do
+  while getopts "a:c:d:e:f:i:m:n:o:p:s:t:u:x:hbrv" opt; do
     case $opt in
     a)
       kubeargs="$OPTARG"
       ;;
+    b)
+      rbac=true
+      ;;
     c)
       context="--context $OPTARG"
+      ;;
+    d)
+      savedir="$OPTARG"
       ;;
     e)
       darg=$OPTARG
@@ -249,14 +261,6 @@ if [ -n "$task" ]; then
   exit 0
 fi
 
-if [ -z "$pod" ] && [ ${#mandatory[@]} -gt 0 ]; then
-  pod=${mandatory[0]}
-fi
-
-if [ -z "$kubecfg" ] && [ -f "$HOME/.kube/config" ]; then
-  kubecfg=$HOME/.kube/config
-fi
-
 kc=""
 if [ -n "$kubecfg" ]; then
   kc="--kubeconfig $kubecfg"
@@ -266,6 +270,36 @@ if [ -z "$namespace" ]; then
   ns="--all-namespaces"
 else
   ns="-n $namespace"
+fi
+
+if "$rbac"; then
+  # 依赖rback和dot
+  if ! type rback &>/dev/null || ! type dot &>/dev/null; then
+    echo "rback and dot required"
+    exit 1
+  fi
+  if [ -n "$savedir" ]; then
+    kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json|rback -show-legend=false ${mandatory[*]}|dot -Tsvg > $savedir/rbac.svg
+  else
+    dispapp="xdg-open"
+    if type display &>/dev/null; then
+      dispapp="display"
+    elif type inkview &>/dev/null; then
+      dispapp="inkview"
+    elif type feh &>/dev/null; then
+      dispapp="feh --conversion-timeout 1"
+    fi
+    kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json|rback -show-legend=false ${mandatory[*]}|dot -Tsvg|$dispapp
+  fi
+  exit 0
+fi
+
+if [ -z "$pod" ] && [ ${#mandatory[@]} -gt 0 ]; then
+  pod=${mandatory[0]}
+fi
+
+if [ -z "$kubecfg" ] && [ -f "$HOME/.kube/config" ]; then
+  kubecfg=$HOME/.kube/config
 fi
 
 pods=$(kubectl $kc $context get pod $ns 2>/dev/null | grep $pod)
