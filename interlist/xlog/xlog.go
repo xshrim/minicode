@@ -78,7 +78,7 @@ func set() {
 func rotate(dir string) string {
 	prefix := "log"
 
-	format := "%d"
+	format := ""
 
 	//format := fmt.Sprintf("log.\%0%vd.log", math.Ceil(math.Log10(float64(Lognum))))
 	switch {
@@ -126,27 +126,51 @@ func run(kind string, v ...interface{}) string {
 	if v == nil || len(v) < 1 {
 		return ""
 	}
+	val := ""
 
-	mutex.Lock()
-	set()
-	mutex.Unlock()
+	if kind != "PRINT" && kind != "SPRINT" {
+		mutex.Lock()
+		set()
+		mutex.Unlock()
+	}
 
 	if len(v) > 1 {
 		if format, ok := v[0].(string); ok || strings.Contains(format, "%") {
-			str := fmt.Sprintf("["+kind+"] "+format, v[1:]...)
+			str := ""
+			if kind != "PRINT" && kind != "SPRINT" {
+				str = fmt.Sprintf("["+kind+"] "+format, v[1:]...)
+			} else {
+				str = fmt.Sprintf(format, v[1:]...)
+			}
 			if !strings.Contains(str, "%!(EXTRA") {
-				xlog.Output(3, str)
-				return str
+				val = str
 			}
 		}
 	}
 
-	v = append([]interface{}{"[" + kind + "]"}, v...)
-	str := fmt.Sprintln(v...)
+	if val == "" {
+		if kind != "PRINT" && kind != "SPRINT" {
+			v = append([]interface{}{"[" + kind + "]"}, v...)
+			val = fmt.Sprint(v...)
+		} else {
+			val = fmt.Sprint(v...)
+		}
+	}
 
-	xlog.Output(3, str)
+	if kind == "PRINT" {
+		fmt.Println(val)
+	} else if kind != "SPRINT" {
+		_ = xlog.Output(3, val)
+	}
+	return val
+}
 
-	return str
+func Print(v ...interface{}) {
+	run("PRINT", v...)
+}
+
+func Sprint(v ...interface{}) string {
+	return run("SPRINT", v...)
 }
 
 func Error(v ...interface{}) {
