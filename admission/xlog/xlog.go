@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,6 +24,8 @@ var Level = INFO // 日志级别
 
 var Prefix = "" // 日志前缀
 
+var Color = false // 彩色输出
+
 var Logpath = "" // 日志目录
 
 var Logsize = int64(2 << 25) // 单日志文件大小上限
@@ -37,12 +40,14 @@ var mutex sync.Mutex
 
 var clogfile = ""
 
+var goos = ""
+
 // var xlog = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 
 func init() {
 	// log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	xlog = log.New(os.Stdout, Prefix, log.Ldate|log.Ltime|log.Lshortfile)
-
+	goos = runtime.GOOS
 }
 
 func set() {
@@ -122,6 +127,29 @@ func rotate(dir string) string {
 	return filepath.Join(dir, clogfile)
 }
 
+func color(str string) string {
+	if goos == "linux" && Color { // colorful output feature only supports linux
+		switch str {
+		case "ERROR":
+			str = "\033[0;31m" + str + "\033[0m"
+		case "WARN":
+			str = "\033[0;33m" + str + "\033[0m"
+		case "INFO":
+			str = "\033[0;32m" + str + "\033[0m"
+		case "DEBUG":
+			str = "\033[0;35m" + str + "\033[0m"
+		case "TRACE":
+			str = "\033[0;36m" + str + "\033[0m"
+		case "FATAL":
+			str = "\033[0;34m" + str + "\033[0m"
+		case "PANIC":
+			str = "\033[1;34m" + str + "\033[0m"
+		}
+	}
+
+	return str
+}
+
 func run(kind string, v ...interface{}) string {
 	if v == nil || len(v) < 1 {
 		return ""
@@ -138,7 +166,7 @@ func run(kind string, v ...interface{}) string {
 		if format, ok := v[0].(string); ok || strings.Contains(format, "%") {
 			str := ""
 			if kind != "PRINT" && kind != "SPRINT" {
-				str = fmt.Sprintf("["+kind+"] "+format, v[1:]...)
+				str = fmt.Sprintf("["+color(kind)+"] "+format, v[1:]...)
 			} else {
 				str = fmt.Sprintf(format, v[1:]...)
 			}
@@ -150,7 +178,7 @@ func run(kind string, v ...interface{}) string {
 
 	if val == "" {
 		if kind != "PRINT" && kind != "SPRINT" {
-			v = append([]interface{}{"[" + kind + "]"}, v...)
+			v = append([]interface{}{"[" + color(kind) + "] "}, v...)
 			val = fmt.Sprint(v...)
 		} else {
 			val = fmt.Sprint(v...)

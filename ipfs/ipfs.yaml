@@ -1,0 +1,104 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: ALLOW-FROM *";
+  name: ipfs
+  namespace: baas-dev
+spec:
+  rules:
+  - host: ipfs.ebcpaas.com
+    http:
+      paths:
+      - backend:
+          serviceName: ipfs
+          servicePort: 5001
+        path: /
+  - host: gipfs.ebcpaas.com
+    http:
+      paths:
+      - backend:
+          serviceName: ipfs
+          servicePort: 8080
+        path: /
+  tls:
+  - secretName: ingress-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: baas-dev
+    role: ipfs
+  name: ipfs
+  namespace: baas-dev
+spec:
+  ports:
+  - name: "5001"
+    port: 5001
+    protocol: TCP
+    targetPort: 5001
+  - name: "8080"
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: baas-dev
+    role: ipfs
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-dev
+    role: ipfs
+  name: ipfs
+  namespace: baas-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas-dev
+      role: ipfs
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: baas-dev
+        role: ipfs
+    spec:
+      containers:
+      - image: reg.ebcpaas.com/baas/go-ipfs
+        imagePullPolicy: IfNotPresent
+        name: ipfs
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 5001
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 1Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        app: ebtech.baas
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: app
+        operator: Equal
+        value: ebtech.baas
