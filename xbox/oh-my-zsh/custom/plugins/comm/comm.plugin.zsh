@@ -900,7 +900,6 @@ alias pan='web_search pan115'
 alias zzl='web_search zhongzilou'
 # add your own !bang searches here
 
-alias x='extract'
 #extract自动解压，同样适用于bash
 function extract {
  if [ -z "$1" ]; then
@@ -936,6 +935,8 @@ function extract {
     done
 fi
 }
+
+alias x='extract'
 
 #漂亮又实用的命令高亮界面
 setopt extended_glob
