@@ -388,16 +388,16 @@ if [ -z "$image" ]; then
     fi
     kubectl $kc $context cp $prearg$sufarg $ns
     exit 0
-  # elif [ $darg == "proxy" ]; then
-  #   kubectl $kc $context proxy $kubeargs
-  #   exit 0
-  # elif [ $darg == "auth" ]; then
-  #   echo $kubeargs
-  #   kubectl $kc $context auth $kubeargs $ns
-  #   exit 0
-  # elif [ $darg == "pf" ]; then
-  #   kubectl $kc $context port-forward $kubeargs $ns
-  #   exit 0
+  elif [ $darg == "proxy" ]; then
+    kubectl $kc $context proxy $kubeargs
+    exit 0
+  elif [ $darg == "auth" ]; then
+    echo $kubeargs
+    kubectl $kc $context auth $kubeargs $ns
+    exit 0
+  elif [ $darg == "pf" ]; then
+    kubectl $kc $context port-forward $podname $kubeargs $ns
+    exit 0
   fi
 else
   if [ $image == "xo" ]; then
