@@ -900,6 +900,7 @@ alias pan='web_search pan115'
 alias zzl='web_search zhongzilou'
 # add your own !bang searches here
 
+alias x='extract'
 #extract自动解压，同样适用于bash
 function extract {
  if [ -z "$1" ]; then
@@ -1104,6 +1105,36 @@ fi
 autoload -U compinit && compinit
 autoload -U promptinit && promptinit
 autoload -U add-zsh-hook
+
+#########################################################################
+# 计算器
+#########################################################################
+
+calc() {
+    zcalc -e "$*"
+}
+
+c () 
+{ 
+    local in="$(echo " $*" | sed -e 's/\[/(/g' -e 's/\]/)/g')";
+    awk "BEGIN {printf $in}"
+}
+
+#########################################################################
+# 大小写转换
+#########################################################################
+
+upper() {
+    echo "$*" | tr '[:lower:]' '[:upper:]'
+}
+
+lower() {
+    echo "$*" | tr '[:upper:]' '[:lower:]'
+}
+
+capitalize() {
+    echo "$*" | tr '[:upper:]' '[:lower:]' | sed 's/^\w\|\s\w/\U&/g'
+}
 
 #########################################################################
 # kubectl自动补全加载较慢, 启用延迟加载

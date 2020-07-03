@@ -44,6 +44,7 @@ RUN set -ex \
     liboping \
     lua5.1 \
     iftop \
+    ipcalc \
     iperf3 \
     iproute2 \
     ipset \
