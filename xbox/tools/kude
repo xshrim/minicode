@@ -83,10 +83,13 @@ kude -n xshrim -i 0 -r xos
 kude -e log -i 1 xos
 
 # 所有命名空间中寻找名称带xos字段的pod并显示其描述信息
-kude -e describe xos
+kude -e desc xos
 
 # 所有命名空间中寻找名称带xos字段的pod并将其配置以json格式输出
 kude -e json xos
+
+# 通过port-forward将所有命名空间中名称带xos字段的pod的指定端口映射到本地
+kude -e pf -a "8080:80" xos
 
 # 所有命名空间中寻找名称带xos字段的pod并进入命令行交互模式
 kude -e exe xos
@@ -310,8 +313,8 @@ if [ $? -ne 0 ] || [ ${#pods[@]} -eq 0 ]; then
 fi
 
 if [ ${#pods[@]} -eq 1 ]; then
-  podname=$(echo $pods | awk '{print $1}')
-  # namespace=$(echo $pods | awk '{print $1}')
+  podname=$(echo $pods | awk '{print $2}')
+  namespace=$(echo $pods | awk '{print $1}')
   ns="-n $namespace"
 else
   echo "Warning: more than one pod! selected the first one."
