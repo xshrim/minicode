@@ -2,16 +2,16 @@
 
 kubecfg=""
 image=xo
-port=16022
+port=22
 timeout=60
 user=root
 #passwd=root
 idx=0
+kwd=""
+kind="pod"
 context=""
-kubeargs=""
+args=""
 chroot=""
-task=""
-rbac=false
 savepath=""
 vol=""
 
@@ -19,28 +19,73 @@ mandatory=()
 
 function usage() {
   echo "**USAGE**:
-  kude -k|-d [<arguments>]
-  kude -x [<command>] [<ipaddrs>]
-  kude [<options>] podname
+  kude <command> [<options>] [<object>]
+
+**COMMANDS**:
+  h,help                   打印命令帮助
+  d,docker                 运行docker命令
+  k,kube,kubectl           运行kubectl命令
+  c,cmd                    运行linux命令
+  dr,drun                  运行容器
+  dt,dtmp                  运行临时容器
+  dq,dquery                查看容器列表
+  di,dimg                  查看镜像列表
+  dn,dnet                  查看容器网络列表
+  dv,dvol                  查看容器卷列表
+  dd,drm                   删除容器
+  do,drmi                  删除镜像
+  dh,dhist                 查看镜像构建历史
+  du,dpush                 推送镜像
+  df,dpull                 拉取镜像
+  da,daddr                 查看容器网络信息
+  de,denv                  查看容器环境变量
+  dc,dcmd                  查看容器运行命令
+  dp,dport                 查看容器端口映射
+  dm,dmnt                  查看容器卷挂载
+  cfg,config               查看kubeconfig配置
+  g,dry,dryrun             模拟执行kubectl命令
+  a,apl,apply              执行kubectl apply命令
+  n,new,create             执行kubectl create命令
+  r,run                    执行kubectl run命令
+  b,rbac                   查看rbac结构图
+  al,all                   查看指定命名空间下所有资源
+  ro,rollout               执行kubectl rollout命令
+  au,auth                  执行kubectl auth命令
+  pr,proxy                 开启kube apiserver本地代理
+  l,log                    查看容器日志
+  lf,logf                  实时查看容器日志
+  i,insp,inspect           查看容器信息
+  s,desc,describe          查看k8s资源详细信息
+  m,wa,watch               监视指定k8s资源状态
+  w,wide                   查看k8s资源更多信息
+  wl,wlabel                查看k8s资源包括label在内的更多信息
+  y,yaml                   以yaml格式查看k8s资源信息
+  j,json                   以json格式查看k8s资源信息
+  p,patch                  为k8s资源打补丁
+  dl,del,delete            删除k8s资源
+  e,exe,exec               在pod中执行命令
+  ie,iexe,iexec            在pod中交互式执行命令
+  t,at,attach              加入pod的命名空间
+  cp,copy                  在本地和pod之间复制文件
+  pf,forward,port-forward  将本地端口映射到pod端口实现端口转发
+  x,debug                  运行调试容器对pod进行调试
 
 **OPTIONS**:
-  -a [args] 为kubectl的proxy, cp等命令提供参数
-  -c [test] kubernetes连接上下文(可选)
-  -d [args] 执行docker命令
-  -e [log, logf, inspect, describe, wide, yaml, json] 非交互式指令(可选)
+  -c [context] kubernetes连接上下文(可选)
+  -d [savedir] rbac结构图保存目录
   -f [./kube/config] kubeonfig文件路径(可选)
   -i [0] 匹配pod内容器index(可选)
-  -k [args] 执行kubectl命令
-  -m [xo] 自定义工具容器(可选)
-  -n [default] 查询的kubernetes命名空间(可选)
-  -o [xos] podname模糊匹配(可选)
-  -p [16022] 目标主机ssh端口(可选)
+  -k [kind] k8s资源类型
+  -m [xo] 自定义调试工具容器(可选)
+  -n [default] 查询的k8s命名空间(可选)
+  -o [host] 指定目标主机ip
+  -p [22] 目标主机ssh端口(可选)
   -s [admin123] 目标主机ssh密码(可选)
   -t [60] 目标主机ssh连接超时时间(可选)
   -u [root] 目标主机ssh账号(可选)
-  -x [cmd] 目标主机上需要执行的命令
-  -r Debug容器中是否需要chroot到目标容器的文件系统
-  -v Debug容器中是否需要挂载目标主机的docker.sock文件
+  -w [kwd] 过滤关键字
+  -r 调试容器中是否需要chroot到目标容器的文件系统
+  -v 调试容器中是否需要挂载目标主机的docker.sock文件
   -h 使用说明
 
 **REFERENCES**:
@@ -49,64 +94,90 @@ function usage() {
 # Kubectl: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
 
 **EXAMPLES**:
-# 命令在带kubectl的主机运行
-# 不带ssh相关参数的命令默认已经配置了免密登录
 
 # 直接执行docker或kubectl命令
-kude -d ps -a     #相当于docker ps -a
-kude -k get pod   #相当于kubectl get pod
+kude d ps -a     #相当于docker ps -a
+kude k get pod   #相当于kubectl get pod
 
 # 进行docker镜像推送并删除临时tag
-kude -x 'dpush xshrim/xo foo.bar.com/xshrim'
+kude du xshrim/xo foo.bar.com/xshrim
+
+# 查看docker容器运行的命令
+kude dc nginx
+
+# 查看镜像构建历史
+kude dh xshrim/xo
 
 # 远程到目标主机执行命令
-kude -x 'ls /etc' 127.0.0.1
-kude -p 22 -s admin -x 'ls /etc' 127.0.0.1
+kude cmd 'ls /etc' 127.0.0.1
+kude cmd -p 22 -w admin 'ls /etc' 127.0.0.1
 
 # 执行本机命令
-kude -x 'scp test root@10.0.0.10:/root/test'
+kude cmd 'scp test root@10.0.0.10:/root/test'
 
 # 获取Kubernetes RBAC结构图
-kude -b u demouser
-kude -b -n kube-system rolebinding
+kude b u demouser
+kude rbac -n kube-system rolebinding
 
-# 最简, 所有命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式
-kude xos
+# 查看kubeconfig配置
+kude cfg
 
-# xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式
-kude -n xshrim xos
+# 执行kubectl apply命令
+kude a pod.yaml
 
-# xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间进入交互模式并chroot到该容器的文件系统
-kude -n xshrim -i 0 -r xos
+# 开启kube-apiserver本地代理
+kude pr 8443
+kude pr 127.0.0.1:8443
 
-# 所有命名空间中寻找名称带xos字段的pod下的第二个容器并显示容器日志
-kude -e log -i 1 xos
+# 查看容器日志
+kude l nginx
+kude lf nginx
+kude log -i 1 nginx
 
-# 所有命名空间中寻找名称带xos字段的pod并显示其描述信息
-kude -e desc xos
+# 查看k8s资源详细信息
+kude s nginx
+kude desc -k deploy nginx
 
-# 所有命名空间中寻找名称带xos字段的pod并将其配置以json格式输出
-kude -e json xos
+# 以yaml格式查看k8s资源信息
+kude y nginx
+kude yaml -k rs nginx
 
-# 通过port-forward将所有命名空间中名称带xos字段的pod的指定端口映射到本地
-kude -e pf -a "8080:80" xos
+# 监视k8s资源状态
+kude m -k pod nginx
+kude watch -k deploy nginx
 
-# 所有命名空间中寻找名称带xos字段的pod并进入命令行交互模式
-kude -e exe xos
+# 为k8s资源打补丁
+kude p -k deploy nginx '{"spec":{"replicas":2}}'
 
-# 所有命名空间中寻找名称带xos字段的pod并执行命令(不进入交互模式)
-kude -e exec xos -a 'ls /root'
+# 进入pod执行命令
+kude e nginx -n default ls
+kude ie nginx
 
-# 所有命名空间中寻找名称带xos字段的pod并进行远程文件复制
-kude -e cp -a 'test :/root/' xos
-kude -e cp -a ':/root/test .' xos
+# 在本地和pod之间复制文件
+kude cp nginx :/foo ./foo
+kude cp nginx -n default bar :/bar
 
-# xshrim命名空间中寻找名称带xos字段的pod, 部署Debug容器共享该pod下第一个容器的命名空间并进入交互模式, 目标主机ssh账号密码端口指定, Debug容器使用netshoot
-kude -n xshrim -u root -p 22 -s admin123 -m netshoot xos
+# 将本地端口映射到pod端口实现端口转发
+kude pf nginx 8000:80
+kude -c minikube pf nginx -n default 8000:80
+
+# 运行调试容器对pod内的指定容器进行调试
+kude x nginx
+kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
 "
 }
 
+function require() {
+  for dep in $*; do
+    if ! type $dep &>/dev/null; then
+      echo "$dep required"
+      exit 1
+    fi
+  done
+}
+
 function dockerpush() {
+  require docker
   # lrepo=${1%/*}
   limg=${1##*/}
   rrepo=${2%/*}
@@ -127,12 +198,13 @@ function dockerpush() {
 }
 
 function lexecmd() {
-  lcmd=$1
-  if [ "$lcmd" == "dpush" ]; then
-    dockerpush "${@:2}"
-  else
-    $@
-  fi
+  # lcmd=$1
+  # if [ "$lcmd" == "dpush" ]; then
+  #   dockerpush "${@:2}"
+  # else
+  #   $*
+  # fi
+  eval "$*"
 }
 
 function execmd() {
@@ -157,259 +229,612 @@ function execmd() {
   fi
 }
 
-# 依赖docker和kubectl
-if ! type docker &>/dev/null || ! type kubectl &>/dev/null; then
-  echo "docker and kubectl required"
-  exit 1
+if ! [[ "$1" =~ ^- ]]; then
+  subcmd=$1
+  shift
 fi
 
-args=$@
-if [ $# -gt 0 ] && [ $1 == "-k" ]; then
-  kubectl ${args#-k }
-  exit 0
-fi
+if [ $subcmd == "d" ] || [ $subcmd == "docker" ]; then
+  require docker
+  docker $*
+elif [ $subcmd == "k" ] || [ $subcmd == "kube" ] || [ $subcmd == "kubectl" ]; then
+  require kubectl
+  kubectl $*
+elif [ $subcmd == "dr" ] || [ $subcmd == "drun" ]; then
+  require docker
+  docker run $*
+elif [ $subcmd == "dt" ] || [ $subcmd == "dtmp" ]; then
+  require docker
+  docker run -it --rm $*
+else
+  while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
+    while getopts "c:d:f:i:k:m:n:o:p:s:t:u:w:hrv" opt; do
+      case $opt in
+      c)
+        context="--context $OPTARG"
+        ;;
+      d)
+        savedir="$OPTARG"
+        ;;
+      f)
+        kubecfg=$OPTARG
+        ;;
+      i)
+        idx=$OPTARG
+        ;;
+      k)
+        kind=$OPTARG
+        ;;
+      m)
+        image=$OPTARG
+        ;;
+      n)
+        namespace=$OPTARG
+        ;;
+      o)
+        host="$OPTARG"
+        ;;
+      p)
+        port=$OPTARG
+        ;;
+      r)
+        chroot="-c 'chroot /proc/1/root/'"
+        ;;
+      s)
+        passwd=$OPTARG
+        ;;
+      t)
+        timeout=$OPTARG
+        ;;
+      u)
+        user=$OPTARG
+        ;;
+      v)
+        vol="-v /var/run/docker.sock:/var/run/docker.sock"
+        ;;
+      w)
+        kwd=$OPTARG
+        ;;
+      h)
+        usage
+        exit 0
+        ;;
+      \?)
+        echo "Invalid option: -$OPTARG" >&2
+        exit 1
+        ;;
+      esac
+    done
 
-if [ $# -gt 0 ] && [ $1 == "-d" ]; then
-  docker ${args#-d }
-  exit 0
-fi
+    shift $((OPTIND - 1))
 
-while [ $# -gt 0 ] && [ "$1" != "--" ]; do
-  while getopts "a:c:d:e:f:i:m:n:o:p:s:t:u:x:hbrv" opt; do
-    case $opt in
-    a)
-      kubeargs="$OPTARG"
+    while [ $# -gt 0 ] && (! [[ "$1" =~ ^- ]] || [[ "$1" =~ ^-- ]]); do
+      mandatory=("${mandatory[@]}" "$1")
+      shift
+    done
+  done
+
+  if [ "$1" == "--" ]; then
+    shift
+    mandatory=("${mandatory[@]}" "$@")
+  fi
+
+  # echo ${#mandatory[@]}
+
+  kc=""
+  if [ -n "$kubecfg" ]; then
+    kc="--kubeconfig $kubecfg"
+  fi
+
+  if [ -z "$namespace" ]; then
+    ns="--all-namespaces"
+  else
+    ns="-n $namespace"
+  fi
+
+  if [ $subcmd == "h" ] || [ $subcmd == "help" ]; then
+    usage
+    exit 0
+  elif [ $subcmd == "c" ] || [ $subcmd == "cmd" ]; then
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      cmd=${mandatory[0]}
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    else
+      echo "need arguments"
+      exit 1
+    fi
+  elif [ $subcmd == "dq" ] || [ $subcmd == "dquery" ]; then
+    cmd="docker ps -a"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "di" ] || [ $subcmd == "dimg" ]; then
+    cmd="docker image ls"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dn" ] || [ $subcmd == "dnet" ]; then
+    cmd="docker network ls"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dv" ] || [ $subcmd == "dvol" ]; then
+    cmd="docker volume ls"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "du" ] || [ $subcmd == "dpush" ]; then
+    require docker
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      llib=${mandatory[0]%/*}
+      limg=${mandatory[0]##*/}
+      rrepo=${mandatory[1]%/*}
+      rlib=${mandatory[1]#*/}
+
+      if [ "$rlib" == "" ] || [ "$rlib" == "$rrepo" ]; then
+        if [[ "$rrepo" =~ "." ]]; then
+          rlib="library"
+        else
+          rlib=$rrepo
+          rrepo="docker.io"
+        fi
+      fi
+
+      if [ -z "$rlib" ]; then
+        if [ -n "$llib" ]; then
+          rlib=$llib
+        else
+          rlib="library"
+        fi
+      fi
+
+      docker tag ${mandatory[0]} $rrepo/$rlib/$limg
+      docker push $rrepo/$rlib/$limg
+      if [ "$rrepo" != "docker.io" ]; then
+        docker rmi -f $rrepo/$rlib/$limg
+      fi
+    else
+      echo "need arguments"
+    fi
+  elif [ $subcmd == "df" ] || [ $subcmd == "dpull" ]; then
+    cmd="docker pull ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dd" ] || [ $subcmd == "drm" ]; then
+    cmd="docker rm -f ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "do" ] || [ $subcmd == "drmi" ]; then
+    cmd="docker rmi -f ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dh" ] || [ $subcmd == "dhist" ]; then
+    cmd="docker history ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "da" ] || [ $subcmd == "daddr" ]; then
+    cmd="docker inspect --format='{{json .NetworkSettings.Networks}}' ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "de" ] || [ $subcmd == "denv" ]; then
+    cmd="docker inspect --format='{{json .Config.Env}}' ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dc" ] || [ $subcmd == "dcmd" ]; then
+    cmd="docker inspect --format='{{json .Config.Cmd}}' ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dp" ] || [ $subcmd == "dport" ]; then
+    cmd="docker inspect --format='{{json .NetworkSettings.Ports}}' ${mandatory[0]}"
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dm" ] || [ $subcmd == "dmnt" ]; then
+    cmd="docker inspect --format='{{json .Mounts}}' ${mandatory[0]}"
+    echo $cmd
+    if [ ${#mandatory[@]} -eq 1 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]:1}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "cfg" ] || [ $subcmd == "config" ]; then
+    require kubectl
+    kubectl $kc $context config view
+  elif [ $subcmd == "g" ] || [ $subcmd == "dry" ] || [ $subcmd == "dryrun" ]; then
+    require kubectl
+    if [ "$ns" == "--all-namespaces" ]; then
+      ns=""
+    fi
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      kubectl $kc $context ${mandatory[@]} --dry-run
+    else
+      echo "need arguments"
+      exit 1
+    fi
+  elif [ $subcmd == "a" ] || [ $subcmd == "apl" ] || [ $subcmd == "apply" ]; then
+    require kubectl
+    if [ "$ns" == "--all-namespaces" ]; then
+      ns=""
+    fi
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      for fname in ${mandatory[@]}; do
+        kubectl $kc $context apply -f $fname $ns
+      done
+    else
+      echo "need arguments"
+      exit 1
+    fi
+  elif [ $subcmd == "n" ] || [ $subcmd == "new" ] || [ $subcmd == "create" ]; then
+    require kubectl
+    if [ "$ns" == "--all-namespaces" ]; then
+      ns=""
+    fi
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      isfile="true"
+      for fname in ${mandatory[@]}; do
+        if ! [[ $fname =~ .yaml$ ]] && ! [[ $fname =~ .yml$ ]] && ! [[ $fname =~ .json$ ]]; then
+          isfile="false"
+          break
+        fi
+      done
+      if [ $isfile == "true" ]; then
+        for fname in ${mandatory[@]}; do
+          kubectl $kc $context create -f $fname $ns
+        done
+      else
+        kubectl $kc $context create $kind ${mandatory[@]} $ns
+      fi
+    else
+      echo "need arguments"
+      exit 1
+    fi
+  elif [ $subcmd == "r" ] || [ $subcmd == "run" ]; then
+    require kubectl
+    if [ "$ns" == "--all-namespaces" ]; then
+      ns=""
+    fi
+    if [ ${#mandatory[@]} -gt 1 ]; then
+      kubectl $kc $context run ${mandatory[@]} $ns
+    else
+      echo "need arguments"
+      exit 1
+    fi
+  elif [ $subcmd == "b" ] || [ $subcmd == "rbac" ]; then
+    require kubectl rback dot
+    if [ -n "$savedir" ]; then
+      kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json | rback -show-legend=false ${mandatory[*]} | dot -Tsvg >$savedir/rbac.svg
+    else
+      dispapp="xdg-open"
+      if type display &>/dev/null; then
+        dispapp="display"
+      elif type inkview &>/dev/null; then
+        dispapp="inkview"
+      elif type feh &>/dev/null; then
+        dispapp="feh --conversion-timeout 1"
+      fi
+      kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json | rback -show-legend=false ${mandatory[*]} | dot -Tsvg | $dispapp
+    fi
+  elif [ $subcmd == "al" ] || [ $subcmd == "all" ]; then
+    require kubectl
+    kubectl $kc $context get all $ns
+  elif [ $subcmd == "ro" ] || [ $subcmd == "rollout" ]; then
+    require kubectl
+    kubectl $kc $context rollout ${mandatory[@]} $ns
+  elif [ $subcmd == "au" ] || [ $subcmd == "auth" ]; then
+    require kubectl
+    kubectl $kc $context auth "${mandatory[@]}" $ns
+  elif [ $subcmd == "pr" ] || [ $subcmd == "proxy" ]; then
+    require kubectl
+    if [[ "${mandatory[*]}" =~ ":" ]]; then
+      ip=$(echo "${mandatory[*]}" | awk -F ':' '{print $1}')
+      pt=$(echo "${mandatory[*]}" | awk -F ':' '{print $2}')
+      if [ -z "$ip" ]; then
+        ip="127.0.0.1"
+      fi
+      if [ -z "$port" ]; then
+        pt=$port
+      fi
+    else
+      ip="127.0.0.1"
+      pt=${mandatory[*]}
+    fi
+    kubectl $kc $context proxy --address $ip --port $pt
+  else
+    require kubectl
+    if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
+      # kwd=${mandatory[${#mandatory[@]} - 1]}
+      # if [ ${#mandatory[@]} -gt 1 ]; then
+      #   args=${mandatory[@]::${#mandatory[@]}-1}
+      # fi
+      kwd=${mandatory[0]}
+      if [ ${#mandatory[@]} -gt 1 ]; then
+        args=${mandatory[@]:1}
+      fi
+    elif [ -n "$kwd" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        args=${mandatory[@]}
+      fi
+    fi
+
+    hasnsfield="false"
+    ress=()
+    result=$(kubectl $kc $context get $kind $ns 2>/dev/null)
+    SIFS=$IFS
+    IFS=$'\n'
+    result=($result)
+    IFS=$SIFS
+    if [[ $(echo "${result[0]}" | awk '{print $1}') == "NAMESPACE" ]]; then
+      hasnsfield="true"
+    fi
+    for ((i = 1; i < ${#result[@]}; i++)); do
+      if [[ "${result[$i]}" =~ "$kwd" ]]; then
+        ress+=("${result[$i]}")
+      fi
+    done
+    #ress=($(echo ${result[@]:1} | grep "$kwd"))
+
+    if [ $? -ne 0 ] || [ ${#ress[@]} -eq 0 ]; then
+      echo "No $kind resources found with keyword $kwd"
+      exit 1
+    fi
+
+    if [ ${#ress[@]} -eq 1 ]; then
+      rs=$ress
+    else
+      echo "====== More than one $kind ======"
+      for ((i = 0; i < ${#ress[@]}; i++)); do
+        echo "$i: ${ress[$i]}"
+      done
+      # echo "====== Selected the first ======"
+      read -p "====== select one with number[0]: " ridx
+      rs=${ress[$ridx]}
+    fi
+    if [ "$ns" == "--all-namespaces" ]; then
+      if [ $hasnsfield == "false" ]; then
+        resname=$(echo $rs | awk '{print $1}')
+      else
+        resname=$(echo $rs | awk '{print $2}')
+        namespace=$(echo $rs | awk '{print $1}')
+        ns="-n $namespace"
+      fi
+    else
+      resname=$(echo $rs | awk '{print $1}')
+    fi
+
+    if [ $kind == "pod" ]; then
+      podinfo=$(kubectl $kc $context get pod $resname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[0].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $resname)
+
+      if [ $? -ne 0 ]; then
+        echo "$resname[$idx] container not found"
+        exit 1
+      fi
+
+      hname=$(echo $podinfo | awk '{print $1}')
+      haddr=$(echo $podinfo | awk '{print $2}')
+      pname=$(echo $podinfo | awk '{print $3}')
+      caddr=$(echo $podinfo | awk '{print $4}')
+      cname=$(echo $podinfo | awk '{print $5}')
+      cid=$(echo $podinfo | awk '{print $6}')
+      cid=${cid#*docker://}
+      cid=${cid:0:12}
+
+      echo "==============================================================================================================================================="
+      echo "Namespace: "${ns#-n } "HostName: "$hname "HostIP:"$haddr "PodName:"$pname "PodIP:"$caddr "CName:"$cname "CID:"$cid
+      echo "==============================================================================================================================================="
+
+      if [ -n "$host" ]; then
+        haddr=$host
+      fi
+    fi
+
+    case $subcmd in
+    "l" | "log")
+      if [ $kind == "pod" ]; then
+        if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
+          docker logs $cid
+        else
+          kubectl $kc $context logs $resname $cname $ns
+        fi
+      else
+        echo "subcmd log not fit for $kind"
+      fi
       ;;
-    b)
-      rbac=true
+    "lf" | "logf")
+      if [ $kind == "pod" ]; then
+        if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
+          docker logs -f $cid
+        else
+          kubectl $kc $context logs -f $resname $cname $ns
+        fi
+      else
+        echo "subcmd logf not fit for $kind"
+      fi
       ;;
-    c)
-      context="--context $OPTARG"
+    "i" | "insp" | "inspect")
+      if [ $kind == "pod" ]; then
+        if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
+          docker inspect $cid
+        else
+          execmd "docker inspect $cid" $haddr
+        fi
+      else
+        echo "subcmd inspect not fit for $kind"
+      fi
       ;;
-    d)
-      savedir="$OPTARG"
+    "s" | "desc" | "describe")
+      kubectl $kc $context describe $kind $resname $ns
       ;;
-    e)
-      darg=$OPTARG
-      image=""
+    "m" | "wa" | "watch")
+      kubectl $kc $context get $kind $resname $ns --watch
       ;;
-    f)
-      kubecfg=$OPTARG
+    "w" | "wide")
+      kubectl $kc $context get $kind $resname $ns -o wide
       ;;
-    i)
-      idx=$OPTARG
+    "wl" | "wlabel")
+      kubectl $kc $context get $kind $resname $ns -o wide --show-labels
       ;;
-    m)
-      image=$OPTARG
+    "y" | "yaml")
+      kubectl $kc $context get $kind $resname $ns -o yaml
       ;;
-    n)
-      namespace=$OPTARG
+    "j" | "json")
+      kubectl $kc $context get $kind $resname $ns -o json
       ;;
-    o)
-      pod=$OPTARG
+    "p" | "patch")
+      kubectl $kc $context patch $kind $resname $ns --patch $args
       ;;
-    p)
-      port=$OPTARG
+    "dl" | "del" | "delete")
+      isfile="true"
+      for fname in ${mandatory[@]}; do
+        if ! [[ $fname =~ .yaml$ ]] && ! [[ $fname =~ .yml$ ]] && ! [[ $fname =~ .json$ ]]; then
+          isfile="false"
+          break
+        fi
+      done
+      if [ $isfile == "true" ]; then
+        for fname in ${mandatory[@]}; do
+          kubectl $kc $context delete -f $fname
+        done
+      else
+        kubectl $kc $context delete $kind $resname $ns
+      fi
       ;;
-    s)
-      passwd=$OPTARG
+    "e" | "exe" | "exec")
+      if [ $kind == "pod" ]; then
+        kubectl $kc $context exec $resname -c $cname $args $ns
+      else
+        echo "subcmd exec not fit for $kind"
+      fi
       ;;
-    t)
-      timeout=$OPTARG
+    "ie" | "iexe" | "iexec")
+      if [ $kind == "pod" ]; then
+        kubectl $kc $context exec -it $resname -c $cname sh $ns
+      else
+        echo "subcmd iexec not fit for $kind"
+      fi
       ;;
-    u)
-      user=$OPTARG
+    "t" | "at" | "attach")
+      if [ $kind == "pod" ]; then
+        kubectl $kc $context attach $resname -c $cname $ns
+      else
+        echo "subcmd attach not fit for $kind"
+      fi
       ;;
-    x)
-      task=$OPTARG
+    "cp" | "copy")
+      if [ $kind == "pod" ]; then
+        prearg=$(echo "$args" | awk -F ':' '{print $1}')
+        sufarg=$(echo "$args" | awk -F ':' '{print $2}')
+        if [ "$prearg" == "" ]; then
+          prearg="$resname:"$prearg
+        else
+          sufarg="$resname:"$sufarg
+        fi
+        kubectl $kc $context cp $prearg$sufarg $ns
+      else
+        echo "subcmd copy not fit for $kind"
+      fi
       ;;
-    r)
-      chroot="-c 'chroot /proc/1/root/'"
+    "pf" | "forward" | "port-forward")
+      if [ $kind == "pod" ]; then
+        kubectl $kc $context port-forward $resname $args $ns
+      else
+        echo "subcmd port-forward not fit for $kind"
+      fi
       ;;
-    v)
-      vol="-v /var/run/docker.sock:/var/run/docker.sock"
+    "x" | "debug")
+      if [ $kind == "pod" ]; then
+        if [ $image == "xo" ] || [ $image == "xshrim/xo" ]; then
+          imgsh="$image zsh $chroot"
+        else
+          imgsh="$image sh $chroot"
+        fi
+
+        cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $imgsh"
+
+        execmd "$cmd" $haddr
+      else
+        echo "subcmd debug not fit for $kind"
+      fi
       ;;
-    h)
+    *)
       usage
-      exit 0
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
       exit 1
       ;;
     esac
-  done
-
-  shift $((OPTIND - 1))
-
-  while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
-    mandatory=("${mandatory[@]}" "$1")
-    shift
-  done
-done
-
-if [ "$1" == "--" ]; then
-  shift
-  mandatory=("${mandatory[@]}" "$@")
-fi
-
-if [ -n "$task" ]; then
-  if [ ${#mandatory[@]} -eq 0 ]; then
-    execmd "$task"
-  else
-    for ip in ${mandatory[*]}; do
-      execmd "$task" $ip
-    done
   fi
-  exit 0
 fi
-
-kc=""
-if [ -n "$kubecfg" ]; then
-  kc="--kubeconfig $kubecfg"
-fi
-
-if [ -z "$namespace" ]; then
-  ns="--all-namespaces"
-else
-  ns="-n $namespace"
-fi
-
-if "$rbac"; then
-  # 依赖rback和dot
-  if ! type rback &>/dev/null || ! type dot &>/dev/null; then
-    echo "rback and dot required"
-    exit 1
-  fi
-  if [ -n "$savedir" ]; then
-    kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json|rback -show-legend=false ${mandatory[*]}|dot -Tsvg > $savedir/rbac.svg
-  else
-    dispapp="xdg-open"
-    if type display &>/dev/null; then
-      dispapp="display"
-    elif type inkview &>/dev/null; then
-      dispapp="inkview"
-    elif type feh &>/dev/null; then
-      dispapp="feh --conversion-timeout 1"
-    fi
-    kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json|rback -show-legend=false ${mandatory[*]}|dot -Tsvg|$dispapp
-  fi
-  exit 0
-fi
-
-if [ -z "$pod" ] && [ ${#mandatory[@]} -gt 0 ]; then
-  pod=${mandatory[0]}
-fi
-
-if [ -z "$kubecfg" ] && [ -f "$HOME/.kube/config" ]; then
-  kubecfg=$HOME/.kube/config
-fi
-
-pods=$(kubectl $kc $context get pod $ns 2>/dev/null | grep $pod)
-
-if [ $? -ne 0 ] || [ ${#pods[@]} -eq 0 ]; then
-  echo "No resources found"
-  exit 1
-fi
-
-if [ ${#pods[@]} -eq 1 ]; then
-  podname=$(echo $pods | awk '{print $2}')
-  namespace=$(echo $pods | awk '{print $1}')
-  ns="-n $namespace"
-else
-  echo "Warning: more than one pod! selected the first one."
-  podname=$(echo $pods[0] | awk '{print $2}')
-  namespace=$(echo $pods[0] | awk '{print $1}')
-  ns="-n $namespace"
-fi
-
-podinfo=$(kubectl $kc $context get pod $podname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[0].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $podname)
-
-if [ $? -ne 0 ]; then
-  echo "$podname[$idx] container not found"
-  exit 1
-fi
-
-hname=$(echo $podinfo | awk '{print $1}')
-haddr=$(echo $podinfo | awk '{print $2}')
-pname=$(echo $podinfo | awk '{print $3}')
-caddr=$(echo $podinfo | awk '{print $4}')
-cname=$(echo $podinfo | awk '{print $5}')
-cid=$(echo $podinfo | awk '{print $6}')
-cid=${cid#*docker://}
-cid=${cid:0:12}
-
-echo "==============================================================================================================================================="
-echo "Namespace: "${ns#-n } "HostName: "$hname "HostIP:"$haddr "PodName:"$pname "PodIP:"$caddr "CName:"$cname "CID:"$cid
-echo "==============================================================================================================================================="
-
-if [ -z "$image" ]; then
-  if [ $darg == "log" ]; then
-    if [ $(hostname) == $hname ]; then
-      cmd="docker logs $cid"
-    else
-      kubectl $kc $context logs $podname $cname $ns
-      exit 0
-    fi
-  elif [ $darg == "logf" ]; then
-    if [ $(hostname) == $hname ]; then
-      cmd="docker logs -f $cid"
-    else
-      kubectl $kc $context logs -f $podname $cname $ns
-      exit 0
-    fi
-  elif [ $darg == "inspect" ] || [ $darg == "insp" ]; then
-    cmd="docker inspect $cid"
-  elif [ $darg == "describe" ] || [ $darg == "desc" ]; then
-    kubectl $kc $context describe pod $podname $ns
-    exit 0
-  elif [ $darg == "wide" ]; then
-    kubectl $kc $context get pod $podname $ns -o wide
-    exit 0
-  elif [ $darg == "yaml" ]; then
-    kubectl $kc $context get pod $podname $ns -o yaml
-    exit 0
-  elif [ $darg == "json" ]; then
-    kubectl $kc $context get pod $podname $ns -o json
-    exit 0
-  elif [ $darg == "exe" ]; then
-    kubectl $kc $context exec -it $podname -c $cname sh $ns
-    exit 0
-  elif [ $darg == "exec" ]; then
-    kubectl $kc $context exec $podname -c $cname $kubeargs $ns
-    exit 0
-  elif [ $darg == "attach" ]; then
-    kubectl $kc $context attach $podname -c $cname $ns
-    exit 0
-  elif [ $darg == "cp" ]; then
-    prearg=$(echo "$kubeargs" | awk -F ':' '{print $1}')
-    sufarg=$(echo "$kubeargs" | awk -F ':' '{print $2}')
-    if [ "$prearg" == "" ]; then
-      prearg="$podname:"$prearg
-    else
-      sufarg="$podname:"$sufarg
-    fi
-    kubectl $kc $context cp $prearg$sufarg $ns
-    exit 0
-  elif [ $darg == "proxy" ]; then
-    kubectl $kc $context proxy $kubeargs
-    exit 0
-  elif [ $darg == "auth" ]; then
-    echo $kubeargs
-    kubectl $kc $context auth $kubeargs $ns
-    exit 0
-  elif [ $darg == "pf" ]; then
-    kubectl $kc $context port-forward $podname $kubeargs $ns
-    exit 0
-  fi
-else
-  if [ $image == "xo" ]; then
-    imgsh="$image zsh $chroot"
-  else
-    imgsh="$image sh $chroot"
-  fi
-
-  cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $imgsh"
-fi
-
-execmd "$cmd" $haddr
