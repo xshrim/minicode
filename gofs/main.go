@@ -33,7 +33,7 @@ import (
 // 解决alpine镜像问题, udp问题, 时区问题
 // RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
-const maxUploadSize = 4 * (2 << 30) // 4 * 1GB
+const maxUploadSize = 32 * (2 << 30) // 32 * 1GB
 var dir, host, port string
 
 const html = `
@@ -51,6 +51,7 @@ const html = `
 <body>
   <p><strong>CMD Method</strong></p>
   <p>curl -X POST -F "path=bar" -F "file=@/root/foo/sample.pdf" http://{{.Host}}:{{.Port}}/upload</p>
+  <p>curl -X POST -d "filepath=bar/sample.pdf" http://{{.Host}}:{{.Port}}/delete</p>
   <p><strong>WEB Method</strong></p>
   <form enctype="multipart/form-data" action="http://{{.Host}}:{{.Port}}/upload" method="post" target="iiframe">
     <input name="path" placeholder="(Optional) remote storage path" size="30" />
@@ -83,10 +84,51 @@ func GetLocalIP() string {
 	return "127.0.0.1"
 }
 
+// delete file
+// curl -X POST -d "filepath=bar/sample.pdf" http://127.0.0.1:2333/delete
+func delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		r.ParseForm()
+		fpath := strings.TrimSpace(r.FormValue("filepath"))
+		if fpath == "" {
+			log.Println("Delete file error: no file specified")
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "✘ Failed: no file specified")
+			return
+		}
+
+		// fmt.Println(dir, fpath, handler.Filename)
+		fullpath := filepath.Join(dir, fpath)
+
+		if err := os.RemoveAll(fullpath); err != nil {
+			log.Println("Delete file error: ", err.Error())
+			fmt.Fprintf(w, "✘ Failed: %s", err.Error())
+			return
+		}
+
+		log.Println("Delete file", fpath, "successfully")
+		fmt.Fprintf(w, "✔ Succeeded")
+	} else {
+		log.Println("Delete file error: requst method must be post")
+		fmt.Fprintf(w, "✘ Failed: requst method must be post")
+	}
+}
+
 // upload file
-//curl -X POST -F "path=test" -F "file=@/home/xshrim/a.js" http://127.0.0.1:8080/upload
-//curl -X POST -F "file=@/home/xshrim/a.js" http://127.0.0.1:8080/upload/test/a.js
+// curl -X POST -F "path=test" -F "file=@/home/xshrim/a.js" http://127.0.0.1:2333/upload
+// curl -X POST -F "file=@/home/xshrim/a.js" http://127.0.0.1:2333/upload/test/a.js
 func upload(w http.ResponseWriter, r *http.Request) {
+
+	ht := host
+	pt := port
+
+	if wh := os.Getenv("WEBHOST"); wh != "" {
+		ht = wh
+		pt = "80"
+		if wp := os.Getenv("WEBPORT"); wp != "" {
+			pt = wp
+		}
+	}
 
 	if r.Method == "GET" {
 		// crutime := time.Now().Unix()
@@ -99,8 +141,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 		// t.Execute(w, token)
 		t.Execute(w, &Server{
-			Host: host,
-			Port: port,
+			Host: ht,
+			Port: pt,
 		})
 		return
 	}
@@ -172,6 +214,8 @@ func main() {
 
 	http.HandleFunc("/upload", upload)
 	http.HandleFunc("/upload/", upload)
+
+	http.HandleFunc("/delete", delete)
 
 	log.Println(fmt.Sprintf("serve path: <%s>", dir))
 	log.Println(fmt.Sprintf("browse url: <0.0.0.0:%s>[%s]", port, host))

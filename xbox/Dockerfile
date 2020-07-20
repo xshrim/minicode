@@ -81,6 +81,8 @@ RUN set -ex \
     rsync \
     samba \
     samba-client \
+    samba-server \
+    samba-common-tools \
     scapy \
     socat \
     sqlite \
@@ -98,7 +100,6 @@ RUN set -ex \
 WORKDIR /root/
 #py2-virtualenv \
 # apparmor issue #14140 
-RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump && echo 'alias iperf="iperf3"' >> /etc/profile && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && ssh-keygen -t rsa -P "" -f /etc/ssh/ssh_host_rsa_key && ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key && ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key && echo "root:root" | chpasswd
 
 # Installing ctop - top-like container monitor
 #RUN wget https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64 -O /usr/local/bin/ctop && chmod +x /usr/local/bin/ctop
@@ -121,12 +122,17 @@ COPY static /root/static
 COPY oh-my-zsh /root/.oh-my-zsh
 COPY zshrc /root/.zshrc
 COPY vimrc /root/.vimrc
+COPY smb.conf /root/smb.conf
+
+RUN mkdir /share && mv /usr/sbin/tcpdump /usr/bin/tcpdump && echo 'alias iperf="iperf3"' >> /etc/profile && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && ssh-keygen -t rsa -P "" -f /etc/ssh/ssh_host_rsa_key && ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key && ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key && echo "root:root" | chpasswd && addgroup -g 1111 smb && adduser -D -H -G smb -s /bin/false -u 1111 smb && echo -e "smb\nsmb" | smbpasswd -a -s -c /root/smb.conf smb
 
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2   # 解决go语言程序无法在alpine执行的问题
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
 # 开放ssh端口
 EXPOSE 22
+# 开放smb端口
+EXPOSE 135/tcp 137/udp 138/udp 139/tcp 445/tcp
 # 开放webssh端口
 EXPOSE 2222
 # 开放gofs端口

@@ -26,6 +26,8 @@ function usage() {
   d,docker                 运行docker命令
   k,kube,kubectl           运行kubectl命令
   c,cmd                    运行linux命令
+  scp                      分发本机文件
+  git                      git一键提交并上传
   dr,drun                  运行容器
   dt,dtmp                  运行临时容器
   dq,dquery                查看容器列表
@@ -94,7 +96,6 @@ function usage() {
 # Kubectl: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
 
 **EXAMPLES**:
-
 # 直接执行docker或kubectl命令
 kude d ps -a     #相当于docker ps -a
 kude k get pod   #相当于kubectl get pod
@@ -109,11 +110,14 @@ kude dc nginx
 kude dh xshrim/xo
 
 # 远程到目标主机执行命令
-kude cmd 'ls /etc' 127.0.0.1
-kude cmd -p 22 -w admin 'ls /etc' 127.0.0.1
+kude cmd 'ls /etc' 127.0.0.1 10.20.0.12-18
+kude cmd -p 22 -s admin 'ls /etc' 127.0.0.1
 
 # 执行本机命令
 kude cmd 'scp test root@10.0.0.10:/root/test'
+
+# 将本地文件分发到远程主机
+./kude scp './foo:/root/bar' 10.20.0.12-18
 
 # 获取Kubernetes RBAC结构图
 kude b u demouser
@@ -214,18 +218,75 @@ function execmd() {
   if [ "$ipaddr" == "" ]; then
     lexecmd $ecmd
   else
-    if [ -n "$user" ]; then
+    if [ -z "$user" ]; then
       user="root"
     fi
-    if [ -n "$passwd" ]; then
+    if [ -z "$passwd" ]; then
       passwd="root"
     fi
+    
+    ipd=${ipaddr%.*}
+    ipr=${ipaddr##*.}
 
-    if [ -n "$passwd" ] && type sshpass &>/dev/null; then
-      sshpass -p $passwd ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$ipaddr "$ecmd"
-    else
-      ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$ipaddr "$ecmd"
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+    ipstart=${ipr%-*}
+    ipend=${ipr##*-}
     fi
+
+    for ((i=$ipstart;i<=$ipend;i++))
+    do
+      cip=$ipd.$i
+      echo "[*] $cip"
+      if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+        sshpass -p $passwd ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$cip "$ecmd"
+      else
+        ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$cip "$ecmd"
+      fi
+    done
+  fi
+}
+
+function remotecp() {
+  paths=$1
+  ipaddr=$2
+
+  if [ "$paths" == "" ] || [ "$ipaddr" == "" ]; then
+    return
+  else
+    if [ -z "$user" ]; then
+      user="root"
+    fi
+    if [ -z "$passwd" ]; then
+      passwd="root"
+    fi
+    
+    lpath=${paths%:*}
+    rpath=${paths##*:}
+    
+    ipd=${ipaddr%.*}
+    ipr=${ipaddr##*.}
+
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+    ipstart=${ipr%-*}
+    ipend=${ipr##*-}
+    fi
+
+    for ((i=$ipstart;i<=$ipend;i++))
+    do
+      cip=$ipd.$i
+      echo "[*] $cip"
+      if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+        sshpass -p $passwd scp -P $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $user@$cip:$rpath
+      else
+        scp -t -P $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r$lpath $user@$cip:$rpath
+      fi
+    done
   fi
 }
 
@@ -349,6 +410,29 @@ else
       echo "need arguments"
       exit 1
     fi
+  elif [ $subcmd == "scp" ]; then
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      cppaths=${mandatory[0]}
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        remotecp "$cppaths"
+      else
+        for ip in ${mandatory[@]:1}; do
+          remotecp "$cppaths" $ip
+        done
+      fi
+    else
+      echo "need arguments"
+      exit 1
+    fi
+  elif [ $subcmd == "git" ]; then
+    require git
+    cmsg="update"
+    if [ ${#mandatory[@]} -gt 0 ]; then
+      cmsg=${mandatory[*]}
+    fi
+    git add -A .
+    git commit -m "$cmsg"
+    git push
   elif [ $subcmd == "dq" ] || [ $subcmd == "dquery" ]; then
     cmd="docker ps -a"
     if [ ${#mandatory[@]} -eq 0 ]; then

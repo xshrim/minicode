@@ -1,0 +1,233 @@
+{
+  "apiVersion": "admission.k8s.io/v1beta1",
+  "kind": "AdmissionReview",
+  "request": {
+    "dryRun": false,
+    "kind": {
+      "group": "apps",
+      "kind": "Deployment",
+      "version": "v1"
+    },
+    "name": "consul",
+    "namespace": "effective-default",
+    "object": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "cpaas.io/creator": "zengkai@ebchinatech.com",
+          "cpaas.io/updated-at": "2020-06-22T11:00:48Z",
+          "deployment.kubernetes.io/revision": "2",
+          "field.cattle.io/publicEndpoints": "[{\"addresses\":[\"\\u003cnil\\u003e\"],\"port\":80,\"protocol\":\"HTTP\",\"serviceName\":\"effective-default:consul\",\"ingressName\":\"effective-default:consul\",\"hostname\":\"consul.ebcpaas.com\",\"path\":\"/\",\"allNodes\":true}]"
+        },
+        "creationTimestamp": "2020-06-22T09:14:29Z",
+        "generation": 1663,
+        "name": "consul",
+        "namespace": "effective-default",
+        "resourceVersion": "112599996",
+        "selfLink": "/apis/apps/v1/namespaces/effective-default/deployments/consul",
+        "uid": "c6e0b444-b468-11ea-a673-fa163e1f29db"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "project.cpaas.io/name": "effective",
+            "service.cpaas.io/name": "deployment-consul"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "cpaas.io/creator": "zengkai@ebchinatech.com"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "project.cpaas.io/name": "effective",
+              "service.cpaas.io/name": "deployment-consul"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "reg.ebcpaas.com/effective/consul:latest",
+                "imagePullPolicy": "Always",
+                "name": "consul",
+                "ports": [
+                  {
+                    "containerPort": 8500,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "dockercfg--effective--reg-ebcpaas-com"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2020-06-22T09:14:32Z",
+            "lastUpdateTime": "2020-06-22T09:14:32Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2020-06-22T09:14:29Z",
+            "lastUpdateTime": "2020-06-22T11:00:50Z",
+            "message": "ReplicaSet \"consul-84b7dc5f87\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1662,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    "oldObject": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "cpaas.io/creator": "zengkai@ebchinatech.com",
+          "cpaas.io/updated-at": "2020-06-22T11:00:48Z",
+          "deployment.kubernetes.io/revision": "2",
+          "field.cattle.io/publicEndpoints": "[{\"addresses\":[\"25.2.20.5\"],\"port\":80,\"protocol\":\"HTTP\",\"serviceName\":\"effective-default:consul\",\"ingressName\":\"effective-default:consul\",\"hostname\":\"consul.ebcpaas.com\",\"path\":\"/\",\"allNodes\":true}]"
+        },
+        "creationTimestamp": "2020-06-22T09:14:29Z",
+        "generation": 1662,
+        "name": "consul",
+        "namespace": "effective-default",
+        "resourceVersion": "112599996",
+        "uid": "c6e0b444-b468-11ea-a673-fa163e1f29db"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "project.cpaas.io/name": "effective",
+            "service.cpaas.io/name": "deployment-consul"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "cpaas.io/creator": "zengkai@ebchinatech.com"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "project.cpaas.io/name": "effective",
+              "service.cpaas.io/name": "deployment-consul"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "reg.ebcpaas.com/effective/consul:latest",
+                "imagePullPolicy": "Always",
+                "name": "consul",
+                "ports": [
+                  {
+                    "containerPort": 8500,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "dockercfg--effective--reg-ebcpaas-com"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      },
+      "status": {
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2020-06-22T09:14:32Z",
+            "lastUpdateTime": "2020-06-22T09:14:32Z",
+            "message": "Deployment has minimum availability.",
+            "reason": "MinimumReplicasAvailable",
+            "status": "True",
+            "type": "Available"
+          },
+          {
+            "lastTransitionTime": "2020-06-22T09:14:29Z",
+            "lastUpdateTime": "2020-06-22T11:00:50Z",
+            "message": "ReplicaSet \"consul-84b7dc5f87\" has successfully progressed.",
+            "reason": "NewReplicaSetAvailable",
+            "status": "True",
+            "type": "Progressing"
+          }
+        ],
+        "observedGeneration": 1662,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "updatedReplicas": 1
+      }
+    },
+    "operation": "UPDATE",
+    "resource": {
+      "group": "apps",
+      "resource": "deployments",
+      "version": "v1"
+    },
+    "uid": "3b9efe40-b4ec-11ea-a673-fa163e1f29db",
+    "userInfo": {
+      "groups": [
+        "system:serviceaccounts",
+        "system:serviceaccounts:cattle-system",
+        "system:authenticated"
+      ],
+      "uid": "9d609320-c270-11e9-b322-fa163e1f29db",
+      "username": "system:serviceaccount:cattle-system:kontainer-engine"
+    }
+  }
+}

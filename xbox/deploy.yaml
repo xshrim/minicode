@@ -87,6 +87,10 @@ spec:
             port: 2333
           timeoutSeconds: 2
         env:
+        - name: WEBHOST
+          value: share.demo.com
+        - name: WEBPORT
+          value: 80
         - name: HOST
           value: 127.0.0.1
         - name: PORT

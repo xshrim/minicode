@@ -53,9 +53,13 @@ var (
 )
 
 const (
-	admissionWebhookAnnotationValidateKey = "admission-webhook-example.banzaicloud.com/validate"
-	admissionWebhookAnnotationMutateKey   = "admission-webhook-example.banzaicloud.com/mutate"
-	admissionWebhookAnnotationStatusKey   = "admission-webhook-example.banzaicloud.com/status"
+	admissionWebhookAnnotationValidateKey = "admission-webhook-watchdog.ebchina/validate"
+	admissionWebhookAnnotationMutateKey   = "admission-webhook-watchdog.ebchina/mutate"
+	admissionWebhookAnnotationStatusKey   = "admission-webhook-watchdog.ebchina/status"
+
+	// targetKind = "PrometheusRule"
+	// prometheusRuleAcpLabel     = "prometheus"
+	// prometheusRuleRancherLabel = "source"
 
 	nameLabel      = "app.kubernetes.io/name"
 	instanceLabel  = "app.kubernetes.io/instance"
@@ -119,7 +123,7 @@ func admissionRequired(ignoredList []string, admissionAnnotationKey string, meta
 	switch strings.ToLower(annotations[admissionAnnotationKey]) {
 	default:
 		required = true
-	case "n", "no", "false", "off":
+	case "n", "no", "false", "off", "ignore":
 		required = false
 	}
 	return required

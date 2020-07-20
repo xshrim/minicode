@@ -26,8 +26,15 @@ if [ "$SSL" == "true" ]; then
   sed -i "s#ws://#wss://#g" /root/static/index.html
 fi
 
+dir="./"
+if [ "$DIR" ]; then
+  dir=$DIR
+fi
+
 /usr/sbin/sshd -D &
 
-/usr/bin/gofs &
+smbd --no-process-group --configfile /root/smb.conf &
+
+/usr/bin/gofs -d $dir &
 
 /root/webssh
