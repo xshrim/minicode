@@ -7,6 +7,11 @@ metadata:
   name: xos
 spec:
   ports:
+  - name: goserver
+    port: 2444
+    protocol: TCP
+    targetPort: 2444
+    nodePort: 34444
   - name: gofs
     port: 2333
     protocol: TCP
@@ -91,6 +96,8 @@ spec:
           value: share.demo.com
         - name: WEBPORT
           value: 80
+        - name: DIR
+          value: /share
         - name: HOST
           value: 127.0.0.1
         - name: PORT
@@ -104,6 +111,9 @@ spec:
         - name: SSL
           value: "true"
         ports:
+        - containerPort: 2444
+          name: goserver
+          protocol: TCP
         - containerPort: 2333
           name: gofs
           protocol: TCP

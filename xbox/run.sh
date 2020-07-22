@@ -37,4 +37,6 @@ smbd --no-process-group --configfile /root/smb.conf &
 
 /usr/bin/gofs -d $dir &
 
+/usr/bin/gohttpserver -r $dir --port 2444  --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
+
 /root/webssh

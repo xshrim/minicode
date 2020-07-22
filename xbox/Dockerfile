@@ -112,8 +112,8 @@ WORKDIR /root/
 #curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/bin/
 
 # Settings
-#ADD motd /etc/motd
 #ADD profile  /etc/profile
+ADD motd /etc/motd
 ADD tools/* /usr/bin/
 ADD webssh /root/
 ADD run.sh /root/
@@ -137,6 +137,8 @@ EXPOSE 135/tcp 137/udp 138/udp 139/tcp 445/tcp
 EXPOSE 2222
 # 开放gofs端口
 EXPOSE 2333
+# 开放gohttpserver端口
+EXPOSE 2444
 
 # CMD ["/usr/sbin/sshd", "-D"]
 CMD ["sh","/root/run.sh"]

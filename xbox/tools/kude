@@ -30,7 +30,7 @@ function usage() {
   git                      git一键提交并上传
   dr,drun                  运行容器
   dt,dtmp                  运行临时容器
-  dq,dquery                查看容器列表
+  dq,dps,dlist             查看容器列表
   di,dimg                  查看镜像列表
   dn,dnet                  查看容器网络列表
   dv,dvol                  查看容器卷列表
@@ -44,6 +44,10 @@ function usage() {
   dc,dcmd                  查看容器运行命令
   dp,dport                 查看容器端口映射
   dm,dmnt                  查看容器卷挂载
+  dw,dcc                   删除所有已退出的容器
+  dx,dic                   删除所有未使用的镜像
+  dy,dvc                   删除所有未使用的容器卷
+  dz,dnc                   删除所有未使用的网络
   cfg,config               查看kubeconfig配置
   g,dry,dryrun             模拟执行kubectl命令
   a,apl,apply              执行kubectl apply命令
@@ -433,7 +437,7 @@ else
     git add -A .
     git commit -m "$cmsg"
     git push
-  elif [ $subcmd == "dq" ] || [ $subcmd == "dquery" ]; then
+  elif [ $subcmd == "dq" ] || [ $subcmd == "dps" ] || [ $subcmd == "dlist" ]; then
     cmd="docker ps -a"
     if [ ${#mandatory[@]} -eq 0 ]; then
       require docker
@@ -473,13 +477,64 @@ else
         execmd "$cmd" $ip
       done
     fi
+  elif [ $subcmd == "dw" ] || [ $subcmd == "dcc" ]; then
+    cmd="docker rm $(docker ps -qaf 'status=exited')"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dx" ] || [ $subcmd == "dic" ]; then
+    cmd="docker image prune -a"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dy" ] || [ $subcmd == "dvc" ]; then
+    cmd="docker volume prune"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
+  elif [ $subcmd == "dz" ] || [ $subcmd == "dnc" ]; then
+    cmd="docker network prune"
+    if [ ${#mandatory[@]} -eq 0 ]; then
+      require docker
+      execmd "$cmd"
+    else
+      for ip in ${mandatory[@]}; do
+        execmd "$cmd" $ip
+      done
+    fi
   elif [ $subcmd == "du" ] || [ $subcmd == "dpush" ]; then
     require docker
     if [ ${#mandatory[@]} -gt 0 ]; then
+      imgname=${mandatory[0]%:*}
+      imgtag=${mandatory[0]##*:}
+      if [ -z $imgtag ] || [ $imgtag == "" ]; then
+        imgtag="latest"
+      fi
+      if [ $(docker images|grep $imgname|awk '{print $2}'|grep $imgtag|wc -l) -eq 0 ]; then
+        docker pull $imgname:$imgtag
+      fi
+      
       llib=${mandatory[0]%/*}
       limg=${mandatory[0]##*/}
-      rrepo=${mandatory[1]%/*}
-      rlib=${mandatory[1]#*/}
+      if [ ${#mandatory[@]} -gt 1 ]; then
+        rrepo=${mandatory[1]%/*}
+        rlib=${mandatory[1]#*/}
+      fi
 
       if [ "$rlib" == "" ] || [ "$rlib" == "$rrepo" ]; then
         if [[ "$rrepo" =~ "." ]]; then
@@ -496,6 +551,9 @@ else
         else
           rlib="library"
         fi
+      fi
+      if [ -z "$rrepo" ]; then
+        rrepo="docker.io"
       fi
 
       docker tag ${mandatory[0]} $rrepo/$rlib/$limg

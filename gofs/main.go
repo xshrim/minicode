@@ -44,21 +44,22 @@ const html = `
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>File Uploader</title>
+  <title>File Share</title>
   <!-- <script src="./bfi.js"></script> -->
 </head>
 
 <body>
   <p><strong>CMD Method</strong></p>
-  <p>curl -X POST -F "path=bar" -F "file=@/root/foo/sample.pdf" http://{{.Host}}:{{.Port}}/upload</p>
-  <p>curl -X POST -d "filepath=bar/sample.pdf" http://{{.Host}}:{{.Port}}/delete</p>
+  <p>curl -X POST -F "path=bar" -F "file=@/root/foo/sample.pdf" {{.Protocol}}://{{.Host}}:{{.Port}}/upload</p>
+  <p>curl -X GET {{.Protocol}}://{{.Host}}:{{.Port}}/bar/sample.pdf</p>
+  <p>curl -X POST -d "filepath=bar/sample.pdf" {{.Protocol}}://{{.Host}}:{{.Port}}/delete</p>
   <p><strong>WEB Method</strong></p>
-  <form enctype="multipart/form-data" action="http://{{.Host}}:{{.Port}}/upload" method="post" target="iiframe">
+  <form enctype="multipart/form-data" action="{{.Protocol}}://{{.Host}}:{{.Port}}/upload" method="post" target="iiframe">
     <input name="path" placeholder="(Optional) remote storage path" size="30" />
     <input type="file" name="file" size="30" />
     <input type="submit" value="Upload" />
     <label> ¦ </label>
-    <a href="http://{{.Host}}:{{.Port}}"><button type="button">Browse</button></a>
+    <a href="{{.Protocol}}://{{.Host}}:{{.Port}}"><button type="button">Browse</button></a>
   </form>
   <iframe id="iiframe" name="iiframe" frameborder="0" width="600px" height="50px" ></iframe>
   <!-- <iframe id="iiframe" name="iiframe" frameborder="0" style="display:none;"></iframe> -->
@@ -68,8 +69,9 @@ const html = `
 `
 
 type Server struct {
-	Host string
-	Port string
+	Protocol string
+	Host     string
+	Port     string
 }
 
 func GetLocalIP() string {
@@ -119,12 +121,22 @@ func delete(w http.ResponseWriter, r *http.Request) {
 // curl -X POST -F "file=@/home/xshrim/a.js" http://127.0.0.1:2333/upload/test/a.js
 func upload(w http.ResponseWriter, r *http.Request) {
 
+	pl := "http"
 	ht := host
 	pt := port
 
 	if wh := os.Getenv("WEBHOST"); wh != "" {
 		ht = wh
 		pt = "80"
+		if wp := os.Getenv("WEBPORT"); wp != "" {
+			pt = wp
+		}
+	}
+	if wl := os.Getenv("WEBPROTOCOL"); wl != "" {
+		pl = strings.ToLower(wl)
+		if pl == "https" {
+			pt = "443"
+		}
 		if wp := os.Getenv("WEBPORT"); wp != "" {
 			pt = wp
 		}
@@ -141,8 +153,9 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 		// t.Execute(w, token)
 		t.Execute(w, &Server{
-			Host: ht,
-			Port: pt,
+			Protocol: pl,
+			Host:     ht,
+			Port:     pt,
 		})
 		return
 	}
@@ -216,6 +229,7 @@ func main() {
 	http.HandleFunc("/upload/", upload)
 
 	http.HandleFunc("/delete", delete)
+	http.HandleFunc("/delete/", delete)
 
 	log.Println(fmt.Sprintf("serve path: <%s>", dir))
 	log.Println(fmt.Sprintf("browse url: <0.0.0.0:%s>[%s]", port, host))
