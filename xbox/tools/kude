@@ -522,15 +522,53 @@ else
     if [ ${#mandatory[@]} -gt 0 ]; then
       imgname=${mandatory[0]%:*}
       imgtag=${mandatory[0]##*:}
-      if [ -z $imgtag ] || [ $imgtag == "" ]; then
-        imgtag="latest"
+      if [ $imgname == $imgtag ]; then
+        imgtag=""
       fi
-      if [ $(docker images|grep $imgname|awk '{print $2}'|grep $imgtag|wc -l) -eq 0 ]; then
-        docker pull $imgname:$imgtag
+#       if [ -z $imgtag ] || [ $imgtag == "" ]; then
+#         imgtag="latest"
+#       fi
+#     if [ $(docker images|grep $imgname|awk '{print $2}'|grep $imgtag|wc -l) -eq 0 ]; then
+      if [ -z $imgtag ] && [ $(docker images|grep $imgname|wc -l) -gt 0 ]; then
+#         docker pull $imgname:$imgtag
+        echo "====== More than one image ======"
+        imgs=$(docker images|grep $imgname|awk '{print $1":"$2}')
+        SIFS=$IFS
+        IFS=$'\n'
+        imgs=($imgs)
+        IFS=$SIFS
+        for ((i = 0; i < ${#imgs[@]}; i++)); do
+          echo "$i: ${imgs[$i]}"
+        done
+        imgtag="latest"
+        echo "-1: pull $imgname:$imgtag"
+        read -p "====== select one with number[0]: " iidx
+        if [ $iidx == -1 ]; then
+          docker pull $imgname:$imgtag
+          irs=$imgname:$imgtag
+        else
+          irs=${imgs[$iidx]}
+        fi
+        llib=${irs%/*}
+        limg=${irs##*/}
+      elif [ $(docker images|grep $imgname|wc -l) -eq 0 ]; then
+        pimg=$imgname:latest
+        docker pull $pimg
+        llib=${pimg%/*}
+        limg=${pimg##*/}
+      else
+        if [ -z $imgtag ]; then
+          imgtag="latest"
+        fi
+        pimg=$imgname:$imgtag
+        llib=${pimg%/*}
+        limg=${pimg##*/}
       fi
       
-      llib=${mandatory[0]%/*}
-      limg=${mandatory[0]##*/}
+      if [ $llib == $limg ]; then
+        llib=""
+      fi
+
       if [ ${#mandatory[@]} -gt 1 ]; then
         rrepo=${mandatory[1]%/*}
         rlib=${mandatory[1]#*/}
@@ -555,8 +593,14 @@ else
       if [ -z "$rrepo" ]; then
         rrepo="docker.io"
       fi
+      
+      if [ -z $llib ]; then
+        simg=$limg
+      else
+        simg=$llib:$limg
+      fi
 
-      docker tag ${mandatory[0]} $rrepo/$rlib/$limg
+      docker tag $simg $rrepo/$rlib/$limg
       docker push $rrepo/$rlib/$limg
       if [ "$rrepo" != "docker.io" ]; then
         docker rmi -f $rrepo/$rlib/$limg
