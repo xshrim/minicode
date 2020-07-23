@@ -909,6 +909,28 @@ else
       if [ ${#mandatory[@]} -gt 1 ]; then
         args=${mandatory[@]:1}
       fi
+    elif [ -z "$kwd" ] && [ ${#mandatory[@]} -eq 0 ]; then
+      case $subcmd in
+        "s" | "desc" | "describe")
+          kubectl $kc $context describe $kind $ns
+          ;;
+        "m" | "wa" | "watch")
+          kubectl $kc $context get $kind $ns --watch
+          ;;
+        "w" | "wide")
+          kubectl $kc $context get $kind $ns -o wide
+          ;;
+        "wl" | "wlabel")
+          kubectl $kc $context get $kind $ns -o wide --show-labels
+          ;;
+        "y" | "yaml")
+          kubectl $kc $context get $kind $ns -o yaml
+          ;;
+        "j" | "json")
+          kubectl $kc $context get $kind $ns -o json
+          ;;
+      esac
+      exit 0
     elif [ -n "$kwd" ]; then
       if [ ${#mandatory[@]} -gt 0 ]; then
         args=${mandatory[@]}
