@@ -60,6 +60,7 @@ var (
 	duration time.Duration
 	command  string
 	prefix   string
+	quit     bool
 	err      error
 )
 
@@ -70,6 +71,7 @@ func init() {
 	flag.DurationVar(&duration, "d", 0, "how long to output logs, this would be interval when count is 0")
 	flag.StringVar(&command, "r", "", "command to run")
 	flag.StringVar(&prefix, "p", "", "prefix of logs")
+	flag.BoolVar(&quit, "q", false, "exit after task completion")
 }
 
 func RandCnName() string {
@@ -176,10 +178,22 @@ func main() {
 		prefix = os.Getenv("LOGBENCH_PREFIX")
 	}
 
+	if os.Getenv("LOGBENCH_QUIT") != "" {
+		quit, err = strconv.ParseBool(os.Getenv("LOGBENCH_QUIT"))
+		if err != nil {
+			xlog.Fatal(err)
+		}
+	}
+
 	xlog.Prefix(prefix)
 
 	//start := time.Now().Format("2006-01-02 15:04:05")
 	_ = LogBench(duration, count, command)
 	//end := time.Now().Format("2006-01-02 15:04:05")
 	//xlog.Prt("%s - %s : %d\n", start, end, num)
+	if !quit {
+		for {
+			time.Sleep(time.Hour * 24)
+		}
+	}
 }

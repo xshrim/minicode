@@ -50,7 +50,7 @@ function usage() {
   dy,dvc                   删除所有未使用的容器卷
   dz,dnc                   删除所有未使用的网络
   cfg,config               查看kubeconfig配置
-  g,dry,dryrun             模拟执行kubectl命令
+  dry,dryrun               模拟执行kubectl命令
   a,apl,apply              执行kubectl apply命令
   n,new,create             执行kubectl create命令
   r,run                    执行kubectl run命令
@@ -62,6 +62,7 @@ function usage() {
   l,log                    查看容器日志
   lf,logf                  实时查看容器日志
   i,insp,inspect           查看容器信息
+  g,get                    查看k8s资源信息
   s,desc,describe          查看k8s资源详细信息
   m,wa,watch               监视指定k8s资源状态
   w,wide                   查看k8s资源更多信息
@@ -384,6 +385,11 @@ function remotecp() {
 if ! [[ "$1" =~ ^- ]]; then
   subcmd=$1
   shift
+fi
+
+if [ -z $subcmd ]; then
+  usage
+  exit 1
 fi
 
 if [ $subcmd == "d" ] || [ $subcmd == "docker" ]; then
@@ -799,7 +805,7 @@ else
   elif [ $subcmd == "cfg" ] || [ $subcmd == "config" ]; then
     require kubectl
     kubectl $kc $context config view
-  elif [ $subcmd == "g" ] || [ $subcmd == "dry" ] || [ $subcmd == "dryrun" ]; then
+  elif [ $subcmd == "dry" ] || [ $subcmd == "dryrun" ]; then
     require kubectl
     if [ "$ns" == "--all-namespaces" ]; then
       ns=""
@@ -911,6 +917,9 @@ else
       fi
     elif [ -z "$kwd" ] && [ ${#mandatory[@]} -eq 0 ]; then
       case $subcmd in
+        "g" | "get")
+          kubectl $kc $context get $kind $ns
+          ;;
         "s" | "desc" | "describe")
           kubectl $kc $context describe $kind $ns
           ;;
@@ -1041,6 +1050,9 @@ else
       else
         echo "subcmd inspect not fit for $kind"
       fi
+      ;;
+    "g" | "get")
+      kubectl $kc $context get $kind $ns
       ;;
     "s" | "desc" | "describe")
       kubectl $kc $context describe $kind $resname $ns

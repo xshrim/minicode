@@ -71,3 +71,5 @@ while [ 1 ]; do
 
   startTimestamp=$(date +%s%3N)
 done
+
+tail -f /dev/null
