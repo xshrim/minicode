@@ -12,6 +12,7 @@ kind="pod"
 context=""
 args=""
 chroot=""
+localrun=0
 savepath=""
 vol=""
 
@@ -90,6 +91,7 @@ function usage() {
   -t [60] 目标主机ssh连接超时时间(可选)
   -u [root] 目标主机ssh账号(可选)
   -w [kwd] 过滤关键字
+  -l 配合cmd本机执行命令
   -r 调试容器中是否需要chroot到目标容器的文件系统
   -v 调试容器中是否需要挂载目标主机的docker.sock文件
   -h 使用说明
@@ -205,7 +207,7 @@ function dockerpush() {
   docker rmi -f $rrepo/$rlib/$limg
 }
 
-function lexecmd() {
+function docmd() {
   # lcmd=$1
   # if [ "$lcmd" == "dpush" ]; then
   #   dockerpush "${@:2}"
@@ -215,19 +217,19 @@ function lexecmd() {
   eval "$*"
 }
 
-function execmd() {
+function lexecmd() {
   ecmd=$1
   ipaddr=$2
 
   if [ "$ipaddr" == "" ]; then
-    lexecmd $ecmd
+    docmd $ecmd
   else
-    if [ -z "$user" ]; then
-      user="root"
-    fi
-    if [ -z "$passwd" ]; then
-      passwd="root"
-    fi
+#     if [ -z "$user" ]; then
+#       user="root"
+#     fi
+#     if [ -z "$passwd" ]; then
+#       passwd="root"
+#     fi
     
     ipd=${ipaddr%.*}
     ipr=${ipaddr##*.}
@@ -239,15 +241,83 @@ function execmd() {
     ipstart=${ipr%-*}
     ipend=${ipr##*-}
     fi
+    
+    ipasswd=""
+    iuser=""
+    if [ -n "$passwd" ]; then
+      ipasswd="-p $passwd"
+    fi
+    if [ -n "$user" ]; then
+      iuser="$user@"
+    fi   
 
     for ((i=$ipstart;i<=$ipend;i++))
     do
-      cip=$ipd.$i
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
       echo "[*] $cip"
       if [ -n "$passwd" ] && type sshpass &>/dev/null; then
-        sshpass -p $passwd ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$cip "$ecmd"
+        sshpass $ipasswd $ecmd $iuser$cip
       else
-        ssh -t -p $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $user@$cip "$ecmd"
+        docmd $ecmd $iuser$cip
+      fi
+    done
+  fi
+}
+
+function execmd() {
+  ecmd=$1
+  ipaddr=$2
+
+  if [ "$ipaddr" == "" ]; then
+    docmd $ecmd
+  else
+#     if [ -z "$user" ]; then
+#       user="root"
+#     fi
+#     if [ -z "$passwd" ]; then
+#       passwd="root"
+#     fi
+    
+    ipd=${ipaddr%.*}
+    ipr=${ipaddr##*.}
+
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+    ipstart=${ipr%-*}
+    ipend=${ipr##*-}
+    fi
+    
+    ipasswd=""
+    iport=""
+    iuser=""
+    if [ -n "$passwd" ]; then
+      ipasswd="-p $passwd"
+    fi
+    if [ -n "$port" ]; then
+      iport="-p $port"
+    fi 
+    if [ -n "$user" ]; then
+      iuser="$user@"
+    fi   
+
+    for ((i=$ipstart;i<=$ipend;i++))
+    do
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
+      echo "[*] $cip"
+      if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+        sshpass $ipasswd ssh -t $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $iuser$cip "$ecmd"
+      else
+        ssh -t $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $iuser$cip "$ecmd"
       fi
     done
   fi
@@ -260,12 +330,12 @@ function remotecp() {
   if [ "$paths" == "" ] || [ "$ipaddr" == "" ]; then
     return
   else
-    if [ -z "$user" ]; then
-      user="root"
-    fi
-    if [ -z "$passwd" ]; then
-      passwd="root"
-    fi
+#     if [ -z "$user" ]; then
+#       user="root"
+#     fi
+#     if [ -z "$passwd" ]; then
+#       passwd="root"
+#     fi
     
     lpath=${paths%:*}
     rpath=${paths##*:}
@@ -280,15 +350,32 @@ function remotecp() {
     ipstart=${ipr%-*}
     ipend=${ipr##*-}
     fi
+    
+    ipasswd=""
+    iport=""
+    iuser=""
+    if [ -n "$passwd" ]; then
+      ipasswd="-p $passwd"
+    fi
+    if [ -n "$port" ]; then
+      iport="-P $port"
+    fi 
+    if [ -n "$user" ]; then
+      iuser="$user@"
+    fi   
 
     for ((i=$ipstart;i<=$ipend;i++))
     do
-      cip=$ipd.$i
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
       echo "[*] $cip"
       if [ -n "$passwd" ] && type sshpass &>/dev/null; then
-        sshpass -p $passwd scp -P $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $user@$cip:$rpath
+        sshpass $ipasswd scp $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $iuser$cip:$rpath
       else
-        scp -t -P $port -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r$lpath $user@$cip:$rpath
+        scp -t -$iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r$lpath $iuser$cip:$rpath
       fi
     done
   fi
@@ -313,7 +400,7 @@ elif [ $subcmd == "dt" ] || [ $subcmd == "dtmp" ]; then
   docker run -it --rm $*
 else
   while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
-    while getopts "c:d:f:i:k:m:n:o:p:s:t:u:w:hrv" opt; do
+    while getopts "c:d:f:i:k:m:n:o:p:s:t:u:w:hlrv" opt; do
       case $opt in
       c)
         context="--context $OPTARG"
@@ -329,6 +416,9 @@ else
         ;;
       k)
         kind=$OPTARG
+        ;;
+      l)
+        localrun=1
         ;;
       m)
         image=$OPTARG
@@ -407,7 +497,11 @@ else
         execmd "$cmd"
       else
         for ip in ${mandatory[@]:1}; do
-          execmd "$cmd" $ip
+          if [ $localrun -eq 0 ]; then
+            execmd "$cmd" $ip
+          else
+            lexecmd "$cmd" $ip
+          fi
         done
       fi
     else
@@ -529,7 +623,7 @@ else
 #         imgtag="latest"
 #       fi
 #     if [ $(docker images|grep $imgname|awk '{print $2}'|grep $imgtag|wc -l) -eq 0 ]; then
-      if [ -z $imgtag ] && [ $(docker images|grep $imgname|wc -l) -gt 0 ]; then
+      if [ -z $imgtag ] && [ $(docker images|grep $imgname|wc -l) -gt 1 ]; then
 #         docker pull $imgname:$imgtag
         echo "====== More than one image ======"
         imgs=$(docker images|grep $imgname|awk '{print $1":"$2}')
@@ -543,6 +637,9 @@ else
         imgtag="latest"
         echo "-1: pull $imgname:$imgtag"
         read -p "====== select one with number[0]: " iidx
+        if [ -z $iidx ]; then
+          iidx=0
+        fi
         if [ $iidx == -1 ]; then
           docker pull $imgname:$imgtag
           irs=$imgname:$imgtag
@@ -597,7 +694,7 @@ else
       if [ -z $llib ]; then
         simg=$limg
       else
-        simg=$llib:$limg
+        simg=$llib/$limg
       fi
 
       docker tag $simg $rrepo/$rlib/$limg

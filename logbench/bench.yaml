@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logbench
+  labels:
+    app: logbench
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 10
+      maxUnavailable: 5
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: logbench
+  template:
+    metadata:
+      labels:
+        app: logbench
+    spec:
+      containers:
+        - name: logbench
+          image: logbench
+          imagePullPolicy: Always
+          env:
+            - name: LOGBENCH_PREFIX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: LOGBENCH_COUNT
+              value: "6000"
+            - name: LOGBENCH_DURATION
+              value: 1m
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v5"
@@ -56,6 +58,7 @@ var (
 	h        bool
 	count    int64
 	duration time.Duration
+	command  string
 	prefix   string
 	err      error
 )
@@ -65,6 +68,7 @@ func init() {
 
 	flag.Int64Var(&count, "c", 0, "how many logs to output, no limit if count is 0")
 	flag.DurationVar(&duration, "d", 0, "how long to output logs, this would be interval when count is 0")
+	flag.StringVar(&command, "r", "", "command to run")
 	flag.StringVar(&prefix, "p", "", "prefix of logs")
 }
 
@@ -101,7 +105,7 @@ func RandPerson() string {
 	})
 }
 
-func LogBench(duration time.Duration, count int64) int64 {
+func LogBench(duration time.Duration, count int64, cmd string) int64 {
 	cur := int64(0)
 	var interval time.Duration
 	if count == 0 {
@@ -114,7 +118,19 @@ func LogBench(duration time.Duration, count int64) int64 {
 		if count != 0 && cur >= count {
 			break
 		}
-		xlog.Infof("%s User: %s [%06d]\n", RandOperation(), RandPerson(), cur)
+		if cmd == "" {
+			xlog.Infof("%s User: %s [%06d]\n", RandOperation(), RandPerson(), cur)
+		} else {
+			cmds := strings.Split(cmd, " ")
+			cmdname := cmds[0]
+			cmdargs := cmds[1:]
+			cmd := exec.Command(cmdname, cmdargs...)
+			stdout, err := cmd.Output()
+			if err != nil {
+				xlog.Fatal(err.Error())
+			}
+			fmt.Print(string(stdout))
+		}
 		cur++
 		time.Sleep(interval)
 	}
@@ -152,6 +168,10 @@ func main() {
 		}
 	}
 
+	if command == "" {
+		command = os.Getenv("LOGBENCH_COMMAND")
+	}
+
 	if prefix == "" {
 		prefix = os.Getenv("LOGBENCH_PREFIX")
 	}
@@ -159,7 +179,7 @@ func main() {
 	xlog.Prefix(prefix)
 
 	//start := time.Now().Format("2006-01-02 15:04:05")
-	_ = LogBench(duration, count)
+	_ = LogBench(duration, count, command)
 	//end := time.Now().Format("2006-01-02 15:04:05")
 	//xlog.Prt("%s - %s : %d\n", start, end, num)
 }

@@ -19,6 +19,7 @@ RUN set -ex \
     bridge-utils \
     busybox-extras \
     conntrack-tools \
+    ctop \
     curl \
     docker \
     dhcping \
@@ -37,9 +38,13 @@ RUN set -ex \
     fping \
     git \
     glances \
+    gotop \
+    gron \
+    hexdump \
     highlight \
     httpie \
     htop \
+    hyperfine \
     libc6-compat \
     liboping \
     lua5.1 \
@@ -56,6 +61,8 @@ RUN set -ex \
     ioping \
     iozone \
     jq \
+    kubectl \
+    minio \
     mtr \
     mysql-client \
     net-snmp-tools \
@@ -67,13 +74,11 @@ RUN set -ex \
     ngrep \
     nmap \
     nmap-nping \
-    ntop \
     nuttcp \
     openssl \
     openssh \
     openssh-server \
     openssh-client \
-    py-crypto \
     postgresql-client \
     qperf \
     tree \
@@ -83,13 +88,14 @@ RUN set -ex \
     samba-client \
     samba-server \
     samba-common-tools \
-    scapy \
     socat \
     sqlite \
     strace \
     sshpass \
     speedtest \
     speedtest-cli \
+    websocat \
+    websocketd \
     tzdata \
     tcpdump \
     tcptraceroute \
