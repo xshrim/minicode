@@ -64,16 +64,17 @@ function usage() {
   i,insp,inspect           查看容器信息
   g,get                    查看k8s资源信息
   s,desc,describe          查看k8s资源详细信息
-  m,wa,watch               监视指定k8s资源状态
+  wa,watch                 监视指定k8s资源状态
   w,wide                   查看k8s资源更多信息
   wl,wlabel                查看k8s资源包括label在内的更多信息
   y,yaml                   以yaml格式查看k8s资源信息
   j,json                   以json格式查看k8s资源信息
+  tp, top                  查看node或pod资源占用
   p,patch                  为k8s资源打补丁
   dl,del,delete            删除k8s资源
   e,exe,exec               在pod中执行命令
   ie,iexe,iexec            在pod中交互式执行命令
-  t,at,attach              加入pod的命名空间
+  at,attach                加入pod的命名空间
   cp,copy                  在本地和pod之间复制文件
   pf,forward,port-forward  将本地端口映射到pod端口实现端口转发
   x,debug                  运行调试容器对pod进行调试
@@ -923,7 +924,7 @@ else
         "s" | "desc" | "describe")
           kubectl $kc $context describe $kind $ns
           ;;
-        "m" | "wa" | "watch")
+        "wa" | "watch")
           kubectl $kc $context get $kind $ns --watch
           ;;
         "w" | "wide")
@@ -937,6 +938,14 @@ else
           ;;
         "j" | "json")
           kubectl $kc $context get $kind $ns -o json
+          ;;
+        "tp" | "top")
+          if [ $ns == "--all-namespaces" ]; then
+            ns="-n default"
+          fi
+          if [ $kind == "pod" ] || [ $kind == "node" ]; then
+            kubectl $kc $context top $kind $ns
+          fi
           ;;
       esac
       exit 0
@@ -1057,7 +1066,7 @@ else
     "s" | "desc" | "describe")
       kubectl $kc $context describe $kind $resname $ns
       ;;
-    "m" | "wa" | "watch")
+    "wa" | "watch")
       kubectl $kc $context get $kind $resname $ns --watch
       ;;
     "w" | "wide")
@@ -1071,6 +1080,14 @@ else
       ;;
     "j" | "json")
       kubectl $kc $context get $kind $resname $ns -o json
+      ;;
+    "tp" | "top")
+      if [ $ns == "--all-namespaces" ]; then
+        ns="-n default"
+      fi
+      if [ $kind == "pod" ] || [ $kind == "node" ]; then
+        kubectl $kc $context top $kind $resname $ns
+      fi
       ;;
     "p" | "patch")
       kubectl $kc $context patch $kind $resname $ns --patch $args
@@ -1105,7 +1122,7 @@ else
         echo "subcmd iexec not fit for $kind"
       fi
       ;;
-    "t" | "at" | "attach")
+    "at" | "attach")
       if [ $kind == "pod" ]; then
         kubectl $kc $context attach $resname -c $cname $ns
       else

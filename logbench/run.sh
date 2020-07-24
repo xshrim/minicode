@@ -9,7 +9,7 @@ while [ 1 ]; do
     break
   fi
   
-  repls=$((count*100))
+  repls=$((count*100+500))  
   
   echo "============================== time: $(date +%T) | replicas: $repls =============================="
   echo "elasticsearch logs: "
