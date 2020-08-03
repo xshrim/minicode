@@ -25,13 +25,20 @@ function usage() {
 
 **COMMANDS**:
   h,help                   打印命令帮助
+  g,go                     运行go命令
+  lg,lgo                   Linux环境下禁用CGO的go命令
   d,docker                 运行docker命令
   k,kube,kubectl           运行kubectl命令
   c,cmd                    运行linux命令
   scp                      分发本机文件
   git                      git一键提交并上传
+  ghp,ghelp                查看go命令帮助
+  khp,khelp                查看kubectl命令帮助
+  dhp,dhelp                查看docker命令帮助
   dr,drun                  运行容器
   dt,dtmp                  运行临时容器
+  db,dbd                   构建docker镜像
+  dg,dtg,dtag              为镜像打标签
   dq,dps,dlist             查看容器列表
   di,dimg                  查看镜像列表
   dn,dnet                  查看容器网络列表
@@ -99,7 +106,9 @@ function usage() {
   -r 调试容器中是否需要chroot到目标容器的文件系统
   -v 调试容器中是否需要挂载目标主机的docker.sock文件
   -h 使用说明
-
+"
+if [ "$1" != "simple" ]; then
+echo "
 **REFERENCES**:
 # Linux: https://community.linuxmint.com/tutorial/view/244 https://man.linuxde.net/
 # Docker: https://docs.docker.com/engine/reference/commandline/cli/
@@ -109,6 +118,10 @@ function usage() {
 # 直接执行docker或kubectl命令
 kude d ps -a     #相当于docker ps -a
 kude k get pod   #相当于kubectl get pod
+
+# 查看docker或kubectl命令帮助
+kude dhp run
+kude khp get
 
 # 进行docker镜像推送并删除临时tag
 kude du xshrim/xo foo.bar.com/xshrim
@@ -146,6 +159,7 @@ kude pr 127.0.0.1:8443
 # 查看容器日志
 kude l nginx
 kude lf nginx
+kude lf -a 10 nginx
 kude log -i 1 nginx
 
 # 查看k8s资源详细信息
@@ -179,6 +193,7 @@ kude -c minikube pf nginx -n default 8000:80
 kude x nginx
 kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
 "
+fi
 }
 
 function require() {
@@ -391,22 +406,43 @@ if ! [[ "$1" =~ ^- ]]; then
 fi
 
 if [ -z $subcmd ]; then
-  usage
+  usage simple
   exit 1
 fi
 
-if [ $subcmd == "d" ] || [ $subcmd == "docker" ]; then
+if [ $subcmd == "g" ] || [ $subcmd == "go" ]; then
+  require go
+  go $*
+elif [ $subcmd == "lg" ] || [ $subcmd == "lgo" ]; then
+  require go
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go $*
+elif [ $subcmd == "d" ] || [ $subcmd == "docker" ]; then
   require docker
   docker $*
 elif [ $subcmd == "k" ] || [ $subcmd == "kube" ] || [ $subcmd == "kubectl" ]; then
   require kubectl
   kubectl $*
+elif [ $subcmd == "ghp" ] || [ $subcmd == "ghelp" ]; then
+  require go
+  go help $*
+elif [ $subcmd == "dhp" ] || [ $subcmd == "dhelp" ]; then
+  require docker
+  docker $* --help
+elif [ $subcmd == "khp" ] || [ $subcmd == "khelp" ]; then
+  require kubectl
+  kubectl $* --help
 elif [ $subcmd == "dr" ] || [ $subcmd == "drun" ]; then
   require docker
   docker run $*
 elif [ $subcmd == "dt" ] || [ $subcmd == "dtmp" ]; then
   require docker
   docker run -it --rm $*
+elif [ $subcmd == "db" ] || [ $subcmd == "dbd" ]; then
+  require docker
+  docker build $*
+elif [ $subcmd == "dg" ] || [ $subcmd == "dtg" ] || [ $subcmd == "dtag" ]; then
+  require docker
+  docker tag $*
 else
   while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
     while getopts "a:c:d:f:i:k:m:n:o:p:s:t:u:w:hlrv" opt; do
@@ -499,7 +535,10 @@ else
     ns="-n $namespace"
   fi
 
-  if [ $subcmd == "h" ] || [ $subcmd == "help" ]; then
+  if [ $subcmd == "h" ]; then
+    usage simple
+    exit 0
+  elif [ $subcmd == "help" ]; then
     usage
     exit 0
   elif [ $subcmd == "c" ] || [ $subcmd == "cmd" ]; then
@@ -745,7 +784,32 @@ else
     cmd="docker rm -f ${mandatory[0]}"
     if [ ${#mandatory[@]} -eq 1 ]; then
       require docker
-      execmd "$cmd"
+      if [ $(docker ps -a | grep ${mandatory[0]} | wc -l) -lt 2 ]; then
+        cmd="docker rm -f $(docker ps -a | grep ${mandatory[0]}| awk '{print $1}')"
+        execmd "$cmd"
+      else
+        echo "====== More than one container ======"
+        conts=$(docker ps -a --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}'|grep ${mandatory[0]})
+        SIFS=$IFS
+        IFS=$'\n'
+        conts=($conts)
+        IFS=$SIFS
+        for ((i = 0; i < ${#conts[@]}; i++)); do
+          echo "$i: ${conts[$i]}"
+        done
+        echo "-1: ALL"
+        read -p "====== select one with number[0]: " dcidx
+        if [ -z $dcidx ]; then
+            dcidx=0
+        fi
+        if [ $dcidx -eq -1 ]; then
+          cmd="docker rm -f $(docker ps -a | grep ${mandatory[0]}| awk '{print $1}')"
+          execmd "$cmd"
+        else
+          cmd="docker rm -f $(echo ${conts[$dcidx]}| awk '{print $1}')"
+          execmd "$cmd"
+        fi
+      fi
     else
       for ip in ${mandatory[@]:1}; do
         execmd "$cmd" $ip
@@ -755,7 +819,33 @@ else
     cmd="docker rmi -f ${mandatory[0]}"
     if [ ${#mandatory[@]} -eq 1 ]; then
       require docker
-      execmd "$cmd"
+      if [ $(docker images | grep ${mandatory[0]} | wc -l) -lt 2 ]; then
+        cmd="docker rmi -f $(docker images | grep ${mandatory[0]}| awk '{print $1":"$2}')"
+        execmd "$cmd"
+      else
+        echo "====== More than one container ======"
+        cimgs=$(docker image list --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}'|grep ${mandatory[0]})
+        SIFS=$IFS
+        IFS=$'\n'
+        cimgs=($cimgs)
+        IFS=$SIFS
+        for ((i = 0; i < ${#cimgs[@]}; i++)); do
+          echo "$i: ${cimgs[$i]}"
+        done
+        echo "-1: ALL"
+        read -p "====== select one with number[0]: " diidx
+        if [ -z $diidx ]; then
+            diidx=0
+        fi
+        if [ $diidx -eq -1 ]; then
+          cmd="docker rmi -f $(docker images | grep ${mandatory[0]}| awk '{print $1":"$2}')"
+          execmd "$cmd"
+        else
+          cmd="docker rmi -f $(echo ${cimgs[$diidx]}| awk '{print $1":"$2}')"
+          echo $cmd
+          execmd "$cmd"
+        fi
+      fi
     else
       for ip in ${mandatory[@]:1}; do
         execmd "$cmd" $ip
@@ -1020,7 +1110,7 @@ else
     fi
 
     if [ $kind == "pod" ]; then
-      podinfo=$(kubectl $kc $context get pod $resname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[0].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $resname)
+      podinfo=$(kubectl $kc $context get pod $resname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[$idx].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $resname)
 
       if [ $? -ne 0 ]; then
         echo "$resname[$idx] container not found"
