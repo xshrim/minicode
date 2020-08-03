@@ -2,12 +2,14 @@ FROM alpine:latest
 
 MAINTAINER xshrim "xshrim@yeah.net"
 
+# mirrors.ustc.edu.cn
+# mirrors.tuna.tsinghua.edu.cn
 RUN set -ex \
     && echo "http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
     && echo "http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
     && echo "http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
-    && sed -i 's/nl.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+    && sed -i 's/nl.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
     && apk update \
     && apk upgrade \
     && apk add --no-cache \
@@ -135,16 +137,8 @@ RUN mkdir /share && mv /usr/sbin/tcpdump /usr/bin/tcpdump && echo 'alias iperf="
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2   # 解决go语言程序无法在alpine执行的问题
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
-# 开放ssh端口
-EXPOSE 22
-# 开放smb端口
-EXPOSE 135/tcp 137/udp 138/udp 139/tcp 445/tcp
-# 开放webssh端口
-EXPOSE 2222
-# 开放gofs端口
-EXPOSE 2333
-# 开放gohttpserver端口
-EXPOSE 2444
+# 开放ssh webssh gofs gohttpserver smb端口
+EXPOSE 22 2222 2333 2444 135/tcp 137/udp 138/udp 139/tcp 445/tcp
 
 # CMD ["/usr/sbin/sshd", "-D"]
 CMD ["sh","/root/run.sh"]

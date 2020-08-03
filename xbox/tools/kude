@@ -7,6 +7,7 @@ timeout=60
 user=root
 #passwd=root
 idx=0
+amount=""
 kwd=""
 kind="pod"
 context=""
@@ -80,8 +81,9 @@ function usage() {
   x,debug                  运行调试容器对pod进行调试
 
 **OPTIONS**:
+  -a [100] log显示条数
   -c [context] kubernetes连接上下文(可选)
-  -d [savedir] rbac结构图保存目录
+  -d [savedir] rbac结构图保存目录(可选)
   -f [./kube/config] kubeonfig文件路径(可选)
   -i [0] 匹配pod内容器index(可选)
   -k [kind] k8s资源类型
@@ -407,8 +409,11 @@ elif [ $subcmd == "dt" ] || [ $subcmd == "dtmp" ]; then
   docker run -it --rm $*
 else
   while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
-    while getopts "c:d:f:i:k:m:n:o:p:s:t:u:w:hlrv" opt; do
+    while getopts "a:c:d:f:i:k:m:n:o:p:s:t:u:w:hlrv" opt; do
       case $opt in
+      a)
+        amount="--tail $OPTARG"
+        ;;
       c)
         context="--context $OPTARG"
         ;;
@@ -674,8 +679,14 @@ else
       fi
 
       if [ ${#mandatory[@]} -gt 1 ]; then
-        rrepo=${mandatory[1]%/*}
+        rrepo=${mandatory[1]%%/*}
         rlib=${mandatory[1]#*/}
+      fi
+
+      rimg=${rlib#*/}
+      rlib=${rlib%%/*}
+      if [ "$rmig" == "$rlib" ]; then
+        rimg=""
       fi
 
       if [ "$rlib" == "" ] || [ "$rlib" == "$rrepo" ]; then
@@ -702,6 +713,14 @@ else
         simg=$limg
       else
         simg=$llib/$limg
+      fi
+      
+      if [ $rimg != $limg ] && [ -n $rimg ]; then
+        limg=$rimg
+      fi
+      
+      if [ "$rimg" != "$limg" ] && [ -n $rimg ] && [ "$rimg" != "" ]; then
+        limg=$rimg
       fi
 
       docker tag $simg $rrepo/$rlib/$limg
@@ -1030,9 +1049,9 @@ else
     "l" | "log")
       if [ $kind == "pod" ]; then
         if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
-          docker logs $cid
+          docker logs $cid $amount
         else
-          kubectl $kc $context logs $resname $cname $ns
+          kubectl $kc $context logs $resname $cname $amount $ns
         fi
       else
         echo "subcmd log not fit for $kind"
@@ -1041,9 +1060,9 @@ else
     "lf" | "logf")
       if [ $kind == "pod" ]; then
         if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
-          docker logs -f $cid
+          docker logs -f $cid $amount
         else
-          kubectl $kc $context logs -f $resname $cname $ns
+          kubectl $kc $context logs -f $resname $cname $amount $ns
         fi
       else
         echo "subcmd logf not fit for $kind"

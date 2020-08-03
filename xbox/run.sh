@@ -26,17 +26,21 @@ if [ "$SSL" == "true" ]; then
   sed -i "s#ws://#wss://#g" /root/static/index.html
 fi
 
-dir="./"
-if [ "$DIR" ]; then
-  dir=$DIR
+hsdir="./"
+if [ "$HSDIR" ]; then
+  hsdir=$HSDIR
+fi
+
+if [ "$HSUSER" ] && [ "$HSPASSWD" ]; then
+  hsauth="--auth-type http --auth-http $HSUSER:$HSPASSWD"
 fi
 
 /usr/sbin/sshd -D &
 
 smbd --no-process-group --configfile /root/smb.conf &
 
-/usr/bin/gofs -d $dir &
+/usr/bin/gofs -d $hsdir &
 
-/usr/bin/gohttpserver -r $dir --port 2444  --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
+/usr/bin/gohttpserver -r $hsdir --port 2444 $hsauth --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
 
 /root/webssh

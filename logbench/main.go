@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -11,7 +10,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v5"
-	"github.com/xshrim/xlog"
+	"github.com/xshrim/gol"
 )
 
 var operation = []string{"QUERY", "CREATE", "UPDATE", "DELETE"}
@@ -58,6 +57,7 @@ var (
 	h        bool
 	count    int64
 	duration time.Duration
+	size     int
 	command  string
 	prefix   string
 	quit     bool
@@ -69,6 +69,7 @@ func init() {
 
 	flag.Int64Var(&count, "c", 0, "how many logs to output, no limit if count is 0")
 	flag.DurationVar(&duration, "d", 0, "how long to output logs, this would be interval when count is 0")
+	flag.IntVar(&size, "s", 200, "size of each log (Byte)")
 	flag.StringVar(&command, "r", "", "command to run")
 	flag.StringVar(&prefix, "p", "", "prefix of logs")
 	flag.BoolVar(&quit, "q", false, "exit after task completion")
@@ -82,32 +83,167 @@ func RandCnName() string {
 func RandCnFirstName() string {
 	var first string
 	for i := 0; i <= rand.Intn(2); i++ {
-		first += fmt.Sprint(firstName[rand.Intn(len(firstName)-1)])
+		first += gol.Sprt(firstName[rand.Intn(len(firstName)-1)])
 	}
 	return first
 }
 
 func RandCnLastName() string {
-	return fmt.Sprint(lastName[rand.Intn(len(lastName)-1)])
+	return gol.Sprt(lastName[rand.Intn(len(lastName)-1)])
 }
 
 func RandOperation() string {
 	return operation[rand.Intn(len(operation))]
 }
 
-func RandPerson() string {
-	return xlog.Jsonify(xlog.F{
-		"Name":    RandCnName(),
-		"Age":     gofakeit.Number(10, 130),
-		"Email":   gofakeit.Email(),
-		"Phone":   gofakeit.Phone(),
-		"City":    gofakeit.City(),
-		"Company": gofakeit.Company(),
-		"Motto":   gofakeit.Phrase(),
-	})
+func RandPerson(s int) string {
+	var m gol.F
+	switch {
+	case s <= 50:
+		m = gol.F{
+			"Name": RandCnName(),
+		}
+	case s <= 100:
+		m = gol.F{
+			"Name":  RandCnName(),
+			"Age":   gofakeit.Number(10, 130),
+			"Phone": gofakeit.Phone(),
+		}
+	case s <= 200:
+		m = gol.F{
+			"Name":     RandCnName(),
+			"Age":      gofakeit.Number(10, 130),
+			"Email":    gofakeit.Email(),
+			"Phone":    gofakeit.Phone(),
+			"City":     gofakeit.City(),
+			"Street":   gofakeit.Street(),
+			"Company":  gofakeit.Company(),
+			"Position": gofakeit.JobTitle(),
+			"Motto":    gofakeit.Phrase(),
+		}
+	case s <= 300:
+		m = gol.F{
+			"Name":         RandCnName(),
+			"Age":          gofakeit.Number(10, 130),
+			"Email":        gofakeit.Email(),
+			"Phone":        gofakeit.Phone(),
+			"City":         gofakeit.City(),
+			"Street":       gofakeit.Street(),
+			"Company":      gofakeit.Company(),
+			"Position":     gofakeit.JobTitle(),
+			"CreditCard":   gofakeit.CreditCardNumber(nil),
+			"Motto":        gofakeit.Phrase(),
+			"HackerPhrase": gofakeit.HackerPhrase(),
+		}
+	case s <= 400:
+		m = gol.F{
+			"Name":         RandCnName(),
+			"Age":          gofakeit.Number(10, 130),
+			"Email":        gofakeit.Email(),
+			"Phone":        gofakeit.Phone(),
+			"City":         gofakeit.City(),
+			"Street":       gofakeit.Street(),
+			"Company":      gofakeit.Company(),
+			"Job":          gofakeit.JobDescriptor(),
+			"Position":     gofakeit.JobTitle(),
+			"CreditCard":   gofakeit.CreditCardNumber(nil),
+			"Phrase":       gofakeit.Phrase(),
+			"Motto":        gofakeit.Phrase(),
+			"HackerPhrase": gofakeit.HackerPhrase(),
+		}
+	case s <= 500:
+		m = gol.F{
+			"Name":         RandCnName(),
+			"Age":          gofakeit.Number(10, 130),
+			"Birthday":     gofakeit.Date(),
+			"Email":        gofakeit.Email(),
+			"Phone":        gofakeit.Phone(),
+			"Country":      gofakeit.Country(),
+			"City":         gofakeit.City(),
+			"Street":       gofakeit.Street(),
+			"Company":      gofakeit.Company(),
+			"Position":     gofakeit.JobTitle(),
+			"Pet":          gofakeit.Animal(),
+			"Currency":     gofakeit.CurrencyLong(),
+			"Job":          gofakeit.JobDescriptor(),
+			"CreditCard":   gofakeit.CreditCardNumber(nil),
+			"Phrase":       gofakeit.Phrase(),
+			"Motto":        gofakeit.Phrase(),
+			"HackerPhrase": gofakeit.HackerPhrase(),
+		}
+	case s <= 700:
+		m = gol.F{
+			"Name":         RandCnName(),
+			"Age":          gofakeit.Number(10, 130),
+			"Birthday":     gofakeit.Date(),
+			"Email":        gofakeit.Email(),
+			"Phone":        gofakeit.Phone(),
+			"Country":      gofakeit.Country(),
+			"City":         gofakeit.City(),
+			"Street":       gofakeit.Street(),
+			"Company":      gofakeit.Company(),
+			"Position":     gofakeit.JobTitle(),
+			"Pet":          gofakeit.Animal(),
+			"Currency":     gofakeit.CurrencyLong(),
+			"Job":          gofakeit.JobDescriptor(),
+			"CreditCard":   gofakeit.CreditCardNumber(nil),
+			"Phrase":       gofakeit.Phrase(),
+			"Motto":        gofakeit.Phrase(),
+			"HackerPhrase": gofakeit.HackerPhrase(),
+			"UserAgent":    gofakeit.UserAgent(),
+			"Question":     gofakeit.Question(),
+		}
+	case s <= 1000:
+		m = gol.F{
+			"Name":         RandCnName(),
+			"Age":          gofakeit.Number(10, 130),
+			"Birthday":     gofakeit.Date(),
+			"Email":        gofakeit.Email(),
+			"Phone":        gofakeit.Phone(),
+			"Country":      gofakeit.Country(),
+			"City":         gofakeit.City(),
+			"Street":       gofakeit.Street(),
+			"Company":      gofakeit.Company(),
+			"Position":     gofakeit.JobTitle(),
+			"Pet":          gofakeit.Animal(),
+			"Currency":     gofakeit.CurrencyLong(),
+			"Job":          gofakeit.JobDescriptor(),
+			"CreditCard":   gofakeit.CreditCardNumber(nil),
+			"Phrase":       gofakeit.Phrase(),
+			"Motto":        gofakeit.Phrase(),
+			"HackerPhrase": gofakeit.HackerPhrase(),
+			"UserAgent":    gofakeit.UserAgent(),
+			"Question":     gofakeit.Question(),
+			"Sentence":     gofakeit.Sentence(50),
+		}
+	default:
+		m = gol.F{
+			"Name":         RandCnName(),
+			"Age":          gofakeit.Number(10, 130),
+			"Birthday":     gofakeit.Date(),
+			"Email":        gofakeit.Email(),
+			"Phone":        gofakeit.Phone(),
+			"Country":      gofakeit.Country(),
+			"City":         gofakeit.City(),
+			"Street":       gofakeit.Street(),
+			"Company":      gofakeit.Company(),
+			"Position":     gofakeit.JobTitle(),
+			"Pet":          gofakeit.Animal(),
+			"Currency":     gofakeit.CurrencyLong(),
+			"Job":          gofakeit.JobDescriptor(),
+			"CreditCard":   gofakeit.CreditCardNumber(nil),
+			"Phrase":       gofakeit.Phrase(),
+			"Motto":        gofakeit.Phrase(),
+			"HackerPhrase": gofakeit.HackerPhrase(),
+			"UserAgent":    gofakeit.UserAgent(),
+			"Question":     gofakeit.Question(),
+			"Sentence":     gofakeit.Sentence((s - 1000) / 5),
+		}
+	}
+	return gol.Jsonify(m)
 }
 
-func LogBench(duration time.Duration, count int64, cmd string) int64 {
+func LogBench(duration time.Duration, count int64, sz int, cmd string) int64 {
 	cur := int64(0)
 	var interval time.Duration
 	if count == 0 {
@@ -121,7 +257,7 @@ func LogBench(duration time.Duration, count int64, cmd string) int64 {
 			break
 		}
 		if cmd == "" {
-			xlog.Infof("%s User: %s [%06d]\n", RandOperation(), RandPerson(), cur)
+			gol.Infof("%s: %s <%09d>\n", RandOperation(), RandPerson(sz), cur)
 		} else {
 			cmds := strings.Split(cmd, " ")
 			cmdname := cmds[0]
@@ -129,9 +265,9 @@ func LogBench(duration time.Duration, count int64, cmd string) int64 {
 			cmd := exec.Command(cmdname, cmdargs...)
 			stdout, err := cmd.Output()
 			if err != nil {
-				xlog.Fatal(err.Error())
+				gol.Fatal(err.Error())
 			}
-			fmt.Print(string(stdout))
+			gol.Prt(string(stdout))
 		}
 		cur++
 		time.Sleep(interval)
@@ -156,7 +292,7 @@ func main() {
 		if os.Getenv("LOGBENCH_COUNT") != "" {
 			count, err = strconv.ParseInt(os.Getenv("LOGBENCH_COUNT"), 10, 64)
 			if err != nil {
-				xlog.Fatal(err)
+				gol.Fatal(err)
 			}
 		}
 	}
@@ -165,7 +301,16 @@ func main() {
 		if os.Getenv("LOGBENCH_DURATION") != "" {
 			duration, err = time.ParseDuration(os.Getenv("LOGBENCH_DURATION"))
 			if err != nil {
-				xlog.Fatal(err)
+				gol.Fatal(err)
+			}
+		}
+	}
+
+	if size == 0 {
+		if os.Getenv("LOGBENCH_SIZE") != "" {
+			size, err = strconv.Atoi(os.Getenv("LOGBENCH_SIZE"))
+			if err != nil {
+				gol.Fatal(err)
 			}
 		}
 	}
@@ -181,14 +326,14 @@ func main() {
 	if os.Getenv("LOGBENCH_QUIT") != "" {
 		quit, err = strconv.ParseBool(os.Getenv("LOGBENCH_QUIT"))
 		if err != nil {
-			xlog.Fatal(err)
+			gol.Fatal(err)
 		}
 	}
 
-	xlog.Prefix(prefix)
+	gol.Prefix(prefix)
 
 	//start := time.Now().Format("2006-01-02 15:04:05")
-	_ = LogBench(duration, count, command)
+	_ = LogBench(duration, count, size, command)
 	//end := time.Now().Format("2006-01-02 15:04:05")
 	//xlog.Prt("%s - %s : %d\n", start, end, num)
 	if !quit {

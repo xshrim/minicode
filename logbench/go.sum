@@ -38,6 +38,8 @@ github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJy
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
 github.com/ugorji/go/codec v1.1.7/go.mod h1:Ax+UKWsSmolVDwsd+7N3ZtXu+yMGCf907BLYF3GoBXY=
+github.com/xshrim/gol v0.0.0-20200726151158-f24c7fcaa2cd h1:mCkph9FUJcMTBB4YgHJLsNHrgyvAkSGgd1Gr8rnHtFQ=
+github.com/xshrim/gol v0.0.0-20200726151158-f24c7fcaa2cd/go.mod h1:1OuGuc2U+TGSZ+5KettJbAGjvuSDC7RaWM02IDED0HM=
 github.com/xshrim/xlog v0.0.0-20200721094302-ca54d8857a9d h1:uWRkZuMQ5AOy6hEggT2DFBgYcftzAlZXdwaMPAbppfI=
 github.com/xshrim/xlog v0.0.0-20200721094302-ca54d8857a9d/go.mod h1:6+jiNjCnf4adwgcu+Q3iCX8X5fYx331WVn8ea+aMsCY=
 github.com/xshrim/xlog v0.0.0-20200721161019-0b0d0d70672c h1:rqFLU0T91VWWyKVeO/tirC1z8YnL4FWRjIuuh4TTWpU=

@@ -96,7 +96,11 @@ spec:
           value: share.demo.com
         - name: WEBPORT
           value: 80
-        - name: DIR
+        - name: HSUSER
+          value: admin
+        - name: HSPASSWD
+          value: Transfer@123
+        - name: HSDIR
           value: /share
         - name: HOST
           value: 127.0.0.1

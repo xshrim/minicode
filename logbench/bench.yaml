@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: logbench
+  name: {{name}}
   labels:
     app: logbench
 spec:
-  replicas: 100
+  replicas: 1
   #strategy:
   #  rollingUpdate:
   #    maxSurge: 10
@@ -26,19 +26,19 @@ spec:
           operator: Equal
           value: ebmpaas
       containers:
-        - name: logbench
+        - name: {{name}}
           image: gregistry.ebcpaas.mp.io:80/library/logbench
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: LOGBENCH_PREFIX
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+              value: "{{label}}"
             - name: LOGBENCH_COUNT
-              value: "60000"
+              value: "{{count}}"
+            - name: LOGBENCH_SIZE
+              value: "{{size}}"
             - name: LOGBENCH_DURATION
-              value: 10m
+              value: {{duration}}
           resources:
             limits:
-              cpu: 1000m
-              memory: 512Mi
+              cpu: 100m
+              memory: 128Mi

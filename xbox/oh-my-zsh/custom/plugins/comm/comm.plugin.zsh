@@ -386,6 +386,11 @@ PROMPT='%n@%M %/
 fi
 }
 
+# 终端开启256色支持
+if [ -e /usr/share/terminfo/x/xterm-256color ]; then
+  export TERM='xterm-256color'
+fi
+
 #}}}
 
 #清空历史记录
