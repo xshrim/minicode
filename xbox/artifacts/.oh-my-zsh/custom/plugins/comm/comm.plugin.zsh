@@ -654,7 +654,7 @@ alias la='ls -a'
 alias l='ls'
 alias cls='clear'
 alias mkdir='mkdir -p'
-#alias ps='ps -elf'
+alias ps='ps -elf'
 alias ss='ss -ntlp'
 alias open='xdg-open'
 alias grep='grep --color=auto'
@@ -905,8 +905,80 @@ alias pan='web_search pan115'
 alias zzl='web_search zhongzilou'
 # add your own !bang searches here
 
+# 打印256色输出效果
+format_number() {
+  local c=$'\u254F'
+  if [ $1 -lt 10 ]; then
+    printf "$c %d" $1
+  else
+    printf "$c%02d" $(($1%100))
+  fi
+}
+
+somecolors() {
+  local from="$1"
+  local to="$2"
+  local prefix="$3"
+  local line
+
+  for line in \
+      "\e[2mdim      " \
+      "normal   " \
+      "\e[1mbold     " \
+      "\e[1;2mbold+dim "; do
+    echo -ne "$line"
+    i=$from
+    while [ $i -le $to ]; do
+      echo -ne "\e[$prefix${i}m"
+      format_number $i
+      i=$((i+1))
+    done
+    echo $'\e[0m\e[K'
+  done
+}
+
+allcolors() {
+  echo "-- 8 standard colors: SGR ${1}0..${1}7 --"
+  somecolors 0 7 "$1"
+  echo
+  echo "-- 8 bright colors: SGR ${2}0..${2}7 --"
+  somecolors 0 7 "$2"
+  echo
+  echo "-- 256 colors: SGR ${1}8;5;0..255 --"
+  somecolors 0 15 "${1}8;5;"
+  echo
+  somecolors  16  51 "${1}8;5;"
+  somecolors  52  87 "${1}8;5;"
+  somecolors  88 123 "${1}8;5;"
+  somecolors 124 159 "${1}8;5;"
+  somecolors 160 195 "${1}8;5;"
+  somecolors 196 231 "${1}8;5;"
+  echo
+  somecolors 232 255 "${1}8;5;"
+}
+
+function printcolor() {
+  allcolors 3 9
+  echo
+  allcolors 4 10
+}
+
+# zshrc重载
+function src() {
+	local cache="$ZSH_CACHE_DIR"
+	autoload -U compinit zrecompile
+	compinit -i -d "$cache/zcomp-$HOST"
+
+	for f in ~/.zshrc "$cache/zcomp-$HOST"; do
+		zrecompile -p $f && command rm -f $f.zwc.old
+	done
+
+	# Use $SHELL if available; remove leading dash if login shell
+	[[ -n "$SHELL" ]] && exec ${SHELL#-} || exec zsh
+}
+
 #extract自动解压，同样适用于bash
-function extract {
+function extract() {
  if [ -z "$1" ]; then
     # display usage if no parameters given
     echo "Usage: extract <path/file_name>.<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z|xz|ex|tar.bz2|tar.gz|tar.xz>"
@@ -1111,16 +1183,35 @@ fi
 autoload -U compinit && compinit
 autoload -U promptinit && promptinit
 autoload -U add-zsh-hook
+autoload -U zcalc
+
+#########################################################################
+# 端口开放
+#########################################################################
+
+function portopen() {
+for port in $*;
+do
+  sudo /sbin/iptables -I INPUT -p tcp --dport $port -j ACCEPT
+done
+}
+
+function portclose() {
+for port in $*;
+do
+  sudo /sbin/iptables -I INPUT -p tcp --dport $port -j DROP
+done
+}
 
 #########################################################################
 # 计算器
 #########################################################################
 
-calc() {
+function calc() {
     zcalc -e "$*"
 }
 
-c () 
+function c() 
 { 
     local in="$(echo " $*" | sed -e 's/\[/(/g' -e 's/\]/)/g')";
     awk "BEGIN {printf $in}"
@@ -1130,17 +1221,43 @@ c ()
 # 大小写转换
 #########################################################################
 
-upper() {
+function upper() {
     echo "$*" | tr '[:lower:]' '[:upper:]'
 }
 
-lower() {
+function lower() {
     echo "$*" | tr '[:upper:]' '[:lower:]'
 }
 
-capitalize() {
+function capitalize() {
     echo "$*" | tr '[:upper:]' '[:lower:]' | sed 's/^\w\|\s\w/\U&/g'
 }
+
+#########################################################################
+# 自动执行sudo命令(Alt+Enter)
+#########################################################################
+
+sudo-command-line() {
+    [[ -z $BUFFER ]] && zle up-history
+    if [[ $BUFFER == sudo\ * ]]; then
+        LBUFFER="${LBUFFER#sudo }"
+    elif [[ $BUFFER == $EDITOR\ * ]]; then
+        LBUFFER="${LBUFFER#$EDITOR }"
+        LBUFFER="sudoedit $LBUFFER"
+    elif [[ $BUFFER == sudoedit\ * ]]; then
+        LBUFFER="${LBUFFER#sudoedit }"
+        LBUFFER="$EDITOR $LBUFFER"
+    else
+        LBUFFER="sudo $LBUFFER"
+    fi
+    
+    zle accept-line
+}
+zle -N sudo-command-line
+# Defined shortcut keys: [Alt] [Enter]
+bindkey -M emacs '^[^M' sudo-command-line
+bindkey -M vicmd '^[^M' sudo-command-line
+bindkey -M viins '^[^M' sudo-command-line
 
 #########################################################################
 # kubectl自动补全加载较慢, 启用延迟加载
@@ -1152,6 +1269,19 @@ function kubectl() {
   command kubectl "$@"
 }
 alias k='kubectl'
+
+#########################################################################
+# nvm加载较慢, 启用延迟加载
+#########################################################################
+#function nvm() {
+#  [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
+#  [ -s "$HOME/.nvm/bash_completion" ] && . "$HOME/.nvm/bash_completion"
+#  command nvm "$@"
+#}
+
+if [ -f /usr/share/nvm/init-nvm.sh ]; then
+  source /usr/share/nvm/init-nvm.sh --no-use
+fi
 
 #########################################################################
 #目录跳转后自动显示目录内容

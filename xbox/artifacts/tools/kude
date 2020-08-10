@@ -1,0 +1,3219 @@
+#!/bin/bash
+
+kubecfg=""
+image=xo
+port=22
+timeout=60
+user=root
+#passwd=root
+idx=0
+since=""
+amount=""
+kwd=""
+list=0
+kind="pod"
+context=""
+args=""
+chroot=""
+localrun=0
+savepath=""
+vol=""
+
+mandatory=()
+
+function usage() {
+  echo "**USAGE**:
+  kude <command> [<options>] [<object>]
+
+**COMMANDS**:
+  hp,help                   打印命令帮助
+  git                      git运行git命令
+  g,go                     运行go命令
+  lg,lgo                   Linux环境下禁用CGO的go命令
+  h,helm                   运行helm命令
+  d,docker                 运行docker命令
+  k,kube,kubectl           运行kubectl命令
+  kk                       运行kubectl kustomize命令
+  km,kustomize             运行kustomize命令
+  td,tdp,tcpdump           运行tcpdump抓包命令
+  ipt,iptable,iptables     运行iptables命令
+  ct,ssl,cred              加密凭证操作
+  sp,sample                输出模板示例
+  c,cmd                    运行linux命令
+  scp                      分发本机文件
+  gi                       git一键提交并上传
+  ghp,ghelp                查看go命令帮助
+  dhp,dhelp                查看docker命令帮助
+  khp,khelp                查看kubectl命令帮助
+  dr,drun                  运行容器
+  drt,dtmp                 运行临时容器
+  dat,dattach              attach到目标容器
+  dx,dbg                   运行共享目标容器命名空间的镜像(调试)
+  dsa,dstart               启动docker容器
+  dsp,dstop                停止docker容器
+  de,dexe,dexec            在容器中执行命令
+  die,diexe,diexec         在容器中交互式执行命令
+  dcp                      在本地和容器之间复制文件
+  dtp,dtop                 查看容器中运行的进程
+  dlg,dlog                 查看容器日志
+  dlf,dlogf                实时查看容器日志
+  dst,dstat,dstats         监控docker容器
+  dq,dsearch               搜索镜像仓库
+  db,dbd                   构建docker镜像
+  dt,dtg,dtag              为镜像打标签
+  dps,dlist                查看容器列表
+  dm,dim,dimg              查看镜像列表
+  di,din,dinsp             查看容器配置信息
+  dmi,dmin,dminsp          查看镜像配置信息
+  dn,dnet                  查看docker网络列表
+  dv,dvol                  查看docker卷列表
+  dd,drm                   删除容器
+  do,drmi                  删除镜像
+  dh,dhi,dhist             查看镜像构建历史
+  ds,dput,dpush            推送镜像
+  dl,dget,dpull            拉取镜像
+  dpa,daddr                查看容器网络信息
+  dpe,denv                 查看容器环境变量
+  dpc,dcmd                 查看容器运行命令
+  dpp,dport                查看容器端口映射
+  dpm,dmnt                 查看容器卷挂载
+  dcc                      删除所有已退出的容器
+  dic                      删除所有未使用的镜像
+  dvc                      删除所有未使用的容器卷
+  dnc                      删除所有未使用的网络
+  cf,cfind                 查找当前目录下包含指定关键字的文件
+  df,dfind                 查找容器配置中包含指定关键字的容器
+  kf,kfind                 查找资源中包含指定关键字的资源
+  cfg,config               查看kubeconfig配置
+  exp,explain              查看k8s资源描述
+  dry,dryrun               模拟执行kubectl命令
+  ap,apl,apply             执行kubectl apply命令
+  n,new,create             执行kubectl create命令
+  r,run                    执行kubectl run命令
+  b,rbac                   查看rbac结构图
+  a,all                    查看指定命名空间下所有资源
+  ro,rollout               执行kubectl rollout命令
+  au,auth                  执行kubectl auth命令
+  pr,proxy                 开启kube apiserver本地代理
+  l,log                    查看pod内容器日志
+  lf,logf                  实时查看容器日志
+  i,insp,inspect           查看容器配置信息
+  gt,get                   查看k8s资源信息
+  s,desc,describe          查看k8s资源详细信息
+  wt,watch                 监视指定k8s资源状态
+  w,wide                   查看k8s资源更多信息
+  wl,wlabel                查看k8s资源包括label在内的更多信息
+  y,yaml                   以yaml格式查看k8s资源信息
+  j,json                   以json格式查看k8s资源信息
+  tp,top                   查看node或pod资源占用
+  ed,edit                  编辑指定k8s资源
+  p,patch                  为k8s资源打补丁
+  rm,del,delete            删除指定k8s资源
+  e,exe,exec               在pod中执行命令
+  ie,iexe,iexec            在pod中交互式执行命令
+  at,attach                加入pod的命名空间
+  cp,copy                  在本地和pod之间复制文件
+  pf,forward,port-forward  将本地端口映射到pod端口实现端口转发
+  x,deb,debug              运行调试容器对pod进行调试
+
+**OPTIONS**:
+  -a [10m] log显示指定时间之后的日志
+  -b [100] log显示条数
+  -c [context] kubernetes连接上下文(可选)
+  -d [savedir] rbac结构图保存目录(可选)
+  -f [./kube/config] kubeonfig文件路径(可选)
+  -i [0] 匹配pod内容器index(可选)
+  -k [kind] k8s资源类型
+  -m [xo] 自定义调试工具容器(可选)
+  -n [default] 查询的k8s命名空间(可选)
+  -o [host] 指定目标主机ip
+  -p [22] 目标主机ssh端口(可选)
+  -s [admin123] 目标主机ssh密码(可选)
+  -t [60] 目标主机ssh连接超时时间(可选)
+  -u [root] 目标主机ssh账号(可选)
+  -w [kwd] 过滤关键字
+  -j 配合cmd本机执行命令
+  -l 列出满足条件的所有资源
+  -r 调试容器中是否需要chroot到目标容器的文件系统
+  -v 调试容器中是否需要挂载目标主机的docker.sock文件
+  -h 使用说明
+"
+  if [ "$1" != "simple" ]; then
+    echo "
+**REFERENCES**:
+# Linux: https://community.linuxmint.com/tutorial/view/244 https://man.linuxde.net/
+# Docker: https://docs.docker.com/engine/reference/commandline/cli/
+# Kubectl: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
+
+**EXAMPLES**:
+# 直接执行docker或kubectl命令
+kude d ps -a     #相当于docker ps -a
+kude k get pod   #相当于kubectl get pod
+
+# 查看docker或kubectl命令帮助
+kude dhp run
+kude khp get
+
+# 进行docker镜像推送并删除临时tag
+kude ds xshrim/xo foo.bar.com/xshrim
+
+# 查看docker容器运行的命令
+kude dpc nginx
+
+# 删除包含指定关键字的容器
+kude drm alp
+
+# 查看镜像构建历史
+kude dh xshrim/xo
+
+# 远程到目标主机执行命令
+kude cmd 'ls /etc' 127.0.0.1 10.20.0.12-18
+kude cmd -p 22 -s admin 'ls /etc' 127.0.0.1
+
+# 执行本机命令
+kude cmd 'scp test root@10.0.0.10:/root/test'
+
+# 将本地文件分发到远程主机
+./kude scp './foo:/root/bar' 10.20.0.12-18
+
+# 获取Kubernetes RBAC结构图
+kude b u demouser
+kude rbac -n kube-system rolebinding
+
+# 查看kubeconfig配置
+kude cfg
+
+# 执行kubectl apply命令
+kude ap pod.yaml
+
+# 开启kube-apiserver本地代理
+kude pr 8443
+kude pr 127.0.0.1:8443
+
+# 查看pod容器日志
+kude l nginx
+kude lf nginx
+kude lf -a 10 nginx
+kude log -i 1 nginx
+
+# 查看k8s资源详细信息
+kude s nginx
+kude desc -k deploy nginx
+
+# 查找包含指定关键字的资源
+kude -c acp-global -k sa -n default kf token-pfmd8
+
+# 以yaml格式查看k8s资源信息
+kude y nginx
+kude yaml -k rs nginx
+
+# 监视k8s资源状态
+kude watch -k deploy nginx
+
+# 为k8s资源打补丁
+kude p -k deploy nginx '{\"spec\":{\"replicas\":2}}'
+
+# 进入pod执行命令
+kude e nginx -n default ls
+kude ie nginx
+
+# 在本地和pod之间复制文件
+kude cp nginx :/foo ./foo
+kude cp nginx -n default bar :/bar
+
+# 将本地端口映射到pod端口实现端口转发
+kude pf nginx 8000:80
+kude -c minikube pf nginx -n default 8000:80
+
+# 运行调试容器对pod内的指定容器进行调试
+kude x nginx
+kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
+"
+  fi
+}
+
+function sslhelp() {
+  echo ' ================================================================ '
+  echo ' --ssl-domain: 生成ssl证书需要的主域名，如不指定则默认为localhost，如果是ip访问服务，则可忽略；'
+  echo ' --ssl-trusted-ip: 一般ssl证书只信任域名的访问请求，有时候需要使用ip去访问server，那么需要给ssl证书添加扩展IP，多个IP用逗号隔开；'
+  echo ' --ssl-trusted-domain: 如果想多个域名访问，则添加扩展域名（SSL_TRUSTED_DOMAIN）,多个扩展域名用逗号隔开；'
+  echo ' --ssl-size: ssl加密位数，默认2048；'
+  echo ' --ssl-date: ssl有效期，默认10年；'
+  echo ' --ca-date: ca有效期，默认10年；'
+  echo ' --ssl-cn: 国家代码(2个字母的代号),默认CN;'
+  echo ' --ca-reuse: 是否复用指定CA私钥和证书;'
+  echo ' --ca-key: 指定复用的CA私钥路径;'
+  echo ' --ca-cert: 指定复用的CA证书路径;'
+  echo ' 使用示例:'
+  echo ' kude ssl gen --ssl-domain=www.test.com --ssl-trusted-domain=*.test1.com,www.test2.com \ '
+  echo ' --ssl-trusted-ip=1.1.1.1,2.2.2.2,3.3.3.3 --ssl-size=2048 --ssl-date=3650'
+  echo ' or'
+  echo ' kude ssl gen --ssl-domain=www.test.com --ssl-trusted-domain=*.test1.com,www.test2.com \ '
+  echo ' --ssl-trusted-ip=1.1.1.1,2.2.2.2 --ssl-size=2048 --ssl-date=3650 --ca-reuse=true ca-key=cakey.pem ca-cert=cacerts.pem'
+  echo ' ================================================================'
+}
+
+function tcpdumphelp() {
+  echo "
+[tcpdump选项]:
+-A：以ASCII文本显示抓包内容
+-D：列出所有网络接口
+-F：从文件中读取抓包的表达式
+-P：指定要抓取的包是流入还是流出的包
+-X：以16进制显示数据包承载的数据内容
+-l：使标准输出变为缓冲行形式
+-c：抓包次数
+-n：禁用域名解析
+-s：设置每个数据包的大小
+-i：指定监听的网络接口
+-r：从指定的文件中读取包
+-w：输出信息保存到指定文件
+-a：将网络地址和广播地址转变成名字
+-d：将匹配信息包的代码以人们能够理解的汇编格式给出
+-e：在输出行打印出数据链路层的头部信息
+-f：将外部的 Internet 地址以数字的形式打印出来
+-t：在输出的每一行不打印时间戳
+-q：快速打印简短输出
+-v：输出稍微详细的报文信息
+-nn：直接以IP及Port显示而非主机名与服务名称
+-vv：输出更详细报文信息
+-vvv：尝试解析应用层协议输出更详细报文信息
+
+[tcpdump关键字]:
+方向关键字: src, dst
+类型关键字: host, net, port, portrange
+协议关键字: ip, ip6, arp, tcp, udp, icmp, ether
+协议内容过滤: proto[x:y]: 过滤协议从x字节开始的y字节数
+逻辑运算符: ! not, && and, || or
+tcp标记: tcp-fin, tcp-syn, tcp-rst, tcp-push, tcp-ack, tcp-urg, tcp-ece, tcp-cwr
+计算字符串二进制: list(map(hex, [ord(x) for x in 'GET ']))
+
+[tcpdump示例]:
+# 从所有网卡抓取数据包
+tcpdump -i any
+
+# 抓取整个网段的数据包
+tcpdump net 192.168.1.0/24
+
+# 抓取包含172.16.1.122的数据包  
+tcpdump -i eth0 -vnn host 172.16.1.122  
+
+# 抓取包含172.16.1.0/24网段的数据包  
+tcpdump -i eth0 -vnn net 172.16.1.0/24  
+
+# 抓取包含端口22-50的数据包  
+tcpdump -i eth0 -vnn portrange 22-50
+
+# 抓取udp协议的数据包  
+tcpdump -i eth0 -vnn  udp
+
+# 抓取icmp协议的数据包  
+tcpdump -i eth0 -vnn icmp  
+
+# 抓取arp协议的数据包  
+tcpdump -i eth0 -vnn arp  
+
+# 抓取ip协议的数据包  
+tcpdump -i eth0 -vnn ip
+
+# 抓取目的ip是10网段的数据包
+tcpdump -i any -nn 'ip[16] == 10'
+
+# 抓取目的ip范围是 192.168.1.10 ~ 192.168.1.100网段的数据包
+tcpdump -i any -nn 'ip[16] == 192 and ip[17] == 168 and ip[18] == 1 and ip[19] > 9 and ip[19] < 101'
+
+# 抓取源ip是172.16.1.122数据包 
+tcpdump -i eth0 -vnn src host 172.16.1.122  
+
+# 抓取目的ip是172.16.1.122数据包  
+tcpdump -i eth0 -vnn dst host 172.16.1.122  
+
+# 抓取源端口是22的数据包  
+tcpdump -i eth0 -vnn src port 22  
+
+# 抓取源ip是172.16.1.253且目的ip是22的数据包  
+tcpdump -i eth0 -vnn src host 172.16.1.253 and dst port 22  
+
+# 抓取源ip是172.16.1.122或者包含端口是22的数据包  
+tcpdump -i eth0 -vnn src host 172.16.1.122 or port 22  
+
+# 抓取源ip是172.16.1.122且端口不是22的数据包  
+tcpdump -i eth0 -vnn src host 172.16.1.122 and not port 22  
+
+# 抓取源ip是172.16.1.59且目的端口是22，或源ip是172.16.1.68且目的端口是80的数据包
+tcpdump -i  eth0 -vnn 'src host 172.16.1.59 and dst port 22' or  ' src host 172.16.1.68 and dst port 80 '  
+
+# 把抓取的数据包记录存到/tmp/fill.cap文件中，当抓取100个数据包后就退出程序 
+tcpdump –i eth0 -vnn -w  /tmp/fill.cap -c 100  
+
+# 从/tmp/fill.cap记录中读取tcp协议的数据包  
+tcpdump –i eth0 -vnn -r  /tmp/fill.cap tcp  
+
+# 从/tmp/fill记录中读取包含172.16.1.58的数据包  
+tcpdump –i eth0 -vnn -r  /tmp/fill.cap host  172.16.1.58
+
+# 抓取所有经过eth0的目的地址是10.10.1.254或10.10.1.200端口是80的TCP数据包
+# tcpdump -i eth0 '((tcp) and (port 80) and ((dst host 10.10.1.254) or (dst host 10.10.1.200)))'
+
+# 抓取目标域名是foo.bar的数据包
+tcpdump -i eth0 -vn dst host foo.bar
+
+# 抓取域名为foo.bar且非80和25端口的数据包
+tcpdump -i eth0 host foo.bar and not port 80 and not port 25
+
+# 抓取http get数据包
+tcpdump -i eth0 'tcp[(tcp[12]>>2):4] = 0x47455420'
+tcpdump -i eth0 tcp[20:2]=0x4745 or tcp[20:2]=0x4854
+
+# 抓取ssh返回数据包
+tcpdump -i eth0 'tcp[(tcp[12]>>2):4] = 0x5353482D'
+
+# 抓取http响应数据包
+tcpdump -i eth0 'tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x48545450 && tcp[((tcp[12:1] & 0xf0) >> 2) + 4:2] = 0x2f31 && tcp[((tcp[12:1] & 0xf0) >> 2) + 6:1] = 0x2e'　
+
+# 抓取dns请求数据包
+tcpdump -i eth0 udp dst port 53
+
+# 抓取tcp协议数据包
+tcpdump -i eth0 tcp
+
+# 抓取大于600字节的数据包
+tcpdump -i eth0 'ip[2:2] > 600'
+
+# 抓取源端口大于1024的数据包
+tcpdump -i eth0 'tcp[0:2] > 1024'
+
+# 抓取tcp syn/ack数据包
+tcpdump -i eth0 'tcp[tcpflags] & (tcp-syn|tcp-ack) != 0'
+
+# 计算抓取10000各syn数据包所使用的时间从而估算访问量
+time tcpdump -nn -i eth0 'tcp[tcpflags] = tcp-syn' -c 10000 > /dev/null
+
+# 保存10000个数据包过滤条件为443端口并解析来源IP
+tcpdump -i any -nn -c 10000 port 443 > tcpdump.log
+cat tcpdump.log | awk '{print $3}' | awk -F '.' '{print $1"."$2"."$3"."$4}' | sort | uniq -c | sort -rn
+
+# 后台滚动抓包
+nohup tcpdump -i eth0 port 22 -s0 -G 3600 -Z root -w ssh22_%Y_%m%d_%H%M_%S.pcap &
+"
+}
+
+function iptableshelp() {
+  echo "
+[iptables选项]:
+-t, --table table：对指定的表 table 进行操作， table 必须是 raw， nat，filter，mangle 中的一个。如果不指定此选项，默认的是 filter 表
+# 通用匹配：源地址目标地址的匹配
+-p：指定要匹配的数据包协议类型
+-s, --source [!] address[/mask]：把指定的一个／一组地址作为源地址，按此规则进行过滤。当后面没有 mask 时，address 是一个地址，比如：192.168.1.1；当 mask 指定时，可以表示一组范围内的地址，比如：192.168.1.0/255.255.255.0
+-d, --destination [!] address[/mask]：地址格式同上，但这里是指定地址为目的地址，按此进行过滤
+-i, --in-interface [!] <网络接口name>：指定数据包的来自来自网络接口，比如最常见的 eth0 。注意：它只对 INPUT，FORWARD，PREROUTING 这三个链起作用。如果没有指定此选项， 说明可以来自任何一个网络接口。同前面类似，"!" 表示取反
+-o, --out-interface [!] <网络接口name>：指定数据包出去的网络接口。只对 OUTPUT，FORWARD，POSTROUTING 三个链起作用
+# 查看管理命令
+-L, --list [chain]：列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则
+# 规则管理命令
+-A, --append chain rule-specification：在指定链 chain 的末尾插入指定的规则，也就是说，这条规则会被放到最后，最后才会被执行。规则是由后面的匹配来指定
+-I, --insert chain [rulenum] rule-specification：在链 chain 中的指定位置插入一条或多条规则。如果指定的规则号是1，则在链的头部插入。这也是默认的情况，如果没有指定规则号
+-D, --delete chain rule-specification -D, --delete chain rulenum：在指定的链 chain 中删除一个或多个指定规则
+-R num：Replays替换/修改第几条规则
+# 链管理命令（这都是立即生效的）
+-P, --policy chain target：为指定的链 chain 设置策略 target。注意，只有内置的链才允许有策略，用户自定义的是不允许的
+-F, --flush [chain]：清空指定链 chain 上面的所有规则。如果没有指定链，清空该表上所有链的所有规则
+-N, --new-chain chain：用指定的名字创建一个新的链
+-X, --delete-chain [chain]：删除指定的链，这个链必须没有被其它任何规则引用，而且这条上必须没有任何规则。如果没有指定链名，则会删除该表中所有非内置的链
+-E, --rename-chain old-chain new-chain：用指定的新名字去重命名指定的链。这并不会对链内部造成任何影响
+-Z, --zero [chain]：把指定链，或者表中的所有链上的所有计数器清零
+-j, --jump target <指定目标>：即满足某条件时该执行什么样的动作。target 可以是内置的目标，比如 ACCEPT，也可以是用户自定义的链
+-h：显示帮助信息
+
+[iptables表]:
+raw：高级功能，如：网址过滤
+mangle：数据包修改（QOS），用于实现服务质量
+nat：地址转换，用于网关路由器
+filter：包过滤，用于防火墙规则
+
+[iptables链]:
+INPUT：处理输入数据包
+OUTPUT：处理输出数据包
+FORWARD：处理转发数据包
+PREROUTING：用于目标地址转换（DNAT）
+POSTOUTING：用于源地址转换（SNAT）
+
+[iptables动作]:
+ACCEPT：接收数据包
+DROP：丢弃数据包
+REDIRECT：重定向、映射、透明代理
+SNAT：源地址转换
+DNAT：目标地址转换
+MASQUERADE：IP伪装（NAT），用于ADSL
+LOG：日志记录
+
+[iptables示例]:
+# 清空当前的所有规则和计数
+iptables -F  # 清空所有的防火墙规则
+iptables -X  # 删除用户自定义的空链
+iptables -Z  # 清空计数
+
+# 配置允许ssh端口连接
+iptables -A INPUT -s 192.168.1.0/24 -p tcp --dport 22 -j ACCEPT
+# 22为你的ssh端口， -s 192.168.1.0/24表示允许这个网段的机器来连接，其它网段的ip地址是登陆不了你的机器的。 -j ACCEPT表示接受这样的请求
+
+# 允许本地回环地址可以正常使用
+iptables -A INPUT -i lo -j ACCEPT
+# 本地圆环地址就是那个127.0.0.1，是本机上使用的,它进与出都设置为允许
+iptables -A OUTPUT -o lo -j ACCEPT
+
+# 设置默认的规则
+iptables -P INPUT DROP # 配置默认的不让进
+iptables -P FORWARD DROP # 默认的不允许转发
+iptables -P OUTPUT ACCEPT # 默认的可以出去
+
+# 配置白名单
+iptables -A INPUT -p all -s 192.168.1.0/24 -j ACCEPT  # 允许机房内网机器可以访问
+iptables -A INPUT -p all -s 192.168.140.0/24 -j ACCEPT  # 允许机房内网机器可以访问
+iptables -A INPUT -p tcp -s 183.121.3.7 --dport 3380 -j ACCEPT # 允许183.121.3.7访问本机的3380端口
+
+# 开启相应的服务端口
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT # 开启80端口，因为web对外都是这个端口
+iptables -A INPUT -p icmp --icmp-type 8 -j ACCEPT # 允许被ping
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT # 已经建立的连接得让它进来
+
+# 保存规则到配置文件中
+cp /etc/sysconfig/iptables /etc/sysconfig/iptables.bak # 任何改动之前先备份，请保持这一优秀的习惯
+iptables-save > /etc/sysconfig/iptables
+cat /etc/sysconfig/iptables
+
+# 列出已设置的规则
+iptables -L [-t 表名] [链名]
+iptables -L -t nat                  # 列出 nat 上面的所有规则
+iptables -L -t nat  --line-numbers  # 规则带编号
+iptables -L INPUT
+iptables -L -nv  # 查看，这个列表看起来更详细
+
+# 清除已有规则
+iptables -F INPUT  # 清空指定链 INPUT 上面的所有规则
+iptables -X INPUT  # 删除指定的链，这个链必须没有被其它任何规则引用，而且这条上必须没有任何规则。不指定则删除该表中所有非内置链
+iptables -Z INPUT  # 把指定链，或者表中的所有链上的所有计数器清零。
+
+# 删除已添加的规则
+iptables -A INPUT -s 192.168.1.5 -j DROP # 添加一条规则
+iptables -L -n --line-numbers # 列出带序号的规则
+iptables -D INPUT 8  #删除INPUT里序号为8的规则
+
+# 开放指定的端口
+iptables -A INPUT -s 127.0.0.1 -d 127.0.0.1 -j ACCEPT               #允许本地回环接口(即运行本机访问本机)
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT    #允许已建立的或相关连的通行
+iptables -A OUTPUT -j ACCEPT      # 允许所有本机向外的访问
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT    # 允许访问22端口
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT    # 允许访问80端口
+iptables -A INPUT -p tcp --dport 21 -j ACCEPT    # 允许ftp服务的21端口
+iptables -A INPUT -p tcp --dport 20 -j ACCEPT    # 允许FTP服务的20端口
+iptables -A INPUT -j reject       # 禁止其他未允许的规则访问
+iptables -A FORWARD -j REJECT     # 禁止其他未允许的规则访问
+
+# 屏蔽端口
+iptables -A INPUT -p tcp --dport 12345 -j DROP  # 屏蔽访问 12345 端口
+
+# 屏蔽域名
+iptables -A OUTPUT -m string --string \"foo.bar\" --algo bm --to 65535 -j DROP  # 屏蔽服务器内域名访问
+
+# 屏蔽IP
+iptables -A INPUT -p tcp -m tcp -s 192.168.0.8 -j DROP  # 屏蔽恶意主机（比如，192.168.0.8
+iptables -I INPUT -s 123.45.6.7 -j DROP       # 屏蔽单个IP的命令
+iptables -I INPUT -s 123.0.0.0/8 -j DROP      # 封整个段即从123.0.0.1到123.255.255.254的命令
+iptables -I INPUT -s 124.45.0.0/16 -j DROP    # 封IP段即从123.45.0.1到123.45.255.254的命令
+iptables -I INPUT -s 123.45.6.0/24 -j DROP    # 封IP段即从123.45.6.1到123.45.6.254的命令
+
+# 指定数据包出去的网络接口
+iptables -A FORWARD -o eth0  #只对 OUTPUT，FORWARD，POSTROUTING 三个链起作用
+
+# 查看已添加的规则
+iptables -L -n -v
+
+# 启动网络转发规则
+iptables -t nat -A POSTROUTING -s 192.168.188.0/24 -j SNAT --to-source 210.14.67.127  #公网210.14.67.7让内网192.168.188.0/24上网
+
+# 端口映射
+iptables -t nat -A PREROUTING -d 210.14.67.127 -p tcp --dport 2222  -j DNAT --to-dest 192.168.188.115:22  #本机的2222端口映射到内网虚拟机的22端口
+
+# 字符串匹配
+iptables -A INPUT -p tcp -m string --algo kmp --string \"test\" -j REJECT --reject-with tcp-reset  # 终止所有带字符串test的TCP连接
+
+# 阻止Windows蠕虫的攻击
+iptables -I INPUT -j DROP -p tcp -s 0.0.0.0/0 -m string --algo kmp --string \"cmd.exe\"
+
+# 防止SYN洪水攻击
+iptables -A INPUT -p tcp --syn -m limit --limit 5/second -j ACCEPT
+  "
+}
+
+function main() {
+  if [ -z $1 ]; then
+    usage simple
+    exit 1
+  elif [ $1 == "g" ] || [ $1 == "go" ]; then
+    require go
+    shift
+    go $*
+  elif [ $1 == "lg" ] || [ $1 == "lgo" ]; then
+    require go
+    shift
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go $*
+  elif [ $1 == "git" ]; then
+    require git
+    shift
+    git $*
+  elif [ $1 == "h" ] || [ $1 == "helm" ]; then
+    require helm
+    shift
+    helm $*
+  elif [ $1 == "kk" ] || [ $1 == "kustomize" ]; then
+    require kubectl
+    shift
+    kubectl kustomize $*
+  elif [ $1 == "km" ]; then
+    require kustomize
+    shift
+    kustomize $*
+  elif [ $1 == "td" ] || [ $1 == "tdp" ] || [ $1 == "tcpdump" ]; then
+    shift
+    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+      tcpdumphelp
+    elif [ $1 == "help" ]; then
+      require tcpdump
+      tcpdump --help
+    else
+      require tcpdump
+      tcpdump $*
+    fi
+  elif [ $1 == "ipt" ] || [ $1 == "iptable" ] || [ $1 == "iptables" ]; then
+    shift
+    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+      iptableshelp
+    elif [ $1 == "help" ]; then
+      require iptables
+      iptables --help
+    else
+      require iptables
+      iptables $*
+    fi
+  elif [ $1 == "ct" ] || [ $1 == "ssl" ] || [ $1 == "cred" ]; then
+    require openssl
+    shift
+    if [ $# -ge 1 ]; then
+      subcmd="$1"
+      shift
+      case "$subcmd" in
+      "gen" | "generate")
+        genssl "$*"
+        ;;
+      "out" | "show")
+        if [ $# -eq 0 ]; then
+          openssl x509 -noout -text -in *
+        elif [ $# -eq 1 ]; then
+          openssl x509 -noout -text -in $1
+        elif [ $# -eq 2 ]; then
+          openssl x509 -noout -$2 -in $1
+        fi
+        ;;
+      "mat" | "match")
+        if [ $# -eq 2 ]; then
+          key=$(openssl rsa --noout --modulus --in $1 | openssl md5)
+          cert=$(openssl x509 --noout --modulus --in $2 | openssl md5)
+          if [ "$key" == "$cert" ]; then
+            echo "true"
+          else
+            echo "false"
+          fi
+        else
+          echo "error: need arguments"
+        fi
+        ;;
+      "ver" | "verify")
+        if [ $# -eq 2 ]; then
+          openssl verify -verbose -CAfile $1 $2
+        elif [ $# -eq 3 ]; then
+          openssl verify -verbose -CAfile $1 -untrusted $2 $3
+        else
+          echo "error: need arguments"
+        fi
+        ;;
+      "get" | "fetch")
+        if [ $# -eq 1 ]; then
+          openssl s_client -showcerts -verify 32 -connect $1 | openssl x509 -text
+        else
+          echo "error: need arguments"
+        fi
+        ;;
+      "sver" | "sverify")
+        if [ $# -eq 1 ]; then
+          domain=${1##*/}
+          domain=${domain%:*}
+          openssl s_client -showcerts -verify 32 -servername $domain -connect $1
+        elif [ $# -eq 2 ]; then
+          openssl s_client -showcerts -verify 32 -servername $2 -connect $1
+        else
+          echo "error: need arguments"
+        fi
+        ;;
+      esac
+    fi
+  elif [ $1 == "d" ] || [ $1 == "docker" ]; then
+    require docker
+    shift
+    docker $*
+  elif [ $1 == "k" ] || [ $1 == "kube" ] || [ $1 == "kubectl" ]; then
+    require kubectl
+    shift
+    kubectl $*
+  elif [ $1 == "ghp" ] || [ $1 == "ghelp" ]; then
+    require go
+    shift
+    go help $*
+  elif [ $1 == "dhp" ] || [ $1 == "dhelp" ]; then
+    require docker
+    shift
+    docker $* --help
+  elif [ $1 == "khp" ] || [ $1 == "khelp" ]; then
+    require kubectl
+    shift
+    kubectl $* --help
+  elif [ $1 == "dq" ] || [ $1 == "dsearch" ]; then
+    require docker
+    shift
+    docker search $*
+  elif [ $1 == "dr" ] || [ $1 == "drun" ]; then
+    require docker
+    shift
+    docker run $*
+  elif [ $1 == "drt" ] || [ $1 == "dtmp" ]; then
+    require docker
+    shift
+    docker run -it --rm $*
+  elif [ $1 == "db" ] || [ $1 == "dbd" ]; then
+    require docker
+    shift
+    docker build $*
+  elif [ $1 == "dt" ] || [ $1 == "dtg" ] || [ $1 == "dtag" ]; then
+    require docker
+    shift
+    docker tag $*
+  elif [ $1 == "sp" ] || [ $1 == "spl" ] || [ $1 == "sample" ]; then
+    shift
+    skind="pod"
+    if [ $# -gt 0 ]; then
+      skind=$1
+    fi
+    printSample "$skind"
+  else
+    while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
+      while getopts "a:b:c:d:f:i:k:m:n:o:p:s:t:u:w:hjlrv" opt; do
+        case $opt in
+        a)
+          since="--since $OPTARG"
+          ;;
+        b)
+          amount="--tail $OPTARG"
+          ;;
+        c)
+          context="--context $OPTARG"
+          ;;
+        d)
+          savedir="$OPTARG"
+          ;;
+        f)
+          kubecfg=$OPTARG
+          ;;
+        i)
+          idx=$OPTARG
+          ;;
+        j)
+          localrun=1
+          ;;
+        k)
+          kind=$OPTARG
+          ;;
+        l)
+          list=1
+          ;;
+        m)
+          image=$OPTARG
+          ;;
+        n)
+          namespace=$OPTARG
+          ;;
+        o)
+          host="$OPTARG"
+          ;;
+        p)
+          port=$OPTARG
+          ;;
+        r)
+          chroot="-c 'chroot /proc/1/root/'"
+          ;;
+        s)
+          passwd=$OPTARG
+          ;;
+        t)
+          timeout=$OPTARG
+          ;;
+        u)
+          user=$OPTARG
+          ;;
+        v)
+          vol="-v /var/run/docker.sock:/var/run/docker.sock"
+          ;;
+        w)
+          kwd=$OPTARG
+          ;;
+        h)
+          usage
+          exit 0
+          ;;
+        \?)
+          echo "Invalid option: -$OPTARG" >&2
+          exit 1
+          ;;
+        esac
+      done
+
+      shift $((OPTIND - 1))
+
+      while [ $# -gt 0 ] && (! [[ "$1" =~ ^- ]] || [[ "$1" =~ ^-- ]]); do
+        mandatory=("${mandatory[@]}" "$1")
+        shift
+        OPTIND=1 # reset OPTIND
+      done
+    done
+
+    if [ "$1" == "--" ]; then
+      shift
+      mandatory=("${mandatory[@]}" "$@")
+    fi
+
+    if [ "$kind" == "dep" ]; then
+      kind="deploy"
+    fi
+
+    if ! [[ "${mandatory[0]}" =~ ^- ]]; then
+      subcmd=${mandatory[0]}
+      mandatory=("${mandatory[@]:1}")
+    fi
+
+    if [ -z $subcmd ]; then
+      echo "need sub command"
+      usage simple
+      exit 1
+    fi
+
+    kc=""
+    if [ -n "$kubecfg" ]; then
+      kc="--kubeconfig $kubecfg"
+    fi
+
+    if [ -z "$namespace" ]; then
+      ns="--all-namespaces"
+    else
+      ns="-n $namespace"
+    fi
+
+    if [ "$subcmd" == "hp" ]; then
+      usage simple
+      exit 0
+    elif [ "$subcmd" == "help" ]; then
+      usage
+      exit 0
+    elif [ "$subcmd" == "c" ] || [ "$subcmd" == "cmd" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        cmd=${mandatory[0]}
+        if [ ${#mandatory[@]} -eq 1 ]; then
+          execmd "$cmd"
+        else
+          for ip in ${mandatory[@]:1}; do
+            if [ $localrun -eq 0 ]; then
+              execmd "$cmd" $ip
+            else
+              lexecmd "$cmd" $ip
+            fi
+          done
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "scp" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        cppaths=${mandatory[0]}
+        if [ ${#mandatory[@]} -eq 1 ]; then
+          remotecp "$cppaths"
+        else
+          for ip in ${mandatory[@]:1}; do
+            remotecp "$cppaths" $ip
+          done
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "gi" ]; then
+      require git
+      cmsg="update"
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        cmsg=${mandatory[*]}
+      fi
+      git add -A .
+      git commit -m "$cmsg"
+      git push
+    elif [ "$subcmd" == "dps" ] || [ "$subcmd" == "dlist" ]; then
+      if [ -n "$kwd" ]; then
+        cmd="docker ps -a | grep $kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        cmd="docker ps -a | grep ${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      else
+        cmd="docker ps -a"
+      fi
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dm" ] || [ "$subcmd" == "dim" ] || [ "$subcmd" == "dimg" ]; then
+      if [ -n "$kwd" ]; then
+        cmd="docker image ls | grep $kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        cmd="docker image ls | grep ${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      else
+        cmd="docker image ls"
+      fi
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dn" ] || [ "$subcmd" == "dnet" ]; then
+      if [ -n "$kwd" ]; then
+        cmd="docker network ls | grep $kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        cmd="docker network ls | grep ${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      else
+        cmd="docker network ls"
+      fi
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dv" ] || [ "$subcmd" == "dvol" ]; then
+      if [ -n "$kwd" ]; then
+        cmd="docker volume ls | grep $kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        cmd="docker volume ls | grep ${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      else
+        cmd="docker volume ls"
+      fi
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dcc" ]; then
+      cmd="docker rm $(docker ps -qaf 'status=exited')"
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dic" ]; then
+      cmd="docker image prune -a"
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dvc" ]; then
+      cmd="docker volume prune"
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dnc" ]; then
+      cmd="docker network prune"
+      if [ ${#mandatory[@]} -eq 0 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "ds" ] || [ "$subcmd" == "dput" ] || [ "$subcmd" == "dpush" ]; then
+      require docker
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        imgname=${mandatory[0]%:*}
+        imgtag=${mandatory[0]##*:}
+        if [ $imgname == $imgtag ]; then
+          imgtag=""
+        fi
+        #       if [ -z $imgtag ] || [ $imgtag == "" ]; then
+        #         imgtag="latest"
+        #       fi
+        #     if [ $(docker images|grep $imgname|awk '{print $2}'|grep $imgtag|wc -l) -eq 0 ]; then
+        if [ -z $imgtag ] && [ $(docker images | grep $imgname | wc -l) -gt 1 ]; then
+          #         docker pull $imgname:$imgtag
+          echo "====== More than one image ======"
+          imgs=$(docker images | grep $imgname | awk '{print $1":"$2}')
+          SIFS=$IFS
+          IFS=$'\n'
+          imgs=($imgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#imgs[@]}; i++)); do
+            echo "$i: ${imgs[$i]}"
+          done
+          imgtag="latest"
+          echo "-1: pull $imgname:$imgtag"
+          read -p "====== select one with number[0]: " iidx
+          if [ -z $iidx ]; then
+            iidx=0
+          fi
+          if [ $iidx -eq -1 ]; then
+            docker pull $imgname:$imgtag
+            irs=$imgname:$imgtag
+          else
+            irs=${imgs[$iidx]}
+          fi
+          llib=${irs%/*}
+          limg=${irs##*/}
+        elif [ $(docker images | grep $imgname | wc -l) -eq 0 ]; then
+          pimg=$imgname:latest
+          docker pull $pimg
+          llib=${pimg%/*}
+          limg=${pimg##*/}
+        else
+          if [ -z $imgtag ]; then
+            imgtag="latest"
+          fi
+          pimg=$imgname:$imgtag
+          llib=${pimg%/*}
+          limg=${pimg##*/}
+        fi
+
+        if [ $llib == $limg ]; then
+          llib=""
+        fi
+
+        if [ ${#mandatory[@]} -gt 1 ]; then
+          rrepo=${mandatory[1]%%/*}
+          rlib=${mandatory[1]#*/}
+        fi
+
+        rimg=${rlib#*/}
+        rlib=${rlib%%/*}
+
+        if [ "$rimg" == "$rlib" ]; then
+          rimg=""
+        fi
+
+        if [ "$rlib" == "" ] || [ "$rlib" == "$rrepo" ]; then
+          if [[ "$rrepo" =~ "." ]]; then
+            rlib="library"
+          else
+            rlib=$rrepo
+            rrepo="docker.io"
+          fi
+        fi
+
+        if [ -z "$rlib" ]; then
+          if [ -n "$llib" ]; then
+            rlib=$llib
+          else
+            rlib="library"
+          fi
+        fi
+        if [ -z "$rrepo" ]; then
+          rrepo="docker.io"
+        fi
+
+        if [ -z $llib ]; then
+          simg=$limg
+        else
+          simg=$llib/$limg
+        fi
+
+        if [ "$rimg" != "$limg" ] && [ -n $rimg ] && [ "$rimg" != "" ]; then
+          limg=$rimg
+        fi
+
+        docker tag $simg $rrepo/$rlib/$limg
+        docker push $rrepo/$rlib/$limg
+        if [ "$rrepo" != "docker.io" ]; then
+          docker rmi -f $rrepo/$rlib/$limg
+        fi
+      else
+        echo "error: need arguments"
+      fi
+    elif [ "$subcmd" == "dl" ] || [ "$subcmd" == "dget" ] || [ "$subcmd" == "dpull" ]; then
+      cmd="docker pull ${mandatory[0]}"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dd" ] || [ "$subcmd" == "drm" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker rm -f $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          conts=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          conts=($conts)
+          IFS=$SIFS
+          for ((i = 0; i < ${#conts[@]}; i++)); do
+            echo "$i: ${conts[$i]}"
+          done
+          echo "-1: ALL"
+          read -p "====== select one with number[0]: " dcidx
+          if [ -z $dcidx ]; then
+            dcidx=0
+          fi
+          if [ $dcidx -eq -1 ]; then
+            docker rm -f $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+          else
+            docker rm -f $(echo ${conts[$dcidx]} | awk '{print $1}')
+          fi
+        fi
+      else
+        cmd="docker rm -f $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dcp" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+        if [ -z "$args" ] && [ ${#mandatory[@]} -gt 0 ]; then
+          args="${mandatory[*]}"
+        else
+          echo "error: need arguments"
+          exit 1
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      if [ -n "$fkwd" ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          tcid=$(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          conts=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          conts=($conts)
+          IFS=$SIFS
+          for ((i = 0; i < ${#conts[@]}; i++)); do
+            echo "$i: ${conts[$i]}"
+          done
+          read -p "====== select one with number[0]: " dcidx
+          if [ -z $dcidx ]; then
+            dcidx=0
+          fi
+          tcid=$(echo ${conts[$dcidx]} | awk '{print $1}')
+        fi
+        prearg=$(echo "$args" | awk -F ':' '{print $1}')
+        sufarg=$(echo "$args" | awk -F ':' '{print $2}')
+        if [ "$prearg" == "" ]; then
+          prearg="$tcid:"$prearg
+        else
+          sufarg="$tcid:"$sufarg
+        fi
+        docker cp $prearg$sufarg
+      fi
+    elif [ "$subcmd" == "dx" ] || [ "$subcmd" == "dbg" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+        if ([ -z "$image" ] || [ "$image" == "xo" ]) && [ ${#mandatory[@]} -gt 0 ]; then
+          image="${mandatory[0]}"
+        elif [ -z "$image" ]; then
+          image="busybox"
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      if [ -n "$fkwd" ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          tcid=$(docker ps -a | grep "$fkwd" | awk '{print $1}')
+          docker run -it --network=container:$tcid --pid=container:$tcid --ipc=container:$tcid $image
+        else
+          echo "====== More than one container ======"
+          conts=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          conts=($conts)
+          IFS=$SIFS
+          for ((i = 0; i < ${#conts[@]}; i++)); do
+            echo "$i: ${conts[$i]}"
+          done
+          read -p "====== select one with number[0]: " dcidx
+          if [ -z $dcidx ]; then
+            dcidx=0
+          fi
+          tcid=$(echo ${conts[$dcidx]} | awk '{print $1}')
+          docker run -it --network=container:$tcid --pid=container:$tcid --ipc=container:$tcid $image
+        fi
+      fi
+    elif [ "$subcmd" == "de" ] || [ "$subcmd" == "dexe" ] || [ "$subcmd" == "dexec" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+        if [ ${#mandatory[@]} -gt 0 ]; then
+          dcmd="${mandatory[*]}"
+        else
+          dcmd="sh"
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      if [ -n "$fkwd" ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker exec $(docker ps -a | grep "$fkwd" | awk '{print $1}') $dcmd
+        else
+          echo "====== More than one container ======"
+          conts=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          conts=($conts)
+          IFS=$SIFS
+          for ((i = 0; i < ${#conts[@]}; i++)); do
+            echo "$i: ${conts[$i]}"
+          done
+          read -p "====== select one with number[0]: " dcidx
+          if [ -z $dcidx ]; then
+            dcidx=0
+          fi
+          docker exec $(echo ${conts[$dcidx]} | awk '{print $1}') $dcmd
+        fi
+      fi
+    elif [ "$subcmd" == "die" ] || [ "$subcmd" == "diexe" ] || [ "$subcmd" == "diexec" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker exec -it $(docker ps -a | grep "$fkwd" | awk '{print $1}') sh
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker exec -it $(echo ${cimgs[$dcidx]} | awk '{print $1}') sh
+        fi
+      else
+        cmd="docker exec -it $fkwd sh"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dat" ] || [ "$subcmd" == "dattach" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker attach $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker attach $(echo ${cimgs[$dcidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker attach $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dlg" ] || [ "$subcmd" == "dlog" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker logs $(docker ps -a | grep "$fkwd" | awk '{print $1}') $since $amount
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker logs $(echo ${cimgs[$dcidx]} | awk '{print $1}') $since $amount
+        fi
+      else
+        cmd="docker logs $fkwd $since $amount"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dlf" ] || [ "$subcmd" == "dlogf" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ -n "$fkwd" ] && [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker logs -f $(docker ps -a | grep "$fkwd" | awk '{print $1}') $since $amount
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker logs -f $(echo ${cimgs[$dcidx]} | awk '{print $1}') $since $amount
+        fi
+      else
+        cmd="docker logs -f $fkwd $since $amount"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dmi" ] || [ "$subcmd" == "dmin" ] || [ "$subcmd" == "dminsp" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect $(docker images | grep "$fkwd" | awk '{print $3}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker image list --format '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect $(echo ${cimgs[$diidx]} | awk '{print $3}')
+        fi
+      else
+        cmd="docker inspect $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "di" ] || [ "$subcmd" == "din" ] || [ "$subcmd" == "dinsp" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker inspect $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dsa" ] || [ "$subcmd" == "dstart" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker start $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker start $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker start $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dsp" ] || [ "$subcmd" == "dstop" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker stop $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker stop $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker stop $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dtp" ] || [ "$subcmd" == "dtop" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker top $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker top $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker top $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dst" ] || [ "$subcmd" == "dstat" ] || [ "$subcmd" == "dstat" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ -z "$fkwd" ]; then
+          docker stats
+        elif [ $(docker ps | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker stats $(docker ps | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker stats $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker stats $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "do" ] || [ "$subcmd" == "drmi" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker image list --format '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          echo "-1: ALL"
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          if [ $diidx -eq -1 ]; then
+            docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
+          else
+            docker rmi -f $(echo ${cimgs[$diidx]} | awk '{print $3}')
+          fi
+        fi
+      else
+        cmd="docker rmi -f $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dh" ] || [ "$subcmd" == "dhi" ] || [ "$subcmd" == "dhist" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker history $(docker images | grep "$fkwd" | awk '{print $3}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker image list --format '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker history $(echo ${cimgs[$diidx]} | awk '{print $3}')
+        fi
+      else
+        cmd="docker history $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dpa" ] || [ "$subcmd" == "daddr" ]; then
+      cmd="docker inspect --format='{{json .NetworkSettings.Networks}}' ${mandatory[0]}"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dpe" ] || [ "$subcmd" == "denv" ]; then
+      cmd="docker inspect --format='{{json .Config.Env}}' ${mandatory[0]}"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dpc" ] || [ "$subcmd" == "dcmd" ]; then
+      cmd="docker inspect --format='{{json .Config.Cmd}}' ${mandatory[0]}"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dpp" ] || [ "$subcmd" == "dport" ]; then
+      cmd="docker inspect --format='{{json .NetworkSettings.Ports}}' ${mandatory[0]}"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "dpm" ] || [ "$subcmd" == "dmnt" ]; then
+      cmd="docker inspect --format='{{json .Mounts}}' ${mandatory[0]}"
+      echo $cmd
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        require docker
+        execmd "$cmd"
+      else
+        for ip in ${mandatory[@]:1}; do
+          execmd "$cmd" $ip
+        done
+      fi
+    elif [ "$subcmd" == "cf" ] || [ "$subcmd" == "cfind" ]; then
+      grep -nr "${mandatory[*]}"
+    elif [ "$subcmd" == "df" ] || [ "$subcmd" == "dfind" ]; then
+      require docker
+      if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
+        kwd="${mandatory[*]}"
+      fi
+
+      items=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' 2>/dev/null)
+      SIFS=$IFS
+      IFS=$'\n'
+      items=($items)
+      IFS=$SIFS
+
+      for ((i = 0; i < ${#items[@]}; i++)); do
+        lid=$(echo ${items[$i]} | awk '{print $1}')
+        if [ $(docker inspect $lid | grep "$kwd" | wc -l) -gt 0 ]; then
+          echo ${items[$i]}
+        fi
+      done
+    elif [ "$subcmd" == "cfg" ] || [ "$subcmd" == "config" ]; then
+      require kubectl
+      kubectl $kc $context config view
+    elif [ "$subcmd" == "dump" ]; then
+      require kubectl
+      kubectl $kc $context cluster-info dump
+    elif [ "$subcmd" == "exp" ]; then
+      require kubectl
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        kubectl $kc $context explain ${mandatory[@]}
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "dry" ] || [ "$subcmd" == "dryrun" ]; then
+      require kubectl
+      if [ "$ns" == "--all-namespaces" ]; then
+        ns=""
+      fi
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        kubectl $kc $context ${mandatory[@]} --dry-run
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "ap" ] || [ "$subcmd" == "apl" ] || [ "$subcmd" == "apply" ]; then
+      require kubectl
+      if [ "$ns" == "--all-namespaces" ]; then
+        ns=""
+      fi
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        for fname in ${mandatory[@]}; do
+          kubectl $kc $context apply -f $fname $ns
+        done
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "n" ] || [ "$subcmd" == "new" ] || [ "$subcmd" == "create" ]; then
+      require kubectl
+      if [ "$ns" == "--all-namespaces" ]; then
+        ns=""
+      fi
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        isfile="true"
+        for fname in ${mandatory[@]}; do
+          if ! [[ $fname =~ .yaml$ ]] && ! [[ $fname =~ .yml$ ]] && ! [[ $fname =~ .json$ ]]; then
+            isfile="false"
+            break
+          fi
+        done
+        if [ "$isfile" == "true" ]; then
+          for fname in ${mandatory[@]}; do
+            kubectl $kc $context create -f $fname $ns
+          done
+        else
+          kubectl $kc $context create $kind ${mandatory[@]} $ns
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "r" ] || [ "$subcmd" == "run" ]; then
+      require kubectl
+      if [ "$ns" == "--all-namespaces" ]; then
+        ns=""
+      fi
+      if [ ${#mandatory[@]} -gt 1 ]; then
+        kubectl $kc $context run ${mandatory[@]} $ns
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "b" ] || [ "$subcmd" == "rbac" ]; then
+      require kubectl rback dot
+      if [ -n "$savedir" ]; then
+        kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json | rback -show-legend=false ${mandatory[*]} | dot -Tsvg >$savedir/rbac.svg
+      else
+        dispapp="xdg-open"
+        if type display &>/dev/null; then
+          dispapp="display"
+        elif type inkview &>/dev/null; then
+          dispapp="inkview"
+        elif type feh &>/dev/null; then
+          dispapp="feh --conversion-timeout 1"
+        fi
+        kubectl $kc $context get sa,roles,rolebindings,clusterroles,clusterrolebindings $ns -o json | rback -show-legend=false ${mandatory[*]} | dot -Tsvg | $dispapp
+      fi
+    elif [ "$subcmd" == "a" ] || [ "$subcmd" == "all" ]; then
+      require kubectl
+      kubectl $kc $context get all $ns
+    elif [ "$subcmd" == "ro" ] || [ "$subcmd" == "rollout" ]; then
+      require kubectl
+      kubectl $kc $context rollout ${mandatory[@]} $ns
+    elif [ "$subcmd" == "au" ] || [ "$subcmd" == "auth" ]; then
+      require kubectl
+      kubectl $kc $context auth "${mandatory[@]}" $ns
+    elif [ "$subcmd" == "pr" ] || [ "$subcmd" == "proxy" ]; then
+      require kubectl
+      if [[ "${mandatory[*]}" =~ ":" ]]; then
+        ip=$(echo "${mandatory[*]}" | awk -F ':' '{print $1}')
+        pt=$(echo "${mandatory[*]}" | awk -F ':' '{print $2}')
+        if [ -z "$ip" ]; then
+          ip="127.0.0.1"
+        fi
+        if [ -z "$port" ]; then
+          pt=$port
+        fi
+      else
+        ip="127.0.0.1"
+        pt=${mandatory[*]}
+      fi
+      kubectl $kc $context proxy --address $ip --port $pt
+    elif [ "$subcmd" == "kf" ] || [ "$subcmd" == "kfind" ]; then
+      require kubectl
+      if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
+        kwd="${mandatory[*]}"
+      fi
+
+      items=$(kubectl $kc $context get $kind --no-headers $ns 2>/dev/null)
+      SIFS=$IFS
+      IFS=$'\n'
+      items=($items)
+      IFS=$SIFS
+
+      for ((i = 0; i < ${#items[@]}; i++)); do
+        if [ "$ns" == "--all-namespaces" ]; then
+          lns=$(echo ${items[$i]} | awk '{print $1}')
+          lrs=$(echo ${items[$i]} | awk '{print $2}')
+        else
+          lns=$(echo "$ns" | awk '{print $2}')
+          lrs=$(echo ${items[$i]} | awk '{print $1}')
+        fi
+
+        if [ $(kubectl $kc $context -n $lns get $kind $lrs -o yaml | grep "$kwd" | wc -l) -gt 0 ]; then
+          echo -e "$lns\t$lrs"
+        fi
+      done
+    else
+      require kubectl
+      if [ -z "$kwd" ]; then
+        # kwd=${mandatory[${#mandatory[@]} - 1]}
+        # if [ ${#mandatory[@]} -gt 1 ]; then
+        #   args=${mandatory[@]::${#mandatory[@]}-1}
+        # fi
+        if [ ${#mandatory[@]} -gt 0 ]; then
+          kwd=${mandatory[0]}
+        fi
+        if [ ${#mandatory[@]} -gt 1 ]; then
+          args=${mandatory[@]:1}
+        fi
+      else
+        args=${mandatory[@]}
+      fi
+      if [ -z "$kwd" ] || [ $list -eq 1 ]; then
+        case $subcmd in
+        "gt" | "get")
+          if [ -n "$kwd" ]; then
+            kubectl $kc $context get $kind $ns | grep "$kwd"
+          else
+            kubectl $kc $context get $kind $ns
+          fi
+          ;;
+        "wt" | "watch")
+          if [ -n "$kwd" ]; then
+            kubectl $kc $context get $kind $ns --watch | grep "$kwd"
+          else
+            kubectl $kc $context get $kind $ns --watch
+          fi
+          ;;
+        "w" | "wide")
+          if [ -n "$kwd" ]; then
+            kubectl $kc $context get $kind $ns -o wide | grep "$kwd"
+          else
+            kubectl $kc $context get $kind $ns -o wide
+          fi
+          ;;
+        "wl" | "wlabel")
+          if [ -n "$kwd" ]; then
+            kubectl $kc $context get $kind $ns -o wide --show-labels | grep "$kwd"
+          else
+            kubectl $kc $context get $kind $ns -o wide --show-labels
+          fi
+          ;;
+        "s" | "desc" | "describe")
+          if [ -n "$kwd" ]; then
+            items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+            SIFS=$IFS
+            IFS=$'\n'
+            items=($items)
+            IFS=$SIFS
+            for ((i = 0; i < ${#items[@]}; i++)); do
+              if [ "$ns" == "--all-namespaces" ]; then
+                lns=$(echo ${items[$i]} | awk '{print $1}')
+                lrs=$(echo ${items[$i]} | awk '{print $2}')
+              else
+                lns=$(echo "$ns" | awk '{print $2}')
+                lrs=$(echo ${items[$i]} | awk '{print $1}')
+              fi
+              kubectl $kc $context -n $lns describe $kind $lrs
+            done
+          else
+            kubectl $kc $context describe $kind $ns
+          fi
+          ;;
+        "y" | "yaml")
+          if [ -n "$kwd" ]; then
+            items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+            SIFS=$IFS
+            IFS=$'\n'
+            items=($items)
+            IFS=$SIFS
+            for ((i = 0; i < ${#items[@]}; i++)); do
+              if [ "$ns" == "--all-namespaces" ]; then
+                lns=$(echo ${items[$i]} | awk '{print $1}')
+                lrs=$(echo ${items[$i]} | awk '{print $2}')
+              else
+                lns=$(echo "$ns" | awk '{print $2}')
+                lrs=$(echo ${items[$i]} | awk '{print $1}')
+              fi
+              kubectl $kc $context -n $lns get $kind $lrs -o yaml
+            done
+          else
+            kubectl $kc $context get $kind $ns -o yaml
+          fi
+          ;;
+        "j" | "json")
+          if [ -n "$kwd" ]; then
+            items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+            SIFS=$IFS
+            IFS=$'\n'
+            items=($items)
+            IFS=$SIFS
+            for ((i = 0; i < ${#items[@]}; i++)); do
+              if [ "$ns" == "--all-namespaces" ]; then
+                lns=$(echo ${items[$i]} | awk '{print $1}')
+                lrs=$(echo ${items[$i]} | awk '{print $2}')
+              else
+                lns=$(echo "$ns" | awk '{print $2}')
+                lrs=$(echo ${items[$i]} | awk '{print $1}')
+              fi
+              kubectl $kc $context -n $lns get $kind $lrs -o json
+            done
+          else
+            kubectl $kc $context get $kind $ns -o json
+          fi
+          ;;
+        "tp" | "top")
+          if [ "$ns" == "--all-namespaces" ]; then
+            ns="-n default"
+          fi
+          if [ "$kind" == "pod" ] || [ "$kind" == "node" ]; then
+            if [ -n "$kwd" ]; then
+              if [ "$kind" == "node" ]; then
+                kubectl $kc $context top $kind $ns | grep "$kwd"
+              else
+                items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+                SIFS=$IFS
+                IFS=$'\n'
+                items=($items)
+                IFS=$SIFS
+                for ((i = 0; i < ${#items[@]}; i++)); do
+                  if [ "$ns" == "--all-namespaces" ]; then
+                    lns=$(echo ${items[$i]} | awk '{print $1}')
+                    lrs=$(echo ${items[$i]} | awk '{print $2}')
+                  else
+                    lns=$(echo "$ns" | awk '{print $2}')
+                    lrs=$(echo ${items[$i]} | awk '{print $1}')
+                  fi
+                  kubectl $kc $context -n $lns top $kind $lrs
+                done
+              fi
+            else
+              kubectl $kc $context top $kind $ns
+            fi
+          fi
+          ;;
+        esac
+        exit 0
+      fi
+
+      hasnsfield="false"
+      ress=()
+      result=$(kubectl $kc $context get $kind $ns 2>/dev/null)
+      SIFS=$IFS
+      IFS=$'\n'
+      result=($result)
+      IFS=$SIFS
+      if [[ $(echo "${result[0]}" | awk '{print $1}') == "NAMESPACE" ]]; then
+        hasnsfield="true"
+      fi
+      for ((i = 1; i < ${#result[@]}; i++)); do
+        if [[ "${result[$i]}" =~ "$kwd" ]]; then
+          ress+=("${result[$i]}")
+        fi
+      done
+      #ress=($(echo ${result[@]:1} | grep "$kwd"))
+
+      if [ $? -ne 0 ] || [ ${#ress[@]} -eq 0 ]; then
+        echo "No $kind resources found with keyword $kwd"
+        exit 1
+      fi
+
+      if [ ${#ress[@]} -eq 1 ]; then
+        rs=$ress
+      else
+        echo "====== More than one $kind ======"
+        for ((i = 0; i < ${#ress[@]}; i++)); do
+          echo "$i: ${ress[$i]}"
+        done
+        # echo "====== Selected the first ======"
+        read -p "====== select one with number[0]: " ridx
+        if [ -z $ridx ]; then
+          ridx=0
+        fi
+        rs=${ress[$ridx]}
+      fi
+      if [ "$ns" == "--all-namespaces" ]; then
+        if [ "$hasnsfield" == "false" ]; then
+          resname=$(echo $rs | awk '{print $1}')
+        else
+          resname=$(echo $rs | awk '{print $2}')
+          namespace=$(echo $rs | awk '{print $1}')
+          ns="-n $namespace"
+        fi
+      else
+        resname=$(echo $rs | awk '{print $1}')
+      fi
+
+      if [ "$kind" == "pod" ]; then
+        podinfo=$(kubectl $kc $context get pod $resname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[$idx].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $resname)
+
+        if [ $? -ne 0 ]; then
+          echo "$resname[$idx] container not found"
+          exit 1
+        fi
+
+        hname=$(echo $podinfo | awk '{print $1}')
+        haddr=$(echo $podinfo | awk '{print $2}')
+        pname=$(echo $podinfo | awk '{print $3}')
+        caddr=$(echo $podinfo | awk '{print $4}')
+        cname=$(echo $podinfo | awk '{print $5}')
+        cid=$(echo $podinfo | awk '{print $6}')
+        cid=${cid#*docker://}
+        cid=${cid:0:12}
+
+        echo "=================================================================================================================================================="
+        echo "Namespace: "${ns#-n } "HostName: "$hname "HostIP:"$haddr "PodName:"$pname "PodIP:"$caddr "CName:"$cname "CID:"$cid
+        echo "=================================================================================================================================================="
+
+        if [ -n "$host" ]; then
+          haddr=$host
+        fi
+      fi
+
+      case $subcmd in
+      "l" | "log")
+        if [ "$kind" == "pod" ]; then
+          if [ "$(hostname)" == "$hname" ] && type docker &>/dev/null; then
+            docker logs $cid $since $amount
+          else
+            kubectl $kc $context logs $resname $cname $since $amount $ns
+          fi
+        else
+          echo "subcmd log not fit for $kind"
+        fi
+        ;;
+      "lf" | "logf")
+        if [ $kind == "pod" ]; then
+          if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
+            docker logs -f $cid $since $amount
+          else
+            kubectl $kc $context logs -f $resname $cname $since $amount $ns
+          fi
+        else
+          echo "subcmd logf not fit for $kind"
+        fi
+        ;;
+      "i" | "insp" | "inspect")
+        if [ "$kind" == "pod" ]; then
+          if [ "$(hostname)" == "$hname" ] && type docker &>/dev/null; then
+            docker inspect $cid
+          else
+            execmd "docker inspect $cid" $haddr
+          fi
+        else
+          echo "subcmd inspect not fit for $kind"
+        fi
+        ;;
+      "gt" | "get")
+        kubectl $kc $context get $kind $resname $ns
+        ;;
+      "s" | "desc" | "describe")
+        kubectl $kc $context describe $kind $resname $ns
+        ;;
+      "wt" | "watch")
+        kubectl $kc $context get $kind $resname $ns --watch
+        ;;
+      "w" | "wide")
+        kubectl $kc $context get $kind $resname $ns -o wide
+        ;;
+      "wl" | "wlabel")
+        kubectl $kc $context get $kind $resname $ns -o wide --show-labels
+        ;;
+      "y" | "yaml")
+        kubectl $kc $context get $kind $resname $ns -o yaml
+        ;;
+      "j" | "json")
+        kubectl $kc $context get $kind $resname $ns -o json
+        ;;
+      "tp" | "top")
+        if [ "$ns" == "--all-namespaces" ]; then
+          ns="-n default"
+        fi
+        if [ "$kind" == "pod" ] || [ "$kind" == "node" ]; then
+          kubectl $kc $context top $kind $resname $ns
+        fi
+        ;;
+      "ed" | "edit")
+        kubectl $kc $context edit $kind $resname $ns
+        ;;
+      "p" | "patch")
+        kubectl $kc $context patch $kind $resname $ns --patch $args
+        ;;
+      "rm" | "del" | "delete")
+        isfile="true"
+        for fname in ${mandatory[@]}; do
+          if ! [[ $fname =~ .yaml$ ]] && ! [[ $fname =~ .yml$ ]] && ! [[ $fname =~ .json$ ]]; then
+            isfile="false"
+            break
+          fi
+        done
+        if [ "$isfile" == "true" ]; then
+          for fname in ${mandatory[@]}; do
+            kubectl $kc $context delete -f $fname
+          done
+        else
+          kubectl $kc $context delete $kind $resname $ns
+        fi
+        ;;
+      "e" | "exe" | "exec")
+        if [ "$kind" == "pod" ]; then
+          kubectl $kc $context exec $resname -c $cname $args $ns
+        else
+          echo "subcmd exec not fit for $kind"
+        fi
+        ;;
+      "ie" | "iexe" | "iexec")
+        if [ $kind == "pod" ]; then
+          kubectl $kc $context exec -it $resname -c $cname sh $ns
+        else
+          echo "subcmd iexec not fit for $kind"
+        fi
+        ;;
+      "at" | "attach")
+        if [ "$kind" == "pod" ]; then
+          kubectl $kc $context attach $resname -c $cname $ns
+        else
+          echo "subcmd attach not fit for $kind"
+        fi
+        ;;
+      "cp" | "copy")
+        if [ "$kind" == "pod" ]; then
+          prearg=$(echo "$args" | awk -F ':' '{print $1}')
+          sufarg=$(echo "$args" | awk -F ':' '{print $2}')
+          if [ "$prearg" == "" ]; then
+            prearg="$resname:"$prearg
+          else
+            sufarg="$resname:"$sufarg
+          fi
+          kubectl $kc $context cp $prearg$sufarg $ns
+        else
+          echo "subcmd copy not fit for $kind"
+        fi
+        ;;
+      "pf" | "forward" | "port-forward")
+        if [ "$kind" == "pod" ]; then
+          kubectl $kc $context port-forward $resname $args $ns
+        else
+          echo "subcmd port-forward not fit for $kind"
+        fi
+        ;;
+      "x" | "deb" | "debug")
+        if [ "$kind" == "pod" ]; then
+          if [ "$image" == "xo" ] || [ "$image" == "xshrim/xo" ]; then
+            imgsh="$image zsh $chroot"
+          else
+            imgsh="$image sh $chroot"
+          fi
+
+          cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $imgsh"
+
+          execmd "$cmd" $haddr
+        else
+          echo "subcmd debug not fit for $kind"
+        fi
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
+      esac
+    fi
+  fi
+}
+
+function require() {
+  for dep in $*; do
+    if ! type $dep &>/dev/null; then
+      echo "$dep required"
+      exit 1
+    fi
+  done
+}
+
+function dockerpush() {
+  require docker
+  # lrepo=${1%/*}
+  limg=${1##*/}
+  rrepo=${2%/*}
+  rlib=${2#*/}
+
+  if [ "$rlib" == "" ] || [ "$rlib" == "$rrepo" ]; then
+    if [[ "$rrepo" =~ "." ]]; then
+      rlib="library"
+    else
+      rlib=$rrepo
+      rrepo="docker.io"
+    fi
+  fi
+
+  docker tag $1 $rrepo/$rlib/$limg
+  docker push $rrepo/$rlib/$limg
+  docker rmi -f $rrepo/$rlib/$limg
+}
+
+function docmd() {
+  eval "$*"
+}
+
+function lexecmd() {
+  ecmd=$1
+  ipaddr=$2
+
+  if [ "$ipaddr" == "" ]; then
+    docmd $ecmd
+  else
+    ipd=${ipaddr%.*}
+    ipr=${ipaddr##*.}
+
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+      ipstart=${ipr%-*}
+      ipend=${ipr##*-}
+    fi
+
+    ipasswd=""
+    iuser=""
+    if [ -n "$passwd" ]; then
+      ipasswd="-p $passwd"
+    fi
+    if [ -n "$user" ]; then
+      iuser="$user@"
+    fi
+
+    for ((i = $ipstart; i <= $ipend; i++)); do
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
+      echo "[*] $cip"
+      if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+        sshpass $ipasswd $ecmd $iuser$cip
+      else
+        docmd $ecmd $iuser$cip
+      fi
+    done
+  fi
+}
+
+function execmd() {
+  ecmd=$1
+  ipaddr=$2
+
+  if [ "$ipaddr" == "" ]; then
+    docmd $ecmd
+  else
+    ipd=${ipaddr%.*}
+    ipr=${ipaddr##*.}
+
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+      ipstart=${ipr%-*}
+      ipend=${ipr##*-}
+    fi
+
+    ipasswd=""
+    iport=""
+    iuser=""
+    if [ -n "$passwd" ]; then
+      ipasswd="-p $passwd"
+    fi
+    if [ -n "$port" ]; then
+      iport="-p $port"
+    fi
+    if [ -n "$user" ]; then
+      iuser="$user@"
+    fi
+
+    for ((i = $ipstart; i <= $ipend; i++)); do
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
+      echo "[*] $cip"
+      if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+        sshpass $ipasswd ssh -t $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $iuser$cip "$ecmd"
+      else
+        ssh -t $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $iuser$cip "$ecmd"
+      fi
+    done
+  fi
+}
+
+function remotecp() {
+  paths=$1
+  ipaddr=$2
+
+  if [ "$paths" == "" ] || [ "$ipaddr" == "" ]; then
+    return
+  else
+    #     if [ -z "$user" ]; then
+    #       user="root"
+    #     fi
+    #     if [ -z "$passwd" ]; then
+    #       passwd="root"
+    #     fi
+
+    lpath=${paths%:*}
+    rpath=${paths##*:}
+
+    ipd=${ipaddr%.*}
+    ipr=${ipaddr##*.}
+
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+      ipstart=${ipr%-*}
+      ipend=${ipr##*-}
+    fi
+
+    ipasswd=""
+    iport=""
+    iuser=""
+    if [ -n "$passwd" ]; then
+      ipasswd="-p $passwd"
+    fi
+    if [ -n "$port" ]; then
+      iport="-P $port"
+    fi
+    if [ -n "$user" ]; then
+      iuser="$user@"
+    fi
+
+    for ((i = $ipstart; i <= $ipend; i++)); do
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
+      echo "[*] $cip"
+      if [ -n "$passwd" ] && type sshpass &>/dev/null; then
+        sshpass $ipasswd scp $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $iuser$cip:$rpath
+      else
+        scp -t -$iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r$lpath $iuser$cip:$rpath
+      fi
+    done
+  fi
+}
+
+function genssl() {
+  case "$1" in
+  -h | --help)
+    sslhelp
+    exit
+    ;;
+  esac
+
+  if [[ $1 == '' ]]; then
+    sslhelp
+    exit
+  fi
+
+  CMDOPTS="$*"
+  for OPTS in $CMDOPTS; do
+    key=$(echo ${OPTS} | awk -F"=" '{print $1}')
+    value=$(echo ${OPTS} | awk -F"=" '{print $2}')
+    case "$key" in
+    --ssl-domain) SSL_DOMAIN=$value ;;
+    --ssl-trusted-ip) SSL_TRUSTED_IP=$value ;;
+    --ssl-trusted-domain) SSL_TRUSTED_DOMAIN=$value ;;
+    --ssl-size) SSL_SIZE=$value ;;
+    --ssl-date) SSL_DATE=$value ;;
+    --ca-date) CA_DATE=$value ;;
+    --ssl-cn) CN=$value ;;
+    --ca-reuse) CA_REUSE=$value ;;
+    --ca-key) CA_KEY=$value ;;
+    --ca-cert) CA_CERT=$value ;;
+    esac
+  done
+
+  # CA相关配置
+  CA_DATE=${CA_DATE:-3650}
+  CA_KEY=${CA_KEY:-cakey.pem}
+  CA_CERT=${CA_CERT:-cacerts.pem}
+  CA_DOMAIN=localhost
+  CA_REUSE=${CA_REUSE:-false}
+
+  # ssl相关配置
+  SSL_CONFIG=${SSL_CONFIG:-$PWD/openssl.cnf}
+  SSL_DOMAIN=${SSL_DOMAIN:-localhost}
+  SSL_DATE=${SSL_DATE:-3650}
+  SSL_SIZE=${SSL_SIZE:-2048}
+
+  ## 国家代码(2个字母的代号),默认CN;
+  CN=${CN:-CN}
+
+  SSL_KEY=$SSL_DOMAIN.key
+  SSL_CSR=$SSL_DOMAIN.csr
+  SSL_CERT=$SSL_DOMAIN.crt
+
+  echo -e "\033[32m ---------------------------- \033[0m"
+  echo -e "\033[32m       | 生成 SSL Cert |       \033[0m"
+  echo -e "\033[32m ---------------------------- \033[0m"
+
+  if [[ -e ./${CA_KEY} ]]; then
+    if [[ ${CA_REUSE} == true ]]; then
+      echo -e "\033[32m ====> 1. 复用已存在CA私钥 \033[0m"
+    else
+      echo -e "\033[32m ====> 1. 发现已存在CA私钥，备份"${CA_KEY}"为"${CA_KEY}"-bak，然后重新创建 \033[0m"
+      mv ${CA_KEY} "${CA_KEY}"-bak
+      openssl genrsa -out ${CA_KEY} ${SSL_SIZE}
+    fi
+  else
+    echo -e "\033[32m ====> 1. 生成新的CA私钥 ${CA_KEY} \033[0m"
+    openssl genrsa -out ${CA_KEY} ${SSL_SIZE}
+  fi
+
+  if [[ -e ./${CA_CERT} ]]; then
+    if [[ ${CA_REUSE} == true ]]; then
+      echo -e "\033[32m ====> 1. 复用已存在CA证书 \033[0m"
+    else
+      echo -e "\033[32m ====> 2. 发现已存在CA证书，先备份"${CA_CERT}"为"${CA_CERT}"-bak，然后重新创建 \033[0m"
+      mv ${CA_CERT} "${CA_CERT}"-bak
+      openssl req -x509 -sha256 -new -nodes -key ${CA_KEY} -days ${CA_DATE} -out ${CA_CERT} -subj "/C=${CN}/CN=${CA_DOMAIN}"
+    fi
+  else
+    echo -e "\033[32m ====> 2. 生成新的CA证书 ${CA_CERT} \033[0m"
+    openssl req -x509 -sha256 -new -nodes -key ${CA_KEY} -days ${CA_DATE} -out ${CA_CERT} -subj "/C=${CN}/CN=${CA_DOMAIN}"
+  fi
+
+  echo -e "\033[32m ====> 3. 生成Openssl配置文件 ${SSL_CONFIG} \033[0m"
+  cat >${SSL_CONFIG} <<EOM
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth, serverAuth
+EOM
+
+  if [[ -n ${SSL_TRUSTED_IP} || -n ${SSL_TRUSTED_DOMAIN} ]]; then
+    cat >>${SSL_CONFIG} <<EOM
+subjectAltName = @alt_names
+[alt_names]
+EOM
+    IFS=","
+    dns=(${SSL_TRUSTED_DOMAIN})
+    dns+=(${SSL_DOMAIN})
+    for i in "${!dns[@]}"; do
+      echo DNS.$((i + 1)) = ${dns[$i]} >>${SSL_CONFIG}
+    done
+
+    if [[ -n ${SSL_TRUSTED_IP} ]]; then
+      ip=(${SSL_TRUSTED_IP})
+      for i in "${!ip[@]}"; do
+        echo IP.$((i + 1)) = ${ip[$i]} >>${SSL_CONFIG}
+      done
+    fi
+  fi
+
+  echo -e "\033[32m ====> 4. 生成服务SSL KEY ${SSL_KEY} \033[0m"
+  openssl genrsa -out ${SSL_KEY} ${SSL_SIZE}
+
+  echo -e "\033[32m ====> 5. 生成服务SSL CSR ${SSL_CSR} \033[0m"
+  openssl req -sha256 -new -key ${SSL_KEY} -out ${SSL_CSR} -subj "/C=${CN}/CN=${SSL_DOMAIN}" -config ${SSL_CONFIG}
+
+  echo -e "\033[32m ====> 6. 生成服务SSL CERT ${SSL_CERT} \033[0m"
+  openssl x509 -sha256 -req -in ${SSL_CSR} -CA ${CA_CERT} \
+    -CAkey ${CA_KEY} -CAcreateserial -out ${SSL_CERT} \
+    -days ${SSL_DATE} -extensions v3_req \
+    -extfile ${SSL_CONFIG}
+
+  echo -e "\033[32m ====> 7. 证书制作完成 \033[0m"
+  echo
+  echo -e "\033[32m ====> 8. 以YAML格式输出结果 \033[0m"
+  echo "----------------------------------------------------------"
+  echo "ca_key: |"
+  cat $CA_KEY | sed 's/^/  /'
+  echo
+  echo "ca_cert: |"
+  cat $CA_CERT | sed 's/^/  /'
+  echo
+  echo "ssl_key: |"
+  cat $SSL_KEY | sed 's/^/  /'
+  echo
+  echo "ssl_csr: |"
+  cat $SSL_CSR | sed 's/^/  /'
+  echo
+  echo "ssl_cert: |"
+  cat $SSL_CERT | sed 's/^/  /'
+  echo
+
+  echo -e "\033[32m ====> 9. 附加CA证书到Cert文件 \033[0m"
+  cat ${CA_CERT} >>${SSL_CERT}
+  echo "ssl_cert: |"
+  cat $SSL_CERT | sed 's/^/  /'
+  echo
+
+  echo -e "\033[32m ====> 10. 重命名服务证书 \033[0m"
+  echo "cp ${SSL_DOMAIN}.key tls.key"
+  cp ${SSL_DOMAIN}.key tls.key
+  echo "cp ${SSL_DOMAIN}.crt tls.crt"
+  cp ${SSL_DOMAIN}.crt tls.crt
+}
+
+function printSample() {
+  local dockerSample="
+FROM alpine:latest
+
+LABEL maintainer='xshrim@yeah.net'
+
+RUN set -ex && apk update && apk upgrade && apk add --no-cache bash
+
+WORKDIR /root/
+
+ADD motd /etc/motd
+COPY static /root/static
+
+#RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
+
+EXPOSE 22 445/tcp
+
+CMD [\"sh\",\"/root/run.sh\"]
+"
+
+  local secretSample="
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myregistrykey
+  namespace: awesomeapps
+data:
+  .dockerconfigjson: UmVhbGx5IHJlYWxseSByZWVlZWVlZWVlZWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx5eXl5eXl5eXl5eXl5eXl5eXl5eSBsbGxsbGxsbGxsbGxsbG9vb29vb29vb29vb29vb29vb29vb29vb29vb25ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubmdnZ2dnZ2dnZ2dnZ2dnZ2dnZ2cgYXV0aCBrZXlzCg==
+type: kubernetes.io/dockerconfigjson
+"
+
+  local configmapSample="
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+data:
+  my.yaml: |
+    name: tom
+    light.weight: baby
+    gym: muscle
+"
+
+  local rbacSample="
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: role-grantor
+rules:
+- apiGroups: [\"rbac.authorization.k8s.io\"]
+  resources: [\"rolebindings\"]
+  verbs: [\"create\"]
+- apiGroups: [\"rbac.authorization.k8s.io\"]
+  resources: [\"clusterroles\"]
+  verbs: [\"bind\"]
+  resourceNames: [\"admin\",\"edit\",\"view\"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: role-grantor-binding
+  namespace: user-1-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: role-grantor
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: ServiceAccount
+  name: grantor
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    foo: bar
+  name: grantor
+  namespace: default
+"
+
+  local storageSample="
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas
+parameters:
+  archiveOnDelete: \"true\"
+provisioner: cluster.local/nas-client-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+  labels:
+    release: stable
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteMany
+  nfs:
+    server: 10.10.10.10
+    path: /nas
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  selector:
+    matchLabels:
+      release: stable
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
+"
+
+  local serviceSample="
+apiVersion: v1
+kind: Service
+metadata:
+  name: websvc
+  namespace: default
+  labels:
+    run: nginx
+spec:
+  type: clusterIP
+  clusterIP: None
+  ports:
+  - name: webport
+    port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 30300
+  selector:
+    run: nginx
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: websvc
+subsets:
+- addresses:
+  - ip: 25.10.10.10
+  ports:
+  - port: 80
+"
+
+  local ingressSample="
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/proxy-body-size: 1000M
+    nginx.ingress.kubernetes.io/ssl-redirect: \"false\"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/cors-allow-headers: DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,Accept,Origin,Referer
+    nginx.ingress.kubernetes.io/cors-allow-methods: GET, PUT, POST, DELETE, PATCH
+    nginx.ingress.kubernetes.io/enable-cors: \"true\"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers \"X-Frame-Options: ALLOW-FROM *\";
+  name: kubernetes
+  namespace: default
+spec:
+  tls:
+    - hosts:
+        - foo.bar.com
+      secretName: ingress-tls
+  rules:
+    - host: foo.bar.com
+      http:
+        paths:
+          - backend:
+              serviceName: kubernetes
+              servicePort: 443
+            path: /region/(.*)
+"
+
+  local podSample="
+apiVersion: v1
+kind: Pod
+metadata:
+  name: xo
+  namespace: default
+  labels:
+    app: xo
+  annotations:
+    alpha.istio.io/sidecar: ignore
+spec:
+  nodeSelector:
+    disk: ssd
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/project
+            operator: In
+            values:
+            - demo
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: security
+            operator: In
+            values:
+            - S1
+        topologyKey: failure-domain.beta.kubernetes.io/zone
+    tolerations:
+    - key: key
+      operator: Equal
+      value: value
+      effect: NoSchedule
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  shareProcessNamespace: false
+  hostNetwork: false
+  securityContext:
+    runAsUser: 1000
+  serviceAccountName: foo
+  automountServiceAccountToken: true
+  hostAliases:
+  - ip: \"127.0.0.1\"
+    hostnames:
+    - \"foo.local\"
+    - \"bar.local\"
+  volumes:
+  - name: storage
+    persistentVolumeClaim:
+      claimName: mysql-pv-claim
+  containers:
+  - name: xo
+    image: registry.io/library/xo
+    imagePullPolicy: IfNotPresent
+    imagePullSecrets:
+    - name: regcred
+    env:
+    - name: FOO
+      value: bar
+    - name: SPECIAL_KEY
+      valueFrom:
+        configMapKeyRef:
+          name: special-config
+          key: special.how
+    command: [\"/bin/sh\"]
+    args: [\"-c\", \"while true; do echo hello; sleep 10;done\"]
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 128M
+    volumeMounts:
+    - name: storage
+      mountPath: /data
+      subPath: config
+    lifecycle:
+      postStart:
+        exec:
+          command: [\"/bin/sh\", \"-c\", \"echo Hello\"]
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 8080
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        successThreshold: 1
+"
+
+  local deploySample="
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xo
+  namespace: default
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: xo
+  template:
+    metadata:
+      labels:
+        app: xo
+    annotations:
+      alpha.istio.io/sidecar: ignore
+    spec:
+      nodeSelector:
+        disk: ssd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/project
+                operator: In
+                values:
+                - demo
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: security
+                operator: In
+                values:
+                - S1
+            topologyKey: failure-domain.beta.kubernetes.io/zone
+        tolerations:
+        - key: key
+          operator: Equal
+          value: value
+          effect: NoSchedule
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      shareProcessNamespace: false
+      hostNetwork: false
+      securityContext:
+        runAsUser: 1000
+      serviceAccountName: foo
+      automountServiceAccountToken: true
+      hostAliases:
+      - ip: \"127.0.0.1\"
+        hostnames:
+        - \"foo.local\"
+        - \"bar.local\"
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+      containers:
+      - name: xo
+        image: registry.io/library/xo
+        imagePullPolicy: IfNotPresent
+        imagePullSecrets:
+        - name: regcred
+        env:
+        - name: FOO
+          value: bar
+        - name: SPECIAL_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: special-config
+              key: special.how
+        command: [\"/bin/sh\"]
+        args: [\"-c\", \"while true; do echo hello; sleep 10;done\"]
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources: 
+          limits:
+            cpu: 100m
+            memory: 128M
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+          subPath: config
+        lifecycle:
+          postStart:
+            exec:
+              command: [\"/bin/sh\", \"-c\", \"echo Hello\"]
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+"
+
+  local daemonsetSample="
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    describe: hello
+  labels:
+    service_name: demo
+  name: demo
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      name: demo
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: foo
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - name: storage
+        nfs:
+          server: 127.0.0.1
+          path: /nas
+      containers:
+      - name: demo
+        image: registry.io/library/demo
+        imagePullPolicy: Always
+        env:
+        - name: MODE
+          value: restart
+        resources:
+          requests:
+            cpu: 256m
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /data
+          name: storage
+"
+
+  local statefulsetSample="
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: demo
+  name: demo
+  namespace: default
+spec:
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: demo
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: mydata
+    spec:
+      accessModes: [\"ReadWriteOnce\"]
+      resources:
+        requests:
+          storage: 5Gi
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      initContainers:
+      - name: init
+        command:
+        - /bin/bash
+        - -c
+        - rm -Rf /data
+        image: registry.io/library/busybox
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/data
+          name: mydata
+      containers:
+      - name: demo
+        envFrom:
+        - secretRef:
+            name: my-secret
+        image: registry.io/library/demo
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/data
+          name: mydata
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+"
+
+  local jobSample="
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    job-name: pi
+  name: pi
+  namespace: default
+spec:
+  backoffLimit: 4
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      app: pi
+  template:
+    metadata:
+      labels:
+        app: pi
+        job-name: pi
+    spec:
+      containers:
+      - name: pi
+        command:
+        - perl
+        - -Mbignum=bpi
+        - -wle
+        - print bpi(2000)
+        image: perl
+        imagePullPolicy: Always
+        resources: {}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+"
+
+  local cronjobSample="
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: \"*/1 * * * *\"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+"
+
+  local networkpolicySample="
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 172.17.0.0/16
+        except:
+        - 172.17.1.0/24
+    - namespaceSelector:
+        matchLabels:
+          project: myproject
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - protocol: TCP
+      port: 6379
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/24
+    ports:
+    - protocol: TCP
+      port: 5978
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-ingress
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-ingress
+spec:
+  podSelector: {}
+  ingress:
+  - {}
+  policyTypes:
+  - Ingress
+"
+
+  case $1 in
+  "docker")
+    echo "$dockerSample"
+    ;;
+  "secret")
+    echo "$secretSample"
+    ;;
+  "cm" | "configmap")
+    echo "$configmapSample"
+    ;;
+  "role" | "rb" | "sa" | "rolebinding" | "serviceaccount" | "rbac")
+    echo "$rbacSample"
+    ;;
+  "pv" | "pvc" | "sc" | "storageclass")
+    echo "$storageSample"
+    ;;
+  "svc" | "service")
+    echo "$serviceSample"
+    ;;
+  "ing" | "ingress")
+    echo "$ingressSample"
+    ;;
+  "pod")
+    echo "$podSample"
+    ;;
+  "deploy" | "deployment")
+    echo "$deploySample"
+    ;;
+  "sts" | "statefulset")
+    echo "$statefulsetSample"
+    ;;
+  "ds" | "daemonset")
+    echo "$daemonsetSample"
+    ;;
+  "job")
+    echo "$jobSample"
+    ;;
+  "cj" | "cronjob")
+    echo "$cronjobSample"
+    ;;
+  "np" | "networkpolicy")
+    echo "$networkpolicySample"
+    ;;
+  esac
+}
+
+main "$@"

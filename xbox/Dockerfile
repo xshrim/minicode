@@ -1,6 +1,14 @@
 FROM alpine:latest
 
-MAINTAINER xshrim "xshrim@yeah.net"
+LABEL maintainer="xshrim@yeah.net"
+
+WORKDIR /root/
+# py2-virtualenv \
+# apparmor issue #14140 
+
+# Settings
+COPY motd /etc/motd
+ADD artifacts /root/
 
 # mirrors.ustc.edu.cn
 # mirrors.tuna.tsinghua.edu.cn
@@ -21,6 +29,7 @@ RUN set -ex \
     bridge-utils \
     busybox-extras \
     conntrack-tools \
+    cmus \
     ctop \
     curl \
     docker \
@@ -28,7 +37,6 @@ RUN set -ex \
     dfc \
     dos2unix \
     drill \
-    etcd \
     etcd-ctl \
     ethtool \
     exa \
@@ -39,7 +47,6 @@ RUN set -ex \
     fio \
     fping \
     git \
-    glances \
     gotop \
     gron \
     hexdump \
@@ -64,13 +71,15 @@ RUN set -ex \
     iozone \
     jq \
     kubectl \
-    minio \
+    minio-client \
     mtr \
     mysql-client \
+    mycli \
     net-snmp-tools \
     netcat-openbsd \
     nftables \
     nfs-utils \
+    neofetch \
     nethogs \
     nginx \
     ngrep \
@@ -82,9 +91,11 @@ RUN set -ex \
     openssh-server \
     openssh-client \
     postgresql-client \
+    pgcli \
     qperf \
     tree \
     redis \
+    ranger \
     rsync \
     samba \
     samba-client \
@@ -94,7 +105,6 @@ RUN set -ex \
     sqlite \
     strace \
     sshpass \
-    speedtest \
     speedtest-cli \
     websocat \
     websocketd \
@@ -103,36 +113,22 @@ RUN set -ex \
     tcptraceroute \
     util-linux \
     vim \
-    zsh
-
-WORKDIR /root/
-#py2-virtualenv \
-# apparmor issue #14140 
-
-# Installing ctop - top-like container monitor
-#RUN wget https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64 -O /usr/local/bin/ctop && chmod +x /usr/local/bin/ctop
-
-# Installing calicoctl
-#ARG CALICOCTL_VERSION=v3.10.2
-#RUN wget https://github.com/projectcalico/calicoctl/releases/download/${CALICOCTL_VERSION}/calicoctl && chmod +x calicoctl && mv calicoctl /usr/bin/
-
-# Installing kubectl
-#curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/bin/
-
-# Settings
-#ADD profile  /etc/profile
-ADD motd /etc/motd
-ADD tools/* /usr/bin/
-ADD webssh /root/
-ADD run.sh /root/
-ADD deploy.yaml /root/
-COPY static /root/static
-COPY oh-my-zsh /root/.oh-my-zsh
-COPY zshrc /root/.zshrc
-COPY vimrc /root/.vimrc
-COPY smb.conf /root/smb.conf
-
-RUN mkdir /share && mv /usr/sbin/tcpdump /usr/bin/tcpdump && echo 'alias iperf="iperf3"' >> /etc/profile && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && ssh-keygen -t rsa -P "" -f /etc/ssh/ssh_host_rsa_key && ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key && ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key && echo "root:root" | chpasswd && addgroup -g 1111 smb && adduser -D -H -G smb -s /bin/false -u 1111 smb && echo -e "smb\nsmb" | smbpasswd -a -s -c /root/smb.conf smb
+    zsh \
+    && mkdir /share \
+    && mv /usr/sbin/tcpdump /usr/bin/tcpdump \
+    && echo 'alias iperf="iperf3"' >> /etc/profile \
+    && echo 'export PATH=/root/tools/:$PATH' >> /etc/profile \
+    && export TERM='xterm-256color'; ranger --copy-config=all \
+    && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd \
+    && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config \
+    && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && ssh-keygen -t rsa -P "" -f /etc/ssh/ssh_host_rsa_key \
+    && ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key \
+    && ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key \
+    && echo "root:root" | chpasswd \
+    && addgroup -g 1111 smb \
+    && adduser -D -H -G smb -s /bin/false -u 1111 smb \
+    && echo -e "smb\nsmb" | smbpasswd -a -s -c /root/smb.conf smb
 
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2   # 解决go语言程序无法在alpine执行的问题
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
