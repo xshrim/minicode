@@ -1,8 +1,8 @@
 #!/bin/bash
 
-kubecfg=""
+kc=""
 image=xo
-port=22
+port=""
 timeout=60
 user=root
 #passwd=root
@@ -13,6 +13,7 @@ kwd=""
 list=0
 kind="pod"
 context=""
+selector=""
 args=""
 chroot=""
 localrun=0
@@ -26,7 +27,7 @@ function usage() {
   kude <command> [<options>] [<object>]
 
 **COMMANDS**:
-  hp,help                   打印命令帮助
+  hp,help                  打印命令帮助
   git                      git运行git命令
   g,go                     运行go命令
   lg,lgo                   Linux环境下禁用CGO的go命令
@@ -35,6 +36,7 @@ function usage() {
   k,kube,kubectl           运行kubectl命令
   kk                       运行kubectl kustomize命令
   km,kustomize             运行kustomize命令
+  ec,edc,etcdctl           运行etcdctl命令
   td,tdp,tcpdump           运行tcpdump抓包命令
   ipt,iptable,iptables     运行iptables命令
   ct,ssl,cred              加密凭证操作
@@ -86,15 +88,25 @@ function usage() {
   kf,kfind                 查找资源中包含指定关键字的资源
   cfg,config               查看kubeconfig配置
   exp,explain              查看k8s资源描述
+  expr,explainr            查看k8s资源及嵌套资源描述
   dry,dryrun               模拟执行kubectl命令
+  eg,etcdget               通过etcdctl获取k8s的etcd数据
+  egp,etcdgetp             通过etcdctl获取k8s的包括子目录在内的etcd数据
   ap,apl,apply             执行kubectl apply命令
   n,new,create             执行kubectl create命令
   r,run                    执行kubectl run命令
   b,rbac                   查看rbac结构图
   a,all                    查看指定命名空间下所有资源
+  np,nodepod               列出运行在指定节点上的所有pod
+  ni,nodeimg               列出指定节点上所有的镜像
+  re,res                   列出k8s集群支持的所有资源
+  ver,version              列出k8s集群的api版本
   ro,rollout               执行kubectl rollout命令
   au,auth                  执行kubectl auth命令
   pr,proxy                 开启kube apiserver本地代理
+  tk,token                 获取serviceaccount的token
+  li,lsimg                 列出k8s中所有容器使用的镜像
+  lli,llimg                按行列出k8s中所有容器使用的镜像
   l,log                    查看pod内容器日志
   lf,logf                  实时查看容器日志
   i,insp,inspect           查看容器配置信息
@@ -121,6 +133,7 @@ function usage() {
   -b [100] log显示条数
   -c [context] kubernetes连接上下文(可选)
   -d [savedir] rbac结构图保存目录(可选)
+  -e [selector] k8s资源标签选择器
   -f [./kube/config] kubeonfig文件路径(可选)
   -i [0] 匹配pod内容器index(可选)
   -k [kind] k8s资源类型
@@ -143,7 +156,9 @@ function usage() {
 **REFERENCES**:
 # Linux: https://community.linuxmint.com/tutorial/view/244 https://man.linuxde.net/
 # Docker: https://docs.docker.com/engine/reference/commandline/cli/
-# Kubectl: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
+# Kubectl: https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands/
+# Etcd: https://etcd.io/docs/v3.4.0/op-guide/configuration/ https://etcd.io/docs/v3.4.0/dev-guide/interacting_v3/
+# Helm: https://helm.sh/docs/helm/helm/
 
 **EXAMPLES**:
 # 直接执行docker或kubectl命令
@@ -183,8 +198,19 @@ kude rbac -n kube-system rolebinding
 # 查看kubeconfig配置
 kude cfg
 
+# 获取k8s集群容器使用的镜像
+kude li -n default
+kude lli
+
+# 获取指定serviceaccount的token
+kude tk
+kude tk -n default
+
 # 执行kubectl apply命令
 kude ap pod.yaml
+
+# 查找包含指定字符串的资源
+kude kf -k sa token-ec9kd
 
 # 开启kube-apiserver本地代理
 kude pr 8443
@@ -566,14 +592,18 @@ function main() {
     require helm
     shift
     helm $*
-  elif [ $1 == "kk" ] || [ $1 == "kustomize" ]; then
+  elif [ $1 == "kk" ]; then
     require kubectl
     shift
     kubectl kustomize $*
-  elif [ $1 == "km" ]; then
+  elif [ $1 == "km" ] || [ $1 == "kustomize" ]; then
     require kustomize
     shift
     kustomize $*
+  elif [ $1 == "ec" ] || [ $1 == "edc" ] || [ $1 == "etcdctl" ]; then
+    require etcdctl
+    shift
+    etcdctl $*
   elif [ $1 == "td" ] || [ $1 == "tdp" ] || [ $1 == "tcpdump" ]; then
     shift
     if [ $1 == "h" ] || [ $1 == "hp" ]; then
@@ -693,10 +723,6 @@ function main() {
     require docker
     shift
     docker build $*
-  elif [ $1 == "dt" ] || [ $1 == "dtg" ] || [ $1 == "dtag" ]; then
-    require docker
-    shift
-    docker tag $*
   elif [ $1 == "sp" ] || [ $1 == "spl" ] || [ $1 == "sample" ]; then
     shift
     skind="pod"
@@ -706,7 +732,7 @@ function main() {
     printSample "$skind"
   else
     while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
-      while getopts "a:b:c:d:f:i:k:m:n:o:p:s:t:u:w:hjlrv" opt; do
+      while getopts "a:b:c:d:e:f:i:k:m:n:o:p:s:t:u:w:hjlrv" opt; do
         case $opt in
         a)
           since="--since $OPTARG"
@@ -720,8 +746,11 @@ function main() {
         d)
           savedir="$OPTARG"
           ;;
+        e)
+          selector="--selector=$OPTARG"
+          ;;
         f)
-          kubecfg=$OPTARG
+          kc="--kubeconfig $OPTARG"
           ;;
         i)
           idx=$OPTARG
@@ -803,11 +832,6 @@ function main() {
       echo "need sub command"
       usage simple
       exit 1
-    fi
-
-    kc=""
-    if [ -n "$kubecfg" ]; then
-      kc="--kubeconfig $kubecfg"
     fi
 
     if [ -z "$namespace" ]; then
@@ -1575,6 +1599,46 @@ function main() {
           execmd "$cmd" $ip
         done
       fi
+    elif [ "$subcmd" == "dt" ] || [ "$subcmd" == "dtg" ] || [ "$subcmd" == "dtag" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        echo "error: need arguments"
+        exit 1
+      else
+        ttag="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker tag $(docker images | grep "$fkwd" | awk '{print $3}') $ttag
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker image list --format '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker tag $(echo ${cimgs[$diidx]} | awk '{print $3}') $ttag
+        fi
+      else
+        cmd="docker tag $fkwd $ttag"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
     elif [ "$subcmd" == "do" ] || [ "$subcmd" == "drmi" ]; then
       if [ -n "$kwd" ]; then
         fkwd="$kwd"
@@ -1585,7 +1649,11 @@ function main() {
       if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
         if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
-          docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
+          if [ $(docker images | grep "$fkwd" | awk '{print $1}') == "none" ]; then
+            docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
+          else
+            docker rmi -f $(docker images | grep "$fkwd" | awk '{print $1":"$2}')
+          fi
         else
           echo "====== More than one container ======"
           cimgs=$(docker image list --format '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep "$fkwd")
@@ -1602,9 +1670,13 @@ function main() {
             diidx=0
           fi
           if [ $diidx -eq -1 ]; then
-            docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
+            docker rmi -f $(docker images | grep "$fkwd" | awk '{print $1":"$2}')
           else
-            docker rmi -f $(echo ${cimgs[$diidx]} | awk '{print $3}')
+            if [ $(echo ${cimgs[$diidx]} | awk '{print $1}') == "none" ]; then
+              docker rmi -f $(echo ${cimgs[$diidx]} | awk '{print $3}')
+            else
+              docker rmi -f $(echo ${cimgs[$diidx]} | awk '{print $1":"$2}')
+            fi
           fi
         fi
       else
@@ -1647,53 +1719,167 @@ function main() {
         done
       fi
     elif [ "$subcmd" == "dpa" ] || [ "$subcmd" == "daddr" ]; then
-      cmd="docker inspect --format='{{json .NetworkSettings.Networks}}' ${mandatory[0]}"
-      if [ ${#mandatory[@]} -eq 1 ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
-        execmd "$cmd"
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect --format='{{json .NetworkSettings.Networks}}' $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect --format='{{json .NetworkSettings.Networks}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
       else
-        for ip in ${mandatory[@]:1}; do
+        cmd="docker inspect --format='{{json .NetworkSettings.Networks}}' $fkwd"
+        for ip in ${mandatory[@]}; do
           execmd "$cmd" $ip
         done
       fi
     elif [ "$subcmd" == "dpe" ] || [ "$subcmd" == "denv" ]; then
-      cmd="docker inspect --format='{{json .Config.Env}}' ${mandatory[0]}"
-      if [ ${#mandatory[@]} -eq 1 ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
-        execmd "$cmd"
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect --format='{{json .Config.Env}}' $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect --format='{{json .Config.Env}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
       else
-        for ip in ${mandatory[@]:1}; do
+        cmd="docker inspect --format='{{json .Config.Env}}' $fkwd"
+        for ip in ${mandatory[@]}; do
           execmd "$cmd" $ip
         done
       fi
     elif [ "$subcmd" == "dpc" ] || [ "$subcmd" == "dcmd" ]; then
-      cmd="docker inspect --format='{{json .Config.Cmd}}' ${mandatory[0]}"
-      if [ ${#mandatory[@]} -eq 1 ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
-        execmd "$cmd"
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect --format='{{json .Config.Cmd}}' $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect --format='{{json .Config.Cmd}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
       else
-        for ip in ${mandatory[@]:1}; do
+        cmd="docker inspect --format='{{json .Config.Cmd}}' $fkwd"
+        for ip in ${mandatory[@]}; do
           execmd "$cmd" $ip
         done
       fi
     elif [ "$subcmd" == "dpp" ] || [ "$subcmd" == "dport" ]; then
-      cmd="docker inspect --format='{{json .NetworkSettings.Ports}}' ${mandatory[0]}"
-      if [ ${#mandatory[@]} -eq 1 ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
-        execmd "$cmd"
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect --format='{{json .NetworkSettings.Ports}}' $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect --format='{{json .NetworkSettings.Ports}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
       else
-        for ip in ${mandatory[@]:1}; do
+        cmd="docker inspect --format='{{json .NetworkSettings.Ports}}' $fkwd"
+        for ip in ${mandatory[@]}; do
           execmd "$cmd" $ip
         done
       fi
     elif [ "$subcmd" == "dpm" ] || [ "$subcmd" == "dmnt" ]; then
-      cmd="docker inspect --format='{{json .Mounts}}' ${mandatory[0]}"
-      echo $cmd
-      if [ ${#mandatory[@]} -eq 1 ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
-        execmd "$cmd"
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect --format='{{json .Mounts}}' $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z $diidx ]; then
+            diidx=0
+          fi
+          docker inspect --format='{{json .Mounts}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
       else
-        for ip in ${mandatory[@]:1}; do
+        cmd="docker inspect --format='{{json .Mounts}}' $fkwd"
+        for ip in ${mandatory[@]}; do
           execmd "$cmd" $ip
         done
       fi
@@ -1723,10 +1909,18 @@ function main() {
     elif [ "$subcmd" == "dump" ]; then
       require kubectl
       kubectl $kc $context cluster-info dump
-    elif [ "$subcmd" == "exp" ]; then
+    elif [ "$subcmd" == "exp" ] || [ "$subcmd" == "explain" ]; then
       require kubectl
       if [ ${#mandatory[@]} -gt 0 ]; then
         kubectl $kc $context explain ${mandatory[@]}
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "expr" ] || [ "$subcmd" == "explainr" ]; then
+      require kubectl
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        kubectl $kc $context explain ${mandatory[@]} --recursive
       else
         echo "error: need arguments"
         exit 1
@@ -1749,7 +1943,7 @@ function main() {
       fi
       if [ ${#mandatory[@]} -gt 0 ]; then
         for fname in ${mandatory[@]}; do
-          kubectl $kc $context apply -f $fname $ns
+          kubectl $kc $context apply -f $fname $selector $ns
         done
       else
         echo "error: need arguments"
@@ -1770,10 +1964,10 @@ function main() {
         done
         if [ "$isfile" == "true" ]; then
           for fname in ${mandatory[@]}; do
-            kubectl $kc $context create -f $fname $ns
+            kubectl $kc $context create -f $fname $selector $ns
           done
         else
-          kubectl $kc $context create $kind ${mandatory[@]} $ns
+          kubectl $kc $context create $kind ${mandatory[@]} $selector $ns
         fi
       else
         echo "error: need arguments"
@@ -1807,10 +2001,205 @@ function main() {
       fi
     elif [ "$subcmd" == "a" ] || [ "$subcmd" == "all" ]; then
       require kubectl
-      kubectl $kc $context get all $ns
+      kubectl $kc $context get all $selector $ns
+    elif [ "$subcmd" == "eg" ] || [ "$subcmd" == "etcdget" ]; then
+      require etcdctl
+      if [ -d /etc/kubernetes/pki ]; then
+        rpath="/etc/kubernetes/pki"
+      else
+        rpath="/etc/kubernetes/ssl"
+      fi
+      if [ -z "$host" ]; then
+        host="127.0.0.1"
+      fi
+      if [ -z "$port" ]; then
+        port="2379"
+      fi
+      ep="$host:$port"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        if [ -f $rpath/ca.crt ]; then
+          ca=$rpath/ca.crt
+        else
+          ca=$rpath/kube-ca.pem
+        fi
+        if [ -f $rpath/etcd/peer.crt ]; then
+          cert=$rpath/etcd/peer.crt
+        else
+          cert=$rpath/$(ls $rpath | grep etcd | grep -v key.pem | sed -n '1p')
+        fi
+        if [ -f $rpath/etcd/peer.key ]; then
+          key=$rpath/etcd/peer.key
+        else
+          key=$rpath/$(ls $rpath | grep etcd | grep key.pem | sed -n '1p')
+        fi
+        etcdkey=${mandatory[0]}
+      elif [ ${#mandatory[@]} -eq 4 ]; then
+        ca=${mandatory[0]}
+        cert=${mandatory[1]}
+        key=${mandatory[2]}
+        etcdkey=${mandatory[3]}
+        if [ "${ca:0:1}" != "/" ]; then
+          ca=$rpath/$ca
+        fi
+        if [ "${cert:0:1}" != "/" ]; then
+          cert=$rpath/$cert
+        fi
+        if [ "${key:0:1}" != "/" ]; then
+          key=$rpath/$key
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      echo "=== endpoint: $ep | cacert: $ca | cert: $cert | key: $key ==="
+      ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get "$etcdkey" -w=json
+    elif [ "$subcmd" == "egp" ] || [ "$subcmd" == "etcdgetp" ]; then
+      require etcdctl
+      if [ -d /etc/kubernetes/pki ]; then
+        rpath="/etc/kubernetes/pki"
+      else
+        rpath="/etc/kubernetes/ssl"
+      fi
+      if [ -z "$host" ]; then
+        host="127.0.0.1"
+      fi
+      if [ -z "$port" ]; then
+        port="2379"
+      fi
+      ep="$host:$port"
+      if [ ${#mandatory[@]} -eq 1 ]; then
+        if [ -f $rpath/ca.crt ]; then
+          ca=$rpath/ca.crt
+        else
+          ca=$rpath/kube-ca.pem
+        fi
+        if [ -f $rpath/etcd/peer.crt ]; then
+          cert=$rpath/etcd/peer.crt
+        else
+          cert=$rpath/$(ls $rpath | grep etcd | grep -v key.pem | sed -n '1p')
+        fi
+        if [ -f $rpath/etcd/peer.key ]; then
+          key=$rpath/etcd/peer.key
+        else
+          key=$rpath/$(ls $rpath | grep etcd | grep key.pem | sed -n '1p')
+        fi
+        etcdkey=${mandatory[0]}
+      elif [ ${#mandatory[@]} -eq 4 ]; then
+        ca=${mandatory[0]}
+        cert=${mandatory[1]}
+        key=${mandatory[2]}
+        etcdkey=${mandatory[3]}
+        if [ "${ca:0:1}" != "/" ]; then
+          ca=$rpath/$ca
+        fi
+        if [ "${cert:0:1}" != "/" ]; then
+          cert=$rpath/$cert
+        fi
+        if [ "${key:0:1}" != "/" ]; then
+          key=$rpath/$key
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      echo "=== endpoint: $ep | cacert: $ca | cert: $cert | key: $key ==="
+      ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get "$etcdkey" --prefix -w=json
+    elif [ "$subcmd" == "np" ] || [ "$subcmd" == "nodepod" ]; then
+      require kubectl
+      if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
+        kwd="${mandatory[*]}"
+      fi
+      nodes=$(kubectl $kc $context get node $selector -o wide --no-headers | grep "$kwd")
+      SIFS=$IFS
+      IFS=$'\n'
+      nodes=($nodes)
+      IFS=$SIFS
+      if [ ${#nodes[@]} -eq 0 ]; then
+        exit 0
+      elif [ ${#nodes[@]} -eq 1 ]; then
+        node=${nodes[0]}
+      else
+        echo "====== More than one node ======"
+        for ((i = 0; i < ${#nodes[@]}; i++)); do
+          echo "$i: ${nodes[$i]}"
+        done
+        read -p "====== select one with number[0]: " niidx
+        if [ -z $niidx ]; then
+          niidx=0
+        fi
+        node=${nodes[$niidx]}
+      fi
+      nodeip=$(echo "$node" | awk '{print $6}')
+      kubectl $kc $context get pod -o wide $selector $ns | grep -E "NAME|$nodeip"
+    elif [ "$subcmd" == "ni" ] || [ "$subcmd" == "nodeimg" ]; then
+      require kubectl
+      if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
+        kwd="${mandatory[*]}"
+      fi
+      nodes=$(kubectl $kc $context get node $selector -o wide --no-headers | grep "$kwd")
+      SIFS=$IFS
+      IFS=$'\n'
+      nodes=($nodes)
+      IFS=$SIFS
+      if [ ${#nodes[@]} -eq 0 ]; then
+        exit 0
+      elif [ ${#nodes[@]} -eq 1 ]; then
+        node=${nodes[0]}
+      else
+        echo "====== More than one node ======"
+        for ((i = 0; i < ${#nodes[@]}; i++)); do
+          echo "$i: ${nodes[$i]}"
+        done
+        read -p "====== select one with number[0]: " niidx
+        if [ -z $niidx ]; then
+          niidx=0
+        fi
+        node=${nodes[$niidx]}
+      fi
+      nodename=$(echo "$node" | awk '{print $1}')
+      kubectl get node $nodename -o jsonpath='{.status.images[*].names[*]}' | sed 's/ /\n/g' | grep -v "@sha256"
+    elif [ "$subcmd" == "tk" ] || [ "$subcmd" == "token" ]; then
+      require kubectl base64
+      if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
+        kwd="${mandatory[*]}"
+      fi
+      sas=$(kubectl $kc $context get serviceaccount --no-headers $selector $ns | grep "$kwd")
+      SIFS=$IFS
+      IFS=$'\n'
+      sas=($sas)
+      IFS=$SIFS
+      if [ ${#sas[@]} -eq 0 ]; then
+        exit 0
+      elif [ ${#sas[@]} -eq 1 ]; then
+        sa=${sas[0]}
+      else
+        echo "====== More than one serviceaccount ======"
+        for ((i = 0; i < ${#sas[@]}; i++)); do
+          echo "$i: ${sas[$i]}"
+        done
+        read -p "====== select one with number[0]: " siidx
+        if [ -z $siidx ]; then
+          siidx=0
+        fi
+        sa=${sas[$siidx]}
+      fi
+      if [ "$ns" == "--all-namespaces" ]; then
+        lns=$(echo "$sa" | awk '{print $1}')
+        lrs=$(echo "$sa" | awk '{print $2}')
+      else
+        lns=$(echo "$ns" | awk '{print $2}')
+        lrs=$(echo "$sa" | awk '{print $1}')
+      fi
+      kubectl $kc $context -n $lns get secret $(kubectl $kc $context get serviceaccount $lrs -n $lns -o jsonpath='{.secrets[0].name}') -o jsonpath='{.data.token}' | base64 --decode
+    elif [ "$subcmd" == "re" ] || [ "$subcmd" == "res" ]; then
+      require kubectl
+      kubectl $kc $context api-resources
+    elif [ "$subcmd" == "ver" ] || [ "$subcmd" == "version" ]; then
+      require kubectl
+      kubectl $kc $context api-versions
     elif [ "$subcmd" == "ro" ] || [ "$subcmd" == "rollout" ]; then
       require kubectl
-      kubectl $kc $context rollout ${mandatory[@]} $ns
+      kubectl $kc $context rollout ${mandatory[@]} $selector $ns
     elif [ "$subcmd" == "au" ] || [ "$subcmd" == "auth" ]; then
       require kubectl
       kubectl $kc $context auth "${mandatory[@]}" $ns
@@ -1819,24 +2208,33 @@ function main() {
       if [[ "${mandatory[*]}" =~ ":" ]]; then
         ip=$(echo "${mandatory[*]}" | awk -F ':' '{print $1}')
         pt=$(echo "${mandatory[*]}" | awk -F ':' '{print $2}')
-        if [ -z "$ip" ]; then
-          ip="127.0.0.1"
-        fi
-        if [ -z "$port" ]; then
-          pt=$port
-        fi
       else
-        ip="127.0.0.1"
         pt=${mandatory[*]}
       fi
+      if [ -z "$ip" ]; then
+        ip="127.0.0.1"
+      fi
+      if [ -z "$pt" ]; then
+        if [ -n "$port" ]; then
+          pt=$port
+        else
+          pt="8001"
+        fi
+      fi
       kubectl $kc $context proxy --address $ip --port $pt
+    elif [ "$subcmd" == "li" ] || [ "$subcmd" == "lsimg" ]; then
+      require kubectl
+      # kubectl get pods --all-namespaces -o jsonpath="{.items[*].spec.containers[*].image}"
+      echo $(kubectl $kc $context get pod -o go-template --template="{{range .items}}{{range .spec.containers}}{{.image}} {{end}}{{end}}" $selector $ns) | sed 's/ /\n/g' | sort | uniq | tr '\n' ' '
+    elif [ "$subcmd" == "lli" ] || [ "$subcmd" == "llimg" ]; then
+      kubectl $kc $context get pod -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}' $selector $ns | sort
     elif [ "$subcmd" == "kf" ] || [ "$subcmd" == "kfind" ]; then
       require kubectl
       if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
         kwd="${mandatory[*]}"
       fi
 
-      items=$(kubectl $kc $context get $kind --no-headers $ns 2>/dev/null)
+      items=$(kubectl $kc $context get $kind --no-headers $selector $ns 2>/dev/null)
       SIFS=$IFS
       IFS=$'\n'
       items=($items)
@@ -1851,7 +2249,7 @@ function main() {
           lrs=$(echo ${items[$i]} | awk '{print $1}')
         fi
 
-        if [ $(kubectl $kc $context -n $lns get $kind $lrs -o yaml | grep "$kwd" | wc -l) -gt 0 ]; then
+        if [ $(kubectl $kc $context -n $lns $selector get $kind $lrs -o yaml | grep "$kwd" | wc -l) -gt 0 ]; then
           echo -e "$lns\t$lrs"
         fi
       done
@@ -1875,35 +2273,35 @@ function main() {
         case $subcmd in
         "gt" | "get")
           if [ -n "$kwd" ]; then
-            kubectl $kc $context get $kind $ns | grep "$kwd"
+            kubectl $kc $context get $kind $selector $ns | grep "$kwd"
           else
-            kubectl $kc $context get $kind $ns
+            kubectl $kc $context get $kind $selector $ns
           fi
           ;;
         "wt" | "watch")
           if [ -n "$kwd" ]; then
-            kubectl $kc $context get $kind $ns --watch | grep "$kwd"
+            kubectl $kc $context get $kind $selector $ns --watch | grep "$kwd"
           else
-            kubectl $kc $context get $kind $ns --watch
+            kubectl $kc $context get $kind $selector $ns --watch
           fi
           ;;
         "w" | "wide")
           if [ -n "$kwd" ]; then
-            kubectl $kc $context get $kind $ns -o wide | grep "$kwd"
+            kubectl $kc $context get $kind $selector $ns -o wide | grep "$kwd"
           else
-            kubectl $kc $context get $kind $ns -o wide
+            kubectl $kc $context get $kind $selector $ns -o wide
           fi
           ;;
         "wl" | "wlabel")
           if [ -n "$kwd" ]; then
-            kubectl $kc $context get $kind $ns -o wide --show-labels | grep "$kwd"
+            kubectl $kc $context get $kind $selector $ns -o wide --show-labels | grep "$kwd"
           else
-            kubectl $kc $context get $kind $ns -o wide --show-labels
+            kubectl $kc $context get $kind $selector $ns -o wide --show-labels
           fi
           ;;
         "s" | "desc" | "describe")
           if [ -n "$kwd" ]; then
-            items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+            items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd" 2>/dev/null)
             SIFS=$IFS
             IFS=$'\n'
             items=($items)
@@ -1916,15 +2314,15 @@ function main() {
                 lns=$(echo "$ns" | awk '{print $2}')
                 lrs=$(echo ${items[$i]} | awk '{print $1}')
               fi
-              kubectl $kc $context -n $lns describe $kind $lrs
+              kubectl $kc $context -n $lns $selector describe $kind $lrs
             done
           else
-            kubectl $kc $context describe $kind $ns
+            kubectl $kc $context describe $kind $selector $ns
           fi
           ;;
         "y" | "yaml")
           if [ -n "$kwd" ]; then
-            items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+            items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd" 2>/dev/null)
             SIFS=$IFS
             IFS=$'\n'
             items=($items)
@@ -1937,15 +2335,15 @@ function main() {
                 lns=$(echo "$ns" | awk '{print $2}')
                 lrs=$(echo ${items[$i]} | awk '{print $1}')
               fi
-              kubectl $kc $context -n $lns get $kind $lrs -o yaml
+              kubectl $kc $context -n $lns $selector get $kind $lrs -o yaml
             done
           else
-            kubectl $kc $context get $kind $ns -o yaml
+            kubectl $kc $context get $kind $selector $ns -o yaml
           fi
           ;;
         "j" | "json")
           if [ -n "$kwd" ]; then
-            items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+            items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd" 2>/dev/null)
             SIFS=$IFS
             IFS=$'\n'
             items=($items)
@@ -1958,10 +2356,10 @@ function main() {
                 lns=$(echo "$ns" | awk '{print $2}')
                 lrs=$(echo ${items[$i]} | awk '{print $1}')
               fi
-              kubectl $kc $context -n $lns get $kind $lrs -o json
+              kubectl $kc $context -n $lns $selector get $kind $lrs -o json
             done
           else
-            kubectl $kc $context get $kind $ns -o json
+            kubectl $kc $context get $kind $selector $ns -o json
           fi
           ;;
         "tp" | "top")
@@ -1971,9 +2369,9 @@ function main() {
           if [ "$kind" == "pod" ] || [ "$kind" == "node" ]; then
             if [ -n "$kwd" ]; then
               if [ "$kind" == "node" ]; then
-                kubectl $kc $context top $kind $ns | grep "$kwd"
+                kubectl $kc $context top $kind $selector $ns | grep "$kwd"
               else
-                items=$(kubectl $kc $context get $kind --no-headers $ns | grep "$kwd" 2>/dev/null)
+                items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd" 2>/dev/null)
                 SIFS=$IFS
                 IFS=$'\n'
                 items=($items)
@@ -1986,11 +2384,11 @@ function main() {
                     lns=$(echo "$ns" | awk '{print $2}')
                     lrs=$(echo ${items[$i]} | awk '{print $1}')
                   fi
-                  kubectl $kc $context -n $lns top $kind $lrs
+                  kubectl $kc $context -n $lns $selector top $kind $lrs
                 done
               fi
             else
-              kubectl $kc $context top $kind $ns
+              kubectl $kc $context top $kind $selector $ns
             fi
           fi
           ;;
@@ -2000,7 +2398,7 @@ function main() {
 
       hasnsfield="false"
       ress=()
-      result=$(kubectl $kc $context get $kind $ns 2>/dev/null)
+      result=$(kubectl $kc $context get $kind $selector $ns 2>/dev/null)
       SIFS=$IFS
       IFS=$'\n'
       result=($result)
