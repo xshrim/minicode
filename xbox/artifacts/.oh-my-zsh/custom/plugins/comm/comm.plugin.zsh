@@ -661,6 +661,7 @@ alias grep='grep --color=auto'
 alias glog='git log --oneline --graph --decorate'
 alias rsync='rsync -avP --progress'
 # docker alias
+alias dkc='docker-compose'
 alias dps='docker container ls'
 alias drm='docker rm'
 alias drmi='docker rmi'

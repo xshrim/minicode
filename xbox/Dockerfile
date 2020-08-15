@@ -33,6 +33,7 @@ RUN set -ex \
     ctop \
     curl \
     docker \
+    docker-compose \
     dhcping \
     dfc \
     dos2unix \

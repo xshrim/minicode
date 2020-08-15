@@ -33,6 +33,7 @@ function usage() {
   lg,lgo                   Linux环境下禁用CGO的go命令
   h,helm                   运行helm命令
   d,docker                 运行docker命令
+  dc,dkc,docker-compose    运行docker-compose命令
   k,kube,kubectl           运行kubectl命令
   kk                       运行kubectl kustomize命令
   km,kustomize             运行kustomize命令
@@ -44,6 +45,7 @@ function usage() {
   c,cmd                    运行linux命令
   scp                      分发本机文件
   gi                       git一键提交并上传
+  pq,promq                 prometheus查询api
   ghp,ghelp                查看go命令帮助
   dhp,dhelp                查看docker命令帮助
   khp,khelp                查看kubectl命令帮助
@@ -189,7 +191,11 @@ kude cmd -p 22 -s admin 'ls /etc' 127.0.0.1
 kude cmd 'scp test root@10.0.0.10:/root/test'
 
 # 将本地文件分发到远程主机
-./kude scp './foo:/root/bar' 10.20.0.12-18
+kude scp './foo:/root/bar' 10.20.0.12-18
+
+# 查看prometheus指标信息
+kude pq metadata 127.0.0.1:9090 process_open_fds
+kude pq md 127.0.0.1:9090 open instance=node-exporter
 
 # 获取Kubernetes RBAC结构图
 kude b u demouser
@@ -258,7 +264,43 @@ kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
   fi
 }
 
+function promqhelp() {
+  echo "
+**USAGE**:
+  kude pq <options> [<arguments>]
+
+**COMMANDS**:
+  h,hp,help                打印pq命令帮助
+  i,m,md,info,metadata     打印指标元数据信息
+  s,inst,series,instance   打印series信息
+  l,v,lv,label,value       打印label及其value数据
+  t,tg,target              打印target数据
+  r,rl,rule                打印rule数据
+  a,al,alert               打印alert数据
+  am,alertmanager          打印alertmanager配置
+  v,status                 打印prometheus状态信息
+  q,query                  使用promql进行查询
+  qr,rq,query_range        使用promql进行范围查询
+  "
+}
+
 function sslhelp() {
+  echo "
+**USAGE**:
+  kude ssl <options> [<arguments>]
+
+**COMMANDS**:
+  h,hp,help                打印ssl命令帮助
+  gen,generate             生成整套openssl-x509凭证
+  out,show                 打印openssl-x509证书或密钥信息
+  mat,match                检查证书与密钥是否匹配
+  ver,verify               检查证书与签发者证书是否匹配
+  get,fetch                获取url的证书
+  sver,sverify             检查url证书与域名是否匹配
+  "
+}
+
+function gensslhelp() {
   echo ' ================================================================ '
   echo ' --ssl-domain: 生成ssl证书需要的主域名，如不指定则默认为localhost，如果是ip访问服务，则可忽略；'
   echo ' --ssl-trusted-ip: 一般ssl证书只信任域名的访问请求，有时候需要使用ip去访问server，那么需要给ssl证书添加扩展IP，多个IP用逗号隔开；'
@@ -633,6 +675,10 @@ function main() {
       subcmd="$1"
       shift
       case "$subcmd" in
+      "h" | "hp" | "help")
+        sslhelp
+        exit 0
+        ;;
       "gen" | "generate")
         genssl "$*"
         ;;
@@ -691,6 +737,10 @@ function main() {
     require docker
     shift
     docker $*
+  elif [ $1 == "dc" ] || [ $1 == "dkc" ] || [ $1 == "docker-compose" ]; then
+    require docker-compose
+    shift
+    docker-compose $*
   elif [ $1 == "k" ] || [ $1 == "kube" ] || [ $1 == "kubectl" ]; then
     require kubectl
     shift
@@ -887,6 +937,166 @@ function main() {
       git add -A .
       git commit -m "$cmsg"
       git push
+    elif [ "$subcmd" == "pq" ] || [ "$subcmd" == "promq" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        sscmd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      if [ -n "$host" ]; then
+        url=$host
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        if [[ "${mandatory[0]}" =~ "." ]] || [[ "${mandatory[0]}" = "localhost" ]]; then
+          url="${mandatory[0]}"
+          mandatory=("${mandatory[@]:1}")
+        fi
+      else
+        url="127.0.0.1"
+      fi
+      if [ -n "$port" ]; then
+        url=$url:$port
+      fi
+      require curl jq
+      case "$sscmd" in
+      "h" | "hp" | "help")
+        promqhelp
+        exit 0
+        ;;
+      "i" | "m" | "md" | "info" | "metadata")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          curl -Gks http://$url/api/v1/metadata
+        fi
+        if [ ${#mandatory[@]} -eq 1 ]; then
+          metric="${mandatory[0]}"
+          tgl="instance"
+          insts=$(curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" |jq -r ".data[]|.instance")
+#           SIFS=$IFS
+#           IFS=$'\n'
+#           insts=($insts)
+#           IFS=$SIFS
+          insts=($insts)
+          if [ ${#insts[@]} -eq 0 ]; then
+            exit 0
+          elif [ ${#insts[@]} -eq 1 ]; then
+            tgv="${insts[0]}"
+          else
+            echo "====== More than one instance ======"
+            for ((i = 0; i < ${#insts[@]}; i++)); do
+                echo "$i: ${insts[$i]}"
+            done
+            read -p "====== select one with number[0]: " iidx
+            if [ -z $iidx ]; then
+                iidx=0
+            fi
+            tgv=${insts[$iidx]}
+          fi
+        elif [ ${#mandatory[@]} -gt 1 ]; then
+          metric="${mandatory[0]}"
+          tgl=${mandatory[1]%=*}
+          tgv=${mandatory[1]##*=}
+          if [ "$tgl" == "$tgv" ]; then
+            tgl="instance"
+          fi
+        fi
+        curl -Gks http://$url/api/v1/targets/metadata --data-urlencode "match_target={$tgl=~\".*$tgv.*\"}" | jq -r ".data[] | select(.metric|contains(\"$metric\"))"
+        ;;
+      "s" | "inst" | "series" | "instance")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          echo "error: need arguments"
+          exit 1
+        fi
+        metric="${mandatory[0]}"
+        curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" | jq
+        ;;
+      "l" | "v" | "lv" | "label" | "value")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          curl -Gks http://$url/api/v1/labels | jq
+        else
+          curl -Gks http://$url/api/v1/label/${mandatory[0]}/values | jq
+        fi
+        ;;
+      "t" | "tg" | "target")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          curl -Gks http://$url/api/v1/targets | jq
+        else
+          curl -Gks http://$url/api/v1/targets?state=${mandatory[0]} | jq
+        fi
+        ;;
+      "r" | "rl" | "rule")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          curl -Gks http://$url/api/v1/rules | jq
+        else
+          curl -Gks http://$url/api/v1/rules?type=${mandatory[0]} | jq
+        fi
+        ;;
+      "a" | "al" | "alert")
+        curl -Gks http://$url/api/v1/alerts | jq
+        ;;
+      "am"  | "alertmanager")
+        curl -Gks http://$url/api/v1/alertmanagers | jq
+        ;;
+      "v"  | "status")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          echo "========================== config =========================="
+          curl -Gks http://$url/api/v1/status/config
+          echo "========================== flags ==========================="
+          curl -Gks http://$url/api/v1/status/flags
+          echo "======================== runtimeinfo ======================="
+          curl -Gks http://$url/api/v1/status/runtimeinfo
+          echo "========================= buildinfo ========================"
+          curl -Gks http://$url/api/v1/status/buildinfo
+          echo "=========================== tsdb ==========================="
+          curl -Gks http://$url/api/v1/status/tsdb
+        else
+          curl -Gks http://$url/api/v1/status/${mandatory[0]} | jq
+        fi
+        ;;
+      "q" | "query")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          echo "error: need arguments"
+          exit 1
+        fi
+        query="${mandatory[0]}"
+        if [[ ! "$query" =~ ^query=.* ]]; then
+          query="query=$query"
+        fi
+        if [ ${#mandatory[@]} -gt 1 ]; then
+          ptime="--data-urlencode \"time=${mandatory[1]}\""
+          if [ ${#mandatory[@]} -gt 2 ]; then
+            ptimeout="--data-urlencode \"timeout=${mandatory[2]}\""
+          fi
+        fi
+        curl -Gks http://$url/api/v1/query --data-urlencode "$query" $ptime $ptimeout | jq
+        ;;
+      "qr" | "rq" | "query_range")
+        if [ ${#mandatory[@]} -eq 0 ]; then
+          echo "error: need arguments"
+          exit 1
+        fi
+        query="${mandatory[0]}"
+        if [[ ! "$query" =~ ^query=.* ]]; then
+          query="query=$query"
+        fi
+        if [ ${#mandatory[@]} -gt 1 ]; then
+          stime="--data-urlencode \"start=${mandatory[1]}\""
+          if [ ${#mandatory[@]} -gt 2 ]; then
+            etime="--data-urlencode \"end=${mandatory[2]}\""
+            if [ ${#mandatory[@]} -gt 3 ]; then
+              step="--data-urlencode \"step=${mandatory[3]}\""
+              if [ ${#mandatory[@]} -gt 4 ]; then
+                ptimeout="--data-urlencode \"timeout=${mandatory[2]}\""
+              fi
+            fi
+          fi
+        fi
+        curl -Gks http://$url/api/v1/query_range --data-urlencode "$query" $stime $etime $step $ptimeout | jq
+        ;;
+      default)
+        curl -Gks ${mandatory[*]} | jq
+        ;;
+      esac
     elif [ "$subcmd" == "dps" ] || [ "$subcmd" == "dlist" ]; then
       if [ -n "$kwd" ]; then
         cmd="docker ps -a | grep $kwd"
@@ -2483,7 +2693,7 @@ function main() {
         fi
         ;;
       "lf" | "logf")
-        if [ $kind == "pod" ]; then
+        if [ "$kind" == "pod" ]; then
           if [ $(hostname) == "$hname" ] && type docker &>/dev/null; then
             docker logs -f $cid $since $amount
           else
@@ -2805,13 +3015,13 @@ function remotecp() {
 function genssl() {
   case "$1" in
   -h | --help)
-    sslhelp
+    gensslhelp
     exit
     ;;
   esac
 
   if [[ $1 == '' ]]; then
-    sslhelp
+    gensslhelp
     exit
   fi
 
