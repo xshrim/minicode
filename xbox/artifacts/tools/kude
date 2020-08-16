@@ -23,11 +23,13 @@ vol=""
 mandatory=()
 
 function usage() {
-  echo "**USAGE**:
+  echo '
+**USAGE**:
   kude <command> [<options>] [<object>]
 
 **COMMANDS**:
   hp,help                  打印命令帮助
+  print                    打印脚本文件内容
   git                      git运行git命令
   g,go                     运行go命令
   lg,lgo                   Linux环境下禁用CGO的go命令
@@ -39,7 +41,10 @@ function usage() {
   km,kustomize             运行kustomize命令
   ec,edc,etcdctl           运行etcdctl命令
   td,tdp,tcpdump           运行tcpdump抓包命令
-  ipt,iptable,iptables     运行iptables命令
+  it,iptable,iptables      运行iptables命令
+  nm,nmap                  运行nmap命令
+  ps,portstatus            运行端口检测命令
+  n,net                    运行网络相关命令          
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
   c,cmd                    运行linux命令
@@ -95,7 +100,7 @@ function usage() {
   eg,etcdget               通过etcdctl获取k8s的etcd数据
   egp,etcdgetp             通过etcdctl获取k8s的包括子目录在内的etcd数据
   ap,apl,apply             执行kubectl apply命令
-  n,new,create             执行kubectl create命令
+  cr,crt,create            执行kubectl create命令
   r,run                    执行kubectl run命令
   b,rbac                   查看rbac结构图
   a,all                    查看指定命名空间下所有资源
@@ -152,9 +157,9 @@ function usage() {
   -r 调试容器中是否需要chroot到目标容器的文件系统
   -v 调试容器中是否需要挂载目标主机的docker.sock文件
   -h 使用说明
-"
+'
   if [ "$1" != "simple" ]; then
-    echo "
+    echo '
 **REFERENCES**:
 # Linux: https://community.linuxmint.com/tutorial/view/244 https://man.linuxde.net/
 # Docker: https://docs.docker.com/engine/reference/commandline/cli/
@@ -184,14 +189,22 @@ kude drm alp
 kude dh xshrim/xo
 
 # 远程到目标主机执行命令
-kude cmd 'ls /etc' 127.0.0.1 10.20.0.12-18
-kude cmd -p 22 -s admin 'ls /etc' 127.0.0.1
+kude cmd "ls /etc" 127.0.0.1 10.20.0.12-18
+kude cmd -p 22 -s admin "ls /etc" 127.0.0.1
 
 # 执行本机命令
-kude cmd 'scp test root@10.0.0.10:/root/test'
+kude cmd "scp test root@10.0.0.10:/root/test"
 
 # 将本地文件分发到远程主机
-kude scp './foo:/root/bar' 10.20.0.12-18
+kude scp "./foo:/root/bar" 10.20.0.12-18
+
+# 查看主机网卡列表和详细信息
+kude net ipa
+kude net ipp UP
+kude net ips 192.168
+
+# 查看端口状态
+kude ps 10.0.0.10 80
 
 # 查看prometheus指标信息
 kude pq metadata 127.0.0.1:9090 process_open_fds
@@ -243,7 +256,7 @@ kude yaml -k rs nginx
 kude watch -k deploy nginx
 
 # 为k8s资源打补丁
-kude p -k deploy nginx '{\"spec\":{\"replicas\":2}}'
+kude p -k deploy nginx "{\"spec\":{\"replicas\":2}}"
 
 # 进入pod执行命令
 kude e nginx -n default ls
@@ -260,12 +273,195 @@ kude -c minikube pf nginx -n default 8000:80
 # 运行调试容器对pod内的指定容器进行调试
 kude x nginx
 kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
-"
+'
   fi
 }
 
+function nethelp() {
+echo '
+**USAGE**:
+  kude n <options> [<arguments>]
+
+**COMMANDS**:
+  h,hp,help                打印pq命令帮助
+  arp                      查看arp列表
+  pi                       ping主机或域名
+  br                       执行网桥控制命令
+  brs                      查看网桥列表
+  brl                      查看bridge link
+  brv                      查看bridge vlan
+  brf                      查看bridge fdb
+  brm                      查看bridge mdb
+  ip                       执行ip命令
+  ipr                      查看主机路由信息
+  ipa                      查看主机网卡列表
+  ipp                      查看主机物理网卡列表
+  ips                      查看指定网卡详细信息
+  tr                       执行mtr/traceroute命令
+  ss                       查看主机网络统计信息(netstat,ss)
+  nl                       域名解析
+  nm                       执行nmap命令
+  td                       执行tcpdump命令
+  it                       执行iptables命令
+  ps                       查看端口状态
+'
+}
+
+function nmaphelp() {
+  echo '
+[nmap选项]:
+-iL: 指定输入文件, 可用于指定扫描的目标
+-iR: 选择随机目标
+–exclude: 排除主机, 即扫描的时候越过该主机
+–excludefile: 通过黑名单文件指定排除的主机
+-sL: 显示扫描主机的列表
+-sn: 使用ping进行扫描
+-Pn: 不进行主机发现, 直接进行深层扫描, 使用此命令时, nmap认为主机在线
+-PS: 端口列表用,隔开[tcp80 syn 扫描]
+-PA: 端口列表用,隔开ack扫描【默认扫描端口1-1024】
+-PU: 端口列表用,隔开[udp高端口扫描 穿越只过滤tcp的防火墙]
+-PE: 通过ICMP Echo扫描简单来说是通过向目标发送ICMP Echo数据包来探测目标主机是否存活, 但由于许多主机的防火墙会禁止这些报文, 所以仅仅ICMP扫描通常是不够的
+-PP: 通过ICMP time stamp时间戳扫描在大多数防火墙配置不当时可能会得到回复, 可以以此方式来判断目标主机是否存活。倘若目标主机在线, 该命令还会探测其开放的端口以及运行的服务
+-PM: 通过ICMP address maskPing地址掩码扫描会试图用备选的ICMP等级Ping指定主机, 通常有不错的穿透防火墙的效果
+-PO: 进行一个基于指定的IP协议的ping
+-n/-R: 选择是否进行dns解析
+–dns-servers: 明确使用的DNS服务器
+-system-dns: 使用主机nmap运行主机的dns
+–traceroute: 跟踪扫描主机的网络路线
+-sS/sT/sA/sW/sM: TCP SYN/Connect()/ACK/Window/Maimon scans, 指定nmap的扫描方式, 默认为sT
+-sU: 使用UDP协议进行扫描
+-sN/sF/sX: 指定使用TCP Null, FIN, and Xmas scans秘密扫描方式来协助探测对方的TCP端口状态
+–scanflags: 定制TCP包的flags
+-sI: 指定使用idle scan方式来扫描目标主机（前提需要找到合适的zombie host）
+-sY/sZ: 使用SCTP INIT/COOKIE-ECHO来扫描SCTP协议端口的开放的情况
+-sO: 使用IP protocol 扫描确定目标机支持的协议类型
+-b: 使用FTP bounce scan扫描方式
+-p: Only scan specified ports
+–exclude-ports: 排除指定端口不作扫描
+-F: 快速模式, 仅扫描TOP 100的端口
+-r: 不进行端口随机打乱的操作（如无该参数, nmap会将要扫描的端口以随机顺序方式扫描, 以让nmap的扫描不易被对方防火墙检测到）
+–top-ports: 扫描开放概率最高的number个端口（nmap的作者曾经做过大规模地互联网扫描, 以此统计出网络上各种端口可能开放的概率
+–port-ratio: 扫描指定频率以上的端口。与上述–top-ports类似, 这里以概率作为参数, 让概率大于–port-ratio的端口才被扫描
+-sV: 指定让Nmap进行版本侦测
+–version-intensity: 指定版本侦测强度（0-9）, 默认为7, 数值越高, 探测出的服务越准确, 但是运行时间会比较长
+–version-light: 指定使用轻量侦测方式 (intensity 2)
+–version-all: 尝试使用所有的probes进行侦测 (intensity 9)
+–version-trace: 显示出详细的版本侦测过程信息
+-sC: 指定script脚本为默认值
+–script: 使用某个或某类脚本进行扫描, 支持通配符描述
+–script-args: 为脚本提供默认参数
+–script-args-file: 使用文件来为脚本提供参数
+–script-trace: 显示脚本执行过程中发送与接收的数据
+–script-updatedb: 更新脚本数据库, 每次更新脚本后
+–script-help: 显示脚本的帮助信息, 其中部分可以逗号分隔的文件或脚本类别
+-O: 指定Nmap进行OS侦测
+–osscan-limit: 限制Nmap只对确定的主机的进行OS探测（至少需确知该主机分别有一个open和closed的端口）
+–osscan-guess: 大胆猜测对方的主机的系统类型。由此准确性会下降不少, 但会尽可能多为用户提供潜在的操作系统
+-T<0-5>: 扫描效率, 越高越快
+–min-hostgroup/max-hostgroup: 平行的主机扫描组的大小
+–min-parallelism/max-parallelism: 并行探测
+–min-rtt-timeout/max-rtt-timeout/initial-rtt-timeout: 指定每轮探测的时间
+–max-retries: 扫描探测的上限次数设定
+–host-timeout: 设置timeout时间
+–scan-delay/–max-scan-delay: 调整两次探测之间的延迟
+–min-rate: 每秒发送数据包不少于次
+–max-rate: 每秒发送数据包不多于次
+-f; --mtu: 指定使用分片、指定数据包的MTU.
+-D: 用一组IP地址掩盖真实地址, 其中ME填入自己的IP地址
+-S: 伪装成其他IP地址
+-e: 使用特定的网络接口,指定网卡
+-g/–source-port: 使用指定源端口
+–proxies: 使用代理
+–data: 给数据包添加指定数据
+–data-string: 给数据包添加指定ASCII字符串
+–data-length: 填充随机数据让数据包长度达到Num
+–ip-options: 使用指定的IP选项来发送数据包。
+–ttl: 设置time-to-live时间,没什么用
+–spoof-mac: 伪装MAC地址, 伪装mac地址为指定值
+–badsum: 使用错误的checksum来发送数据包（正常情况下, 该类数据包被抛弃, 如果收到回复, 说明回复来自防火墙或IDS/IPS）
+-oN/-oX/-oS/-oG: 指定输出文件格式
+-oA: 用生成以上格式的文件
+-v: 这个选项使用两次, 会提供更详细的信息
+-d: 提高或设置调试级别, 最高级别-d9, 输出更多的细节
+–reason: 显示端口处于特定状态的原因
+–open: 仅显示open的端口
+–packet-trace: 显示所有的收发包
+–iflist: 打印主机网络接口和路由
+–append-output: 以追加的形式写入文件
+–resume: 重新开始中断的扫描
+–stylesheet: 指定xsl样式文件将xml转换为html
+–webxml: 参考在线样式表
+–no-stylesheet: 防止关联带有xml输出的样式表
+-6: 启用IPv6扫描
+-A: 启用OS检测, 版本检测, 脚本扫描和路由跟踪
+–datadir: 指定自定义nmap数据文件路径
+–send-eth/–send-ip: 使用原始以太网帧或ip数据包发送
+–privileged: 假设用户具有完全特权
+–unprivileged: 假设用户缺乏原始套接字特权
+-V: 打印版本号
+-h: 打印帮助摘要
+
+[nmap示例]:
+# 扫描并输出数据库信息
+nmap -sS -p 1433,1434 -f --script ms-sql-info  -oG - -oX ms-sql.xml 110.42.96.0/24
+
+# 爆破数据库
+nmap -sT -p 1433,1434 -f --script ms-sql-brute -script-args userdb=sqluser.dic,passdb=sqlpass.dic -oG - -oX ms-sql-test.xml 110.42.96.0/24
+
+# 获取远程主机的系统类型及开放端口
+nmap -sS -P0 -sV -O 110.42.96.0
+
+# 列出开放了指定端口的主机列表
+nmap -sT -p 80 -oG – 192.168.1.* | grep open
+
+# 在网络寻找所有在线主机
+nmap -sP 192.168.0.*
+nmap -sP 192.168.0.0/24
+
+# Ping指定范围内的IP地址
+nmap -sP 192.168.1.100-254
+
+# 在某段子网上查找未占用的IP
+nmap -T4 -sP 192.168.2.0/24 && egrep “00:00:00:00:00:00″ /proc/net/arp
+
+# 在局域网上扫找Conficker蠕虫病毒
+nmap -PN -T4 -p139,445 -n -v –script=smb-check-vulns –script-args safe=1 192.168.0.1-254
+
+# 扫描网络上的恶意接入点rogue APs
+nmap -A -p1-85,113,443,8080-8100 -T4 –min-hostgroup 50 –max-rtt-timeout2000 –initial-rtt-timeout 300 –max-retries 3 –host-timeout 20m–max-scan-delay 1000 -oA wapscan 10.0.0.0/8
+
+# 使用诱饵扫描方法来扫描主机端口
+nmap -sS 192.168.0.10 -D 192.168.0.2
+
+# 为一个子网列出反向DNS记录
+nmap -R -sL 209.85.229.99/27 | awk "{if($3=="not")print"("$2") no PTR";else print$3" is "$2}" | grep "("
+
+# 显示网络上共有多少台Linux及Win设备
+nmap -F -O 192.168.0.1-255 | grep "Running: " > /tmp/os; echo "$(cat /tmp/os | grep Linux \| wc -l) Linux device(s)"; echo "$(cat /tmp/os | grep Windows | wc -l) Window(s) device"
+
+# 探测Web应用错误代码
+nmap -p80,443 --script http-errors targetWebsite.com
+
+# 爆破子域
+nmap -p80,443 --script dns-brute targetWebsite.com
+nmap -p80,443 --script dns-brute --script-args dns-brute.threads=25,dns-brute.hostlist=/root/Desktop/custom-subdomain-wordlist.txt targetWebsite.com
+
+# 爬取Web应用
+nmap -vv -p80,443 --script http-errors --script-args "httpspider.url=/docs/,httpspider.maxpagecount=3,httpspider.maxdepth=1" targetwebsite.com
+
+# 探测Web应用防火墙以及防火墙指纹检测
+nmap -p80,443 --script http-waf-detect --script-args "http-waf-detect.aggro,http-waf-detect.detectBodyChanges" targetWebsite.com
+nmap -p80,443 --script http-waf-fingerprint targetWebsite.comStarting 
+nmap -p80,443 --script http-waf-fingerprint --script-args http-waf-fingerprint.intensive=1 targetWebsiteStarting
+
+# 提取图片嵌入式信息EXIF
+nmap -p80,443 --script http-exif-spider targetWebsite.com
+nmap -p80,443 --script http-exif-spider --script-args "http.max-cache-size=99999999" targetWebsite.com
+  '
+}
+
 function promqhelp() {
-  echo "
+  echo '
 **USAGE**:
   kude pq <options> [<arguments>]
 
@@ -281,11 +477,11 @@ function promqhelp() {
   v,status                 打印prometheus状态信息
   q,query                  使用promql进行查询
   qr,rq,query_range        使用promql进行范围查询
-  "
+  '
 }
 
 function sslhelp() {
-  echo "
+  echo '
 **USAGE**:
   kude ssl <options> [<arguments>]
 
@@ -297,7 +493,7 @@ function sslhelp() {
   ver,verify               检查证书与签发者证书是否匹配
   get,fetch                获取url的证书
   sver,sverify             检查url证书与域名是否匹配
-  "
+  '
 }
 
 function gensslhelp() {
@@ -322,30 +518,30 @@ function gensslhelp() {
 }
 
 function tcpdumphelp() {
-  echo "
+  echo '
 [tcpdump选项]:
--A：以ASCII文本显示抓包内容
--D：列出所有网络接口
--F：从文件中读取抓包的表达式
--P：指定要抓取的包是流入还是流出的包
--X：以16进制显示数据包承载的数据内容
--l：使标准输出变为缓冲行形式
--c：抓包次数
--n：禁用域名解析
--s：设置每个数据包的大小
--i：指定监听的网络接口
--r：从指定的文件中读取包
--w：输出信息保存到指定文件
--a：将网络地址和广播地址转变成名字
--d：将匹配信息包的代码以人们能够理解的汇编格式给出
--e：在输出行打印出数据链路层的头部信息
--f：将外部的 Internet 地址以数字的形式打印出来
--t：在输出的每一行不打印时间戳
--q：快速打印简短输出
--v：输出稍微详细的报文信息
--nn：直接以IP及Port显示而非主机名与服务名称
--vv：输出更详细报文信息
--vvv：尝试解析应用层协议输出更详细报文信息
+-A: 以ASCII文本显示抓包内容
+-D: 列出所有网络接口
+-F: 从文件中读取抓包的表达式
+-P: 指定要抓取的包是流入还是流出的包
+-X: 以16进制显示数据包承载的数据内容
+-l: 使标准输出变为缓冲行形式
+-c: 抓包次数
+-n: 禁用域名解析
+-s: 设置每个数据包的大小
+-i: 指定监听的网络接口
+-r: 从指定的文件中读取包
+-w: 输出信息保存到指定文件
+-a: 将网络地址和广播地址转变成名字
+-d: 将匹配信息包的代码以人们能够理解的汇编格式给出
+-e: 在输出行打印出数据链路层的头部信息
+-f: 将外部的 Internet 地址以数字的形式打印出来
+-t: 在输出的每一行不打印时间戳
+-q: 快速打印简短输出
+-v: 输出稍微详细的报文信息
+-nn: 直接以IP及Port显示而非主机名与服务名称
+-vv: 输出更详细报文信息
+-vvv: 尝试解析应用层协议输出更详细报文信息
 
 [tcpdump关键字]:
 方向关键字: src, dst
@@ -354,7 +550,7 @@ function tcpdumphelp() {
 协议内容过滤: proto[x:y]: 过滤协议从x字节开始的y字节数
 逻辑运算符: ! not, && and, || or
 tcp标记: tcp-fin, tcp-syn, tcp-rst, tcp-push, tcp-ack, tcp-urg, tcp-ece, tcp-cwr
-计算字符串二进制: list(map(hex, [ord(x) for x in 'GET ']))
+计算字符串二进制: list(map(hex, [ord(x) for x in "GET "]))
 
 [tcpdump示例]:
 # 从所有网卡抓取数据包
@@ -385,10 +581,10 @@ tcpdump -i eth0 -vnn arp
 tcpdump -i eth0 -vnn ip
 
 # 抓取目的ip是10网段的数据包
-tcpdump -i any -nn 'ip[16] == 10'
+tcpdump -i any -nn "ip[16] == 10"
 
 # 抓取目的ip范围是 192.168.1.10 ~ 192.168.1.100网段的数据包
-tcpdump -i any -nn 'ip[16] == 192 and ip[17] == 168 and ip[18] == 1 and ip[19] > 9 and ip[19] < 101'
+tcpdump -i any -nn "ip[16] == 192 and ip[17] == 168 and ip[18] == 1 and ip[19] > 9 and ip[19] < 101"
 
 # 抓取源ip是172.16.1.122数据包 
 tcpdump -i eth0 -vnn src host 172.16.1.122  
@@ -409,7 +605,7 @@ tcpdump -i eth0 -vnn src host 172.16.1.122 or port 22
 tcpdump -i eth0 -vnn src host 172.16.1.122 and not port 22  
 
 # 抓取源ip是172.16.1.59且目的端口是22，或源ip是172.16.1.68且目的端口是80的数据包
-tcpdump -i  eth0 -vnn 'src host 172.16.1.59 and dst port 22' or  ' src host 172.16.1.68 and dst port 80 '  
+tcpdump -i  eth0 -vnn "src host 172.16.1.59 and dst port 22" or  " src host 172.16.1.68 and dst port 80 "
 
 # 把抓取的数据包记录存到/tmp/fill.cap文件中，当抓取100个数据包后就退出程序 
 tcpdump –i eth0 -vnn -w  /tmp/fill.cap -c 100  
@@ -421,7 +617,7 @@ tcpdump –i eth0 -vnn -r  /tmp/fill.cap tcp
 tcpdump –i eth0 -vnn -r  /tmp/fill.cap host  172.16.1.58
 
 # 抓取所有经过eth0的目的地址是10.10.1.254或10.10.1.200端口是80的TCP数据包
-# tcpdump -i eth0 '((tcp) and (port 80) and ((dst host 10.10.1.254) or (dst host 10.10.1.200)))'
+# tcpdump -i eth0 "((tcp) and (port 80) and ((dst host 10.10.1.254) or (dst host 10.10.1.200)))"
 
 # 抓取目标域名是foo.bar的数据包
 tcpdump -i eth0 -vn dst host foo.bar
@@ -430,14 +626,14 @@ tcpdump -i eth0 -vn dst host foo.bar
 tcpdump -i eth0 host foo.bar and not port 80 and not port 25
 
 # 抓取http get数据包
-tcpdump -i eth0 'tcp[(tcp[12]>>2):4] = 0x47455420'
+tcpdump -i eth0 "tcp[(tcp[12]>>2):4] = 0x47455420"
 tcpdump -i eth0 tcp[20:2]=0x4745 or tcp[20:2]=0x4854
 
 # 抓取ssh返回数据包
-tcpdump -i eth0 'tcp[(tcp[12]>>2):4] = 0x5353482D'
+tcpdump -i eth0 "tcp[(tcp[12]>>2):4] = 0x5353482D"
 
 # 抓取http响应数据包
-tcpdump -i eth0 'tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x48545450 && tcp[((tcp[12:1] & 0xf0) >> 2) + 4:2] = 0x2f31 && tcp[((tcp[12:1] & 0xf0) >> 2) + 6:1] = 0x2e'　
+tcpdump -i eth0 "tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x48545450 && tcp[((tcp[12:1] & 0xf0) >> 2) + 4:2] = 0x2f31 && tcp[((tcp[12:1] & 0xf0) >> 2) + 6:1] = 0x2e"
 
 # 抓取dns请求数据包
 tcpdump -i eth0 udp dst port 53
@@ -446,74 +642,74 @@ tcpdump -i eth0 udp dst port 53
 tcpdump -i eth0 tcp
 
 # 抓取大于600字节的数据包
-tcpdump -i eth0 'ip[2:2] > 600'
+tcpdump -i eth0 "ip[2:2] > 600"
 
 # 抓取源端口大于1024的数据包
-tcpdump -i eth0 'tcp[0:2] > 1024'
+tcpdump -i eth0 "tcp[0:2] > 1024"
 
 # 抓取tcp syn/ack数据包
-tcpdump -i eth0 'tcp[tcpflags] & (tcp-syn|tcp-ack) != 0'
+tcpdump -i eth0 "tcp[tcpflags] & (tcp-syn|tcp-ack) != 0"
 
 # 计算抓取10000各syn数据包所使用的时间从而估算访问量
-time tcpdump -nn -i eth0 'tcp[tcpflags] = tcp-syn' -c 10000 > /dev/null
+time tcpdump -nn -i eth0 "tcp[tcpflags] = tcp-syn" -c 10000 > /dev/null
 
 # 保存10000个数据包过滤条件为443端口并解析来源IP
 tcpdump -i any -nn -c 10000 port 443 > tcpdump.log
-cat tcpdump.log | awk '{print $3}' | awk -F '.' '{print $1"."$2"."$3"."$4}' | sort | uniq -c | sort -rn
+cat tcpdump.log | awk "{print $3}" | awk -F "." "{print $1"."$2"."$3"."$4}" | sort | uniq -c | sort -rn
 
 # 后台滚动抓包
 nohup tcpdump -i eth0 port 22 -s0 -G 3600 -Z root -w ssh22_%Y_%m%d_%H%M_%S.pcap &
-"
+'
 }
 
 function iptableshelp() {
-  echo "
+  echo '
 [iptables选项]:
--t, --table table：对指定的表 table 进行操作， table 必须是 raw， nat，filter，mangle 中的一个。如果不指定此选项，默认的是 filter 表
-# 通用匹配：源地址目标地址的匹配
--p：指定要匹配的数据包协议类型
--s, --source [!] address[/mask]：把指定的一个／一组地址作为源地址，按此规则进行过滤。当后面没有 mask 时，address 是一个地址，比如：192.168.1.1；当 mask 指定时，可以表示一组范围内的地址，比如：192.168.1.0/255.255.255.0
--d, --destination [!] address[/mask]：地址格式同上，但这里是指定地址为目的地址，按此进行过滤
--i, --in-interface [!] <网络接口name>：指定数据包的来自来自网络接口，比如最常见的 eth0 。注意：它只对 INPUT，FORWARD，PREROUTING 这三个链起作用。如果没有指定此选项， 说明可以来自任何一个网络接口。同前面类似，"!" 表示取反
--o, --out-interface [!] <网络接口name>：指定数据包出去的网络接口。只对 OUTPUT，FORWARD，POSTROUTING 三个链起作用
+-t, --table table: 对指定的表 table 进行操作， table 必须是 raw， nat，filter，mangle 中的一个。如果不指定此选项，默认的是 filter 表
+# 通用匹配: 源地址目标地址的匹配
+-p: 指定要匹配的数据包协议类型
+-s, --source [!] address[/mask]: 把指定的一个／一组地址作为源地址，按此规则进行过滤。当后面没有 mask 时，address 是一个地址，比如: 192.168.1.1；当 mask 指定时，可以表示一组范围内的地址，比如: 192.168.1.0/255.255.255.0
+-d, --destination [!] address[/mask]: 地址格式同上，但这里是指定地址为目的地址，按此进行过滤
+-i, --in-interface [!] <网络接口name>: 指定数据包的来自来自网络接口，比如最常见的 eth0 。注意: 它只对 INPUT，FORWARD，PREROUTING 这三个链起作用。如果没有指定此选项， 说明可以来自任何一个网络接口。同前面类似，"!" 表示取反
+-o, --out-interface [!] <网络接口name>: 指定数据包出去的网络接口。只对 OUTPUT，FORWARD，POSTROUTING 三个链起作用
 # 查看管理命令
--L, --list [chain]：列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则
+-L, --list [chain]: 列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则
 # 规则管理命令
--A, --append chain rule-specification：在指定链 chain 的末尾插入指定的规则，也就是说，这条规则会被放到最后，最后才会被执行。规则是由后面的匹配来指定
--I, --insert chain [rulenum] rule-specification：在链 chain 中的指定位置插入一条或多条规则。如果指定的规则号是1，则在链的头部插入。这也是默认的情况，如果没有指定规则号
--D, --delete chain rule-specification -D, --delete chain rulenum：在指定的链 chain 中删除一个或多个指定规则
--R num：Replays替换/修改第几条规则
+-A, --append chain rule-specification: 在指定链 chain 的末尾插入指定的规则，也就是说，这条规则会被放到最后，最后才会被执行。规则是由后面的匹配来指定
+-I, --insert chain [rulenum] rule-specification: 在链 chain 中的指定位置插入一条或多条规则。如果指定的规则号是1，则在链的头部插入。这也是默认的情况，如果没有指定规则号
+-D, --delete chain rule-specification -D, --delete chain rulenum: 在指定的链 chain 中删除一个或多个指定规则
+-R num: Replays替换/修改第几条规则
 # 链管理命令（这都是立即生效的）
--P, --policy chain target：为指定的链 chain 设置策略 target。注意，只有内置的链才允许有策略，用户自定义的是不允许的
--F, --flush [chain]：清空指定链 chain 上面的所有规则。如果没有指定链，清空该表上所有链的所有规则
--N, --new-chain chain：用指定的名字创建一个新的链
--X, --delete-chain [chain]：删除指定的链，这个链必须没有被其它任何规则引用，而且这条上必须没有任何规则。如果没有指定链名，则会删除该表中所有非内置的链
--E, --rename-chain old-chain new-chain：用指定的新名字去重命名指定的链。这并不会对链内部造成任何影响
--Z, --zero [chain]：把指定链，或者表中的所有链上的所有计数器清零
--j, --jump target <指定目标>：即满足某条件时该执行什么样的动作。target 可以是内置的目标，比如 ACCEPT，也可以是用户自定义的链
--h：显示帮助信息
+-P, --policy chain target: 为指定的链 chain 设置策略 target。注意，只有内置的链才允许有策略，用户自定义的是不允许的
+-F, --flush [chain]: 清空指定链 chain 上面的所有规则。如果没有指定链，清空该表上所有链的所有规则
+-N, --new-chain chain: 用指定的名字创建一个新的链
+-X, --delete-chain [chain]: 删除指定的链，这个链必须没有被其它任何规则引用，而且这条上必须没有任何规则。如果没有指定链名，则会删除该表中所有非内置的链
+-E, --rename-chain old-chain new-chain: 用指定的新名字去重命名指定的链。这并不会对链内部造成任何影响
+-Z, --zero [chain]: 把指定链，或者表中的所有链上的所有计数器清零
+-j, --jump target <指定目标>: 即满足某条件时该执行什么样的动作。target 可以是内置的目标，比如 ACCEPT，也可以是用户自定义的链
+-h: 显示帮助信息
 
 [iptables表]:
-raw：高级功能，如：网址过滤
-mangle：数据包修改（QOS），用于实现服务质量
-nat：地址转换，用于网关路由器
-filter：包过滤，用于防火墙规则
+raw: 高级功能，如: 网址过滤
+mangle: 数据包修改（QOS），用于实现服务质量
+nat: 地址转换，用于网关路由器
+filter: 包过滤，用于防火墙规则
 
 [iptables链]:
-INPUT：处理输入数据包
-OUTPUT：处理输出数据包
-FORWARD：处理转发数据包
-PREROUTING：用于目标地址转换（DNAT）
-POSTOUTING：用于源地址转换（SNAT）
+INPUT: 处理输入数据包
+OUTPUT: 处理输出数据包
+FORWARD: 处理转发数据包
+PREROUTING: 用于目标地址转换（DNAT）
+POSTOUTING: 用于源地址转换（SNAT）
 
 [iptables动作]:
-ACCEPT：接收数据包
-DROP：丢弃数据包
-REDIRECT：重定向、映射、透明代理
-SNAT：源地址转换
-DNAT：目标地址转换
-MASQUERADE：IP伪装（NAT），用于ADSL
-LOG：日志记录
+ACCEPT: 接收数据包
+DROP: 丢弃数据包
+REDIRECT: 重定向、映射、透明代理
+SNAT: 源地址转换
+DNAT: 目标地址转换
+MASQUERADE: IP伪装（NAT），用于ADSL
+LOG: 日志记录
 
 [iptables示例]:
 # 清空当前的所有规则和计数
@@ -604,20 +800,22 @@ iptables -t nat -A POSTROUTING -s 192.168.188.0/24 -j SNAT --to-source 210.14.67
 iptables -t nat -A PREROUTING -d 210.14.67.127 -p tcp --dport 2222  -j DNAT --to-dest 192.168.188.115:22  #本机的2222端口映射到内网虚拟机的22端口
 
 # 字符串匹配
-iptables -A INPUT -p tcp -m string --algo kmp --string \"test\" -j REJECT --reject-with tcp-reset  # 终止所有带字符串test的TCP连接
+iptables -A INPUT -p tcp -m string --algo kmp --string "test" -j REJECT --reject-with tcp-reset  # 终止所有带字符串test的TCP连接
 
 # 阻止Windows蠕虫的攻击
-iptables -I INPUT -j DROP -p tcp -s 0.0.0.0/0 -m string --algo kmp --string \"cmd.exe\"
+iptables -I INPUT -j DROP -p tcp -s 0.0.0.0/0 -m string --algo kmp --string "cmd.exe"
 
 # 防止SYN洪水攻击
 iptables -A INPUT -p tcp --syn -m limit --limit 5/second -j ACCEPT
-  "
+  '
 }
 
 function main() {
   if [ -z $1 ]; then
     usage simple
     exit 1
+  elif [ $1 == "print" ]; then
+    cat $(echo $0)
   elif [ $1 == "g" ] || [ $1 == "go" ]; then
     require go
     shift
@@ -657,7 +855,44 @@ function main() {
       require tcpdump
       tcpdump $*
     fi
-  elif [ $1 == "ipt" ] || [ $1 == "iptable" ] || [ $1 == "iptables" ]; then
+  elif [ $1 == "nm" ] || [ $1 == "nmap" ]; then
+    shift
+    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+        nmaphelp
+      elif [ $1 == "help" ]; then
+        require nmap
+        nmap --help
+      else
+        require nmap
+        if [ $# -eq 1 ]; then
+          sudo nmap -sS -P0 -sV -O $1
+        else
+          nmap $*
+        fi
+      fi
+  elif [ $1 == "ps" ] || [ $1 == "portstatus" ]; then
+    shift
+    if [ $# -eq 1 ]; then
+      nhost="127.0.0.1"
+      nport=$1
+    elif [ $# -gt 1 ]; then
+      nhost=$1
+      nport=$2
+    else
+      echo "error: need arguments"
+    fi
+    if type nmap &>/dev/null; then
+      nmap -p $nport $nhost
+    elif type nc &>/dev/null; then
+      nc $nhost $nport -zv
+    elif type telnet &>/dev/null; then
+      echo -e '\035\nquit' | telnet $nhost $nport
+    elif type curl &>/dev/null; then
+      curl -ksvIL http://${nhost}:${nport} > /dev/null
+    else
+      wget -qS -O- http://${nhost}:${nport} > /dev/null
+    fi
+  elif [ $1 == "it" ] || [ $1 == "iptable" ] || [ $1 == "iptables" ]; then
     shift
     if [ $1 == "h" ] || [ $1 == "hp" ]; then
       iptableshelp
@@ -668,6 +903,202 @@ function main() {
       require iptables
       iptables $*
     fi
+  elif [ $1 == "n" ] || [ $1 == "net" ]; then
+    shift
+    subcmd=$1
+    case "$subcmd" in
+    "h" | "hp" | "help")
+      nethelp
+      ;;
+    "arp")
+      shift
+      require arp
+      if [ -z $1 ]; then
+        arp -a
+      else
+        arp -a -i $1
+      fi
+      ;;
+    "pi")
+      shift
+      if type nmap &>/dev/null; then
+        sudo nmap -sP --disable-arp-ping $1
+      elif type fping &>/dev/null; then
+        fping -Ae $*
+      else
+        ping $*
+      fi
+      ;;
+    "br")
+      shift
+      require brctl
+      brctl $*
+      ;;
+    "brs")
+      shift
+      require brctl
+      brctl show
+      ;;
+    "brl")
+      shift
+      require bridge
+      bridge link show -d
+      ;;
+    "brv")
+      shift
+      require bridge
+      bridge vlan show -d
+      ;;
+    "brf")
+      shift
+      require bridge
+      bridge fdb show -d
+      ;;
+    "brm")
+      shift
+      require bridge
+      bridge mdb show -d
+      ;;
+    "ip")
+      shift
+      require ip
+      ip $*
+      ;;
+    "ipr")
+      shift
+      require ip
+      ip r
+      ;;
+    "ipa")
+      shift
+      require ip jq
+      getip "ipa" "$1"
+      ;;
+    "ipp")
+      shift
+      require ip jq
+      getip "ipp" "$1"
+      ;;
+    "ips")
+      shift
+      require ip
+      itfs=$(ip -j a|jq -r '.[].ifname' | grep "$1")
+      itfs=($itfs)
+      if [ ${#itfs[@]} -eq 1 ]; then
+        titf="${itfs[0]}"
+      else
+        echo "====== More than one net interface ======"
+        for ((i = 0; i < ${#itfs[@]}; i++)); do
+          echo "$i: ${itfs[$i]}"
+        done
+        read -p "====== select one with number[0]: " iidx
+        if [ -z $iidx ]; then
+          iidx=0
+        fi
+        titf=${itfs[$iidx]}
+      fi
+      ip -s a show dev $titf
+      ;;
+    "tr")
+      shift
+      if ! type mtr &>/dev/null; then
+        traceroute $*
+      else
+        if [ -z $1 ]; then
+          mtr
+        else
+          mtr $*
+        fi
+      fi
+      ;;
+    "ss")
+      shift
+      if ! type ss &>/dev/null; then
+        if [ -z $1 ]; then
+          netstat -vatunlp
+        else
+          netstat $*
+        fi
+      else
+        if [ -z $1 ]; then
+          ss -asntup
+        else
+          ss $*
+        fi
+      fi
+      ;;
+    "nl")
+      shift
+      if type nslookup &>/dev/null; then
+        nslookup $*
+      else
+        dig $*
+      fi
+      ;;
+    "nm")
+      shift
+      if [ $1 == "h" ] || [ $1 == "hp" ]; then
+        nmaphelp
+      elif [ $1 == "help" ]; then
+        require nmap
+        nmap --help
+      else
+        require nmap
+        if [ $# -eq 1 ]; then
+          sudo nmap -sS -P0 -sV -O $1
+        else
+          nmap $*
+        fi
+      fi
+      ;;
+    "td")
+      shift
+      if [ $1 == "h" ] || [ $1 == "hp" ]; then
+        tcpdumphelp
+      elif [ $1 == "help" ]; then
+        require tcpdump
+        tcpdump --help
+      else
+        require tcpdump
+        tcpdump $*
+      fi
+      ;;
+    "it")
+      shift
+      if [ $1 == "h" ] || [ $1 == "hp" ]; then
+        iptableshelp
+      elif [ $1 == "help" ]; then
+        require iptables
+        iptables --help
+      else
+        require iptables
+        iptables $*
+      fi
+      ;;
+    "ps")
+      shift
+      if [ $# -eq 1 ]; then
+        nhost="127.0.0.1"
+        nport=$1
+      elif [ $# -gt 1 ]; then
+        nhost=$1
+        nport=$2
+      else
+        echo "error: need arguments"
+      fi
+      if type nmap &>/dev/null; then
+        nmap -p $nport $nhost
+      elif type nc &>/dev/null; then
+        nc $nhost $nport -zv
+      elif type telnet &>/dev/null; then
+        echo -e '\035\nquit' | telnet $nhost $nport
+      elif type curl &>/dev/null; then
+        curl -ksvIL http://${nhost}:${nport} > /dev/null
+      else
+        wget -qS -O- http://${nhost}:${nport} > /dev/null
+      fi
+      ;;
+    esac
   elif [ $1 == "ct" ] || [ $1 == "ssl" ] || [ $1 == "cred" ]; then
     require openssl
     shift
@@ -2159,7 +2590,7 @@ function main() {
         echo "error: need arguments"
         exit 1
       fi
-    elif [ "$subcmd" == "n" ] || [ "$subcmd" == "new" ] || [ "$subcmd" == "create" ]; then
+    elif [ "$subcmd" == "cr" ] || [ "$subcmd" == "crt" ] || [ "$subcmd" == "create" ]; then
       require kubectl
       if [ "$ns" == "--all-namespaces" ]; then
         ns=""
@@ -2836,6 +3267,77 @@ function require() {
     if ! type $dep &>/dev/null; then
       echo "$dep required"
       exit 1
+    fi
+  done
+}
+
+function getip() {
+  itfs=$(ip -j a|jq -r '.[].ifname')
+  itfs=($itfs)
+
+  ifnets=()
+  for ((i = 0; i < ${#itfs[@]}; i++)); do
+    itf=${itfs[$i]}
+    itfi=$(ip -j a show dev $itf)
+    status=$(echo $itfi|jq -r '.[].operstate')
+    ether=$(echo $itfi|jq -r '.[].address')
+    if [ -z "$ether" ]; then
+      ether="NA"
+    fi
+    mtu=$(echo $itfi|jq -r '.[].mtu')
+    inet=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet")|.local')
+    inetprefix=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet")|.prefixlen')
+    inetdyn=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet")|.dynamic')
+    if [ -z "$inetdyn" ]; then
+      inetassign=""
+    else
+      if [ "$inetdyn" == "true" ]; then
+        inetassign="D"
+      else
+        inetassing="S"
+      fi
+    fi
+    if [ -n "$inetprefix" ]; then
+      inet=$inet/$inetprefix
+    fi
+    if [ -n "$inetassign" ]; then
+      inet=$inet"#$inetassign"
+    fi
+    if [ -z "$inet" ]; then
+      inet="NA"
+    fi
+    inet6=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet6")|.local')
+    inet6prefix=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet6")|.prefixlen')
+    inet6dyn=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet6")|.dynamic')
+    if [ -z "$inet6dyn" ]; then
+      inet6assign=""
+    else
+      if [ "$inet6dyn" == "true" ]; then
+        inet6assign="D"
+      else
+        inet6assing="S"
+      fi
+    fi
+    if [ -n "$inet6prefix" ]; then
+      inet6=$inet6/$inet6prefix
+    fi
+    if [ -n "$inet6assign" ]; then
+      inet6=$inet6"#$inet6assign"
+    fi
+    if [ -z "$inet6" ]; then
+      inet6="NA"
+    fi
+    item="$itf: $inet $inet6 $ether $mtu $status"
+    ifnets[$i]="$item"
+  done
+
+  for ((i = 0; i < ${#ifnets[@]}; i++)); do
+    if [ "$1" == "ipp" ]; then
+      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}'|grep -iE '^(en|wl|ww|eth)'|grep "$2"
+    elif [ "$1" == "ipa" ]; then
+      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}'|grep "$2"
+    else
+      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}'|grep "$1"
     fi
   done
 }
