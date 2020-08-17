@@ -57,7 +57,7 @@ RUN set -ex \
     hyperfine \
     libc6-compat \
     liboping \
-    lua5.1 \
+    lua5.3 \
     iftop \
     ipcalc \
     iperf3 \
@@ -112,6 +112,7 @@ RUN set -ex \
     tzdata \
     tcpdump \
     tcptraceroute \
+    tshark \
     util-linux \
     vim \
     zsh \
@@ -120,6 +121,9 @@ RUN set -ex \
     && echo 'alias iperf="iperf3"' >> /etc/profile \
     && echo 'export PATH=/root/tools/:$PATH' >> /etc/profile \
     && export TERM='xterm-256color'; ranger --copy-config=all \
+    && chgrp root /usr/bin/dumpcap \
+    && chmod 750 /usr/bin/dumpcap \
+    && setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap \
     && sed -i 's^/bin/ash^/bin/zsh^g' /etc/passwd \
     && sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
