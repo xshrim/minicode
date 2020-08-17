@@ -44,7 +44,8 @@ function usage() {
   ts,tsk,tshark            运行tshark抓包命令(wireshark)
   it,iptable,iptables      运行iptables命令
   nm,nmap                  运行nmap命令
-  ps,portstatus            运行端口检测命令
+  ps,portstat,portstatus   运行端口检测命令
+  pc,portctl,portcontrol   运行端口开放关闭命令
   n,net                    运行网络相关命令          
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
@@ -306,6 +307,7 @@ echo '
   ts                       执行tshark命令
   it                       执行iptables命令
   ps                       查看端口状态
+  pc                       设置端口开放关闭
 '
 }
 
@@ -991,7 +993,23 @@ function main() {
           nmap $*
         fi
       fi
-  elif [ $1 == "ps" ] || [ $1 == "portstatus" ]; then
+  elif [ $1 == "pc" ] || [ $1 == "portctl" ] || [ $1 == "portcontrol" ]; then
+    shift
+    if [ $# -lt 1 ]; then
+      echo "error: need arguments"
+    fi
+    if [ "$1" == "open" ] || [ "$1" == "accept" ]; then
+      paction="ACCEPT"
+    elif [ "$1" == "close" ] || [ "$1" == "drop" ]; then
+      paction="DROP"
+    else
+      paction="DROP"
+    fi
+    shift
+    for pport in $*; do
+      sudo /sbin/iptables -I INPUT -p tcp --dport $pport -j $paction
+    done
+  elif [ $1 == "ps" ] || [ $1 == "portstat" ] || [ $1 == "portstatus" ]; then
     shift
     if [ $# -eq 1 ]; then
       nhost="127.0.0.1"
@@ -1002,12 +1020,12 @@ function main() {
     else
       echo "error: need arguments"
     fi
-    if type nmap &>/dev/null; then
-      nmap -p $nport $nhost
-    elif type nc &>/dev/null; then
+    if type nc &>/dev/null; then
       nc $nhost $nport -zv
     elif type telnet &>/dev/null; then
       echo -e '\035\nquit' | telnet $nhost $nport
+    elif type nmap &>/dev/null; then
+      nmap -p $nport $nhost
     elif type curl &>/dev/null; then
       curl -ksvIL http://${nhost}:${nport} > /dev/null
     else
@@ -1219,17 +1237,34 @@ function main() {
       else
         echo "error: need arguments"
       fi
-      if type nmap &>/dev/null; then
-        nmap -p $nport $nhost
-      elif type nc &>/dev/null; then
+      if type nc &>/dev/null; then
         nc $nhost $nport -zv
       elif type telnet &>/dev/null; then
         echo -e '\035\nquit' | telnet $nhost $nport
+      elif type nmap &>/dev/null; then
+        nmap -p $nport $nhost
       elif type curl &>/dev/null; then
         curl -ksvIL http://${nhost}:${nport} > /dev/null
       else
         wget -qS -O- http://${nhost}:${nport} > /dev/null
       fi
+      ;;
+    "pc")
+      shift
+      if [ $# -lt 1 ]; then
+        echo "error: need arguments"
+      fi
+      if [ "$1" == "open" ] || [ "$1" == "accept" ]; then
+        paction="ACCEPT"
+      elif [ "$1" == "close" ] || [ "$1" == "drop" ]; then
+        paction="DROP"
+      else
+        paction="DROP"
+      fi
+      shift
+      for pport in $*; do
+        sudo /sbin/iptables -I INPUT -p tcp --dport $pport -j $paction
+      done
       ;;
     esac
   elif [ $1 == "ct" ] || [ $1 == "ssl" ] || [ $1 == "cred" ]; then
@@ -2182,6 +2217,10 @@ function main() {
       fi
       if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
+        if [[ "$fkwd" =~ ":" ]]; then
+          docker inspect "$fkwd"
+          exit 0
+        fi
         if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
           docker inspect $(docker images | grep "$fkwd" | awk '{print $3}')
         else
@@ -2389,6 +2428,10 @@ function main() {
       fi
       if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
+        if [[ "$fkwd" =~ ":" ]]; then
+          docker tag "$fkwd" $ttag
+          exit 0
+        fi
         if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
           docker tag $(docker images | grep "$fkwd" | awk '{print $3}') $ttag
         else
@@ -2422,6 +2465,10 @@ function main() {
       fi
       if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
+        if [[ "$fkwd" =~ ":" ]]; then
+          docker rmi -f "$fkwd"
+          exit 0
+        fi
         if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
           if [ $(docker images | grep "$fkwd" | awk '{print $1}') == "<none>" ]; then
             docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
@@ -2468,6 +2515,10 @@ function main() {
       fi
       if [ ${#mandatory[@]} -lt 1 ]; then
         require docker
+        if [[ "$fkwd" =~ ":" ]]; then
+          docker history "$fkwd"
+          exit 0
+        fi
         if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
           docker history $(docker images | grep "$fkwd" | awk '{print $3}')
         else
