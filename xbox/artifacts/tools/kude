@@ -46,6 +46,8 @@ function usage() {
   nm,nmap                  运行nmap命令
   ps,portstat,portstatus   运行端口检测命令
   pc,portctl,portcontrol   运行端口开放关闭命令
+  py,py3,python            执行python3命令
+  px,goproxy               运行goproxy代理服务器
   n,net                    运行网络相关命令          
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
@@ -208,6 +210,9 @@ kude net ips 192.168
 # 查看端口状态
 kude ps 10.0.0.10 80
 
+# 开启http(s)代理服务器
+kude px http
+
 # 查看prometheus指标信息
 kude pq metadata 127.0.0.1:9090 process_open_fds
 kude pq md 127.0.0.1:9090 open instance=node-exporter
@@ -308,160 +313,8 @@ echo '
   it                       执行iptables命令
   ps                       查看端口状态
   pc                       设置端口开放关闭
+  px                       运行goproxy代理服务器
 '
-}
-
-function nmaphelp() {
-  echo '
-[nmap选项]:
--iL: 指定输入文件, 可用于指定扫描的目标
--iR: 选择随机目标
-–exclude: 排除主机, 即扫描的时候越过该主机
-–excludefile: 通过黑名单文件指定排除的主机
--sL: 显示扫描主机的列表
--sn: 使用ping进行扫描
--Pn: 不进行主机发现, 直接进行深层扫描, 使用此命令时, nmap认为主机在线
--PS: 端口列表用,隔开[tcp80 syn 扫描]
--PA: 端口列表用,隔开ack扫描【默认扫描端口1-1024】
--PU: 端口列表用,隔开[udp高端口扫描 穿越只过滤tcp的防火墙]
--PE: 通过ICMP Echo扫描简单来说是通过向目标发送ICMP Echo数据包来探测目标主机是否存活, 但由于许多主机的防火墙会禁止这些报文, 所以仅仅ICMP扫描通常是不够的
--PP: 通过ICMP time stamp时间戳扫描在大多数防火墙配置不当时可能会得到回复, 可以以此方式来判断目标主机是否存活。倘若目标主机在线, 该命令还会探测其开放的端口以及运行的服务
--PM: 通过ICMP address maskPing地址掩码扫描会试图用备选的ICMP等级Ping指定主机, 通常有不错的穿透防火墙的效果
--PO: 进行一个基于指定的IP协议的ping
--n/-R: 选择是否进行dns解析
-–dns-servers: 明确使用的DNS服务器
--system-dns: 使用主机nmap运行主机的dns
-–traceroute: 跟踪扫描主机的网络路线
--sS/sT/sA/sW/sM: TCP SYN/Connect()/ACK/Window/Maimon scans, 指定nmap的扫描方式, 默认为sT
--sU: 使用UDP协议进行扫描
--sN/sF/sX: 指定使用TCP Null, FIN, and Xmas scans秘密扫描方式来协助探测对方的TCP端口状态
-–scanflags: 定制TCP包的flags
--sI: 指定使用idle scan方式来扫描目标主机（前提需要找到合适的zombie host）
--sY/sZ: 使用SCTP INIT/COOKIE-ECHO来扫描SCTP协议端口的开放的情况
--sO: 使用IP protocol 扫描确定目标机支持的协议类型
--b: 使用FTP bounce scan扫描方式
--p: Only scan specified ports
-–exclude-ports: 排除指定端口不作扫描
--F: 快速模式, 仅扫描TOP 100的端口
--r: 不进行端口随机打乱的操作（如无该参数, nmap会将要扫描的端口以随机顺序方式扫描, 以让nmap的扫描不易被对方防火墙检测到）
-–top-ports: 扫描开放概率最高的number个端口（nmap的作者曾经做过大规模地互联网扫描, 以此统计出网络上各种端口可能开放的概率
-–port-ratio: 扫描指定频率以上的端口。与上述–top-ports类似, 这里以概率作为参数, 让概率大于–port-ratio的端口才被扫描
--sV: 指定让Nmap进行版本侦测
-–version-intensity: 指定版本侦测强度（0-9）, 默认为7, 数值越高, 探测出的服务越准确, 但是运行时间会比较长
-–version-light: 指定使用轻量侦测方式 (intensity 2)
-–version-all: 尝试使用所有的probes进行侦测 (intensity 9)
-–version-trace: 显示出详细的版本侦测过程信息
--sC: 指定script脚本为默认值
-–script: 使用某个或某类脚本进行扫描, 支持通配符描述
-–script-args: 为脚本提供默认参数
-–script-args-file: 使用文件来为脚本提供参数
-–script-trace: 显示脚本执行过程中发送与接收的数据
-–script-updatedb: 更新脚本数据库, 每次更新脚本后
-–script-help: 显示脚本的帮助信息, 其中部分可以逗号分隔的文件或脚本类别
--O: 指定Nmap进行OS侦测
-–osscan-limit: 限制Nmap只对确定的主机的进行OS探测（至少需确知该主机分别有一个open和closed的端口）
-–osscan-guess: 大胆猜测对方的主机的系统类型。由此准确性会下降不少, 但会尽可能多为用户提供潜在的操作系统
--T<0-5>: 扫描效率, 越高越快
-–min-hostgroup/max-hostgroup: 平行的主机扫描组的大小
-–min-parallelism/max-parallelism: 并行探测
-–min-rtt-timeout/max-rtt-timeout/initial-rtt-timeout: 指定每轮探测的时间
-–max-retries: 扫描探测的上限次数设定
-–host-timeout: 设置timeout时间
-–scan-delay/–max-scan-delay: 调整两次探测之间的延迟
-–min-rate: 每秒发送数据包不少于次
-–max-rate: 每秒发送数据包不多于次
--f; --mtu: 指定使用分片、指定数据包的MTU.
--D: 用一组IP地址掩盖真实地址, 其中ME填入自己的IP地址
--S: 伪装成其他IP地址
--e: 使用特定的网络接口,指定网卡
--g/–source-port: 使用指定源端口
-–proxies: 使用代理
-–data: 给数据包添加指定数据
-–data-string: 给数据包添加指定ASCII字符串
-–data-length: 填充随机数据让数据包长度达到Num
-–ip-options: 使用指定的IP选项来发送数据包。
-–ttl: 设置time-to-live时间,没什么用
-–spoof-mac: 伪装MAC地址, 伪装mac地址为指定值
-–badsum: 使用错误的checksum来发送数据包（正常情况下, 该类数据包被抛弃, 如果收到回复, 说明回复来自防火墙或IDS/IPS）
--oN/-oX/-oS/-oG: 指定输出文件格式
--oA: 用生成以上格式的文件
--v: 这个选项使用两次, 会提供更详细的信息
--d: 提高或设置调试级别, 最高级别-d9, 输出更多的细节
-–reason: 显示端口处于特定状态的原因
-–open: 仅显示open的端口
-–packet-trace: 显示所有的收发包
-–iflist: 打印主机网络接口和路由
-–append-output: 以追加的形式写入文件
-–resume: 重新开始中断的扫描
-–stylesheet: 指定xsl样式文件将xml转换为html
-–webxml: 参考在线样式表
-–no-stylesheet: 防止关联带有xml输出的样式表
--6: 启用IPv6扫描
--A: 启用OS检测, 版本检测, 脚本扫描和路由跟踪
-–datadir: 指定自定义nmap数据文件路径
-–send-eth/–send-ip: 使用原始以太网帧或ip数据包发送
-–privileged: 假设用户具有完全特权
-–unprivileged: 假设用户缺乏原始套接字特权
--V: 打印版本号
--h: 打印帮助摘要
-
-[nmap示例]:
-# 扫描并输出数据库信息
-nmap -sS -p 1433,1434 -f --script ms-sql-info  -oG - -oX ms-sql.xml 110.42.96.0/24
-
-# 爆破数据库
-nmap -sT -p 1433,1434 -f --script ms-sql-brute -script-args userdb=sqluser.dic,passdb=sqlpass.dic -oG - -oX ms-sql-test.xml 110.42.96.0/24
-
-# 获取远程主机的系统类型及开放端口
-nmap -sS -P0 -sV -O 110.42.96.0
-
-# 列出开放了指定端口的主机列表
-nmap -sT -p 80 -oG – 192.168.1.* | grep open
-
-# 在网络寻找所有在线主机
-nmap -sP 192.168.0.*
-nmap -sP 192.168.0.0/24
-
-# Ping指定范围内的IP地址
-nmap -sP 192.168.1.100-254
-
-# 在某段子网上查找未占用的IP
-nmap -T4 -sP 192.168.2.0/24 && egrep “00:00:00:00:00:00″ /proc/net/arp
-
-# 在局域网上扫找Conficker蠕虫病毒
-nmap -PN -T4 -p139,445 -n -v –script=smb-check-vulns –script-args safe=1 192.168.0.1-254
-
-# 扫描网络上的恶意接入点rogue APs
-nmap -A -p1-85,113,443,8080-8100 -T4 –min-hostgroup 50 –max-rtt-timeout2000 –initial-rtt-timeout 300 –max-retries 3 –host-timeout 20m–max-scan-delay 1000 -oA wapscan 10.0.0.0/8
-
-# 使用诱饵扫描方法来扫描主机端口
-nmap -sS 192.168.0.10 -D 192.168.0.2
-
-# 为一个子网列出反向DNS记录
-nmap -R -sL 209.85.229.99/27 | awk "{if($3=="not")print"("$2") no PTR";else print$3" is "$2}" | grep "("
-
-# 显示网络上共有多少台Linux及Win设备
-nmap -F -O 192.168.0.1-255 | grep "Running: " > /tmp/os; echo "$(cat /tmp/os | grep Linux \| wc -l) Linux device(s)"; echo "$(cat /tmp/os | grep Windows | wc -l) Window(s) device"
-
-# 探测Web应用错误代码
-nmap -p80,443 --script http-errors targetWebsite.com
-
-# 爆破子域
-nmap -p80,443 --script dns-brute targetWebsite.com
-nmap -p80,443 --script dns-brute --script-args dns-brute.threads=25,dns-brute.hostlist=/root/Desktop/custom-subdomain-wordlist.txt targetWebsite.com
-
-# 爬取Web应用
-nmap -vv -p80,443 --script http-errors --script-args "httpspider.url=/docs/,httpspider.maxpagecount=3,httpspider.maxdepth=1" targetwebsite.com
-
-# 探测Web应用防火墙以及防火墙指纹检测
-nmap -p80,443 --script http-waf-detect --script-args "http-waf-detect.aggro,http-waf-detect.detectBodyChanges" targetWebsite.com
-nmap -p80,443 --script http-waf-fingerprint targetWebsite.comStarting 
-nmap -p80,443 --script http-waf-fingerprint --script-args http-waf-fingerprint.intensive=1 targetWebsiteStarting
-
-# 提取图片嵌入式信息EXIF
-nmap -p80,443 --script http-exif-spider targetWebsite.com
-nmap -p80,443 --script http-exif-spider --script-args "http.max-cache-size=99999999" targetWebsite.com
-  '
 }
 
 function promqhelp() {
@@ -473,7 +326,7 @@ function promqhelp() {
   h,hp,help                打印pq命令帮助
   i,m,md,info,metadata     打印指标元数据信息
   s,inst,series,instance   打印series信息
-  l,v,lv,label,value       打印label及其value数据
+  l,v,lv,lb,label,value    打印label及其value数据
   t,tg,target              打印target数据
   r,rl,rule                打印rule数据
   a,al,alert               打印alert数据
@@ -922,6 +775,159 @@ iptables -A INPUT -p tcp --syn -m limit --limit 5/second -j ACCEPT
   '
 }
 
+function nmaphelp() {
+  echo '
+[nmap选项]:
+-iL: 指定输入文件, 可用于指定扫描的目标
+-iR: 选择随机目标
+–exclude: 排除主机, 即扫描的时候越过该主机
+–excludefile: 通过黑名单文件指定排除的主机
+-sL: 显示扫描主机的列表
+-sn: 使用ping进行扫描
+-Pn: 不进行主机发现, 直接进行深层扫描, 使用此命令时, nmap认为主机在线
+-PS: 端口列表用,隔开[tcp80 syn 扫描]
+-PA: 端口列表用,隔开ack扫描【默认扫描端口1-1024】
+-PU: 端口列表用,隔开[udp高端口扫描 穿越只过滤tcp的防火墙]
+-PE: 通过ICMP Echo扫描简单来说是通过向目标发送ICMP Echo数据包来探测目标主机是否存活, 但由于许多主机的防火墙会禁止这些报文, 所以仅仅ICMP扫描通常是不够的
+-PP: 通过ICMP time stamp时间戳扫描在大多数防火墙配置不当时可能会得到回复, 可以以此方式来判断目标主机是否存活。倘若目标主机在线, 该命令还会探测其开放的端口以及运行的服务
+-PM: 通过ICMP address maskPing地址掩码扫描会试图用备选的ICMP等级Ping指定主机, 通常有不错的穿透防火墙的效果
+-PO: 进行一个基于指定的IP协议的ping
+-n/-R: 选择是否进行dns解析
+–dns-servers: 明确使用的DNS服务器
+-system-dns: 使用主机nmap运行主机的dns
+–traceroute: 跟踪扫描主机的网络路线
+-sS/sT/sA/sW/sM: TCP SYN/Connect()/ACK/Window/Maimon scans, 指定nmap的扫描方式, 默认为sT
+-sU: 使用UDP协议进行扫描
+-sN/sF/sX: 指定使用TCP Null, FIN, and Xmas scans秘密扫描方式来协助探测对方的TCP端口状态
+–scanflags: 定制TCP包的flags
+-sI: 指定使用idle scan方式来扫描目标主机（前提需要找到合适的zombie host）
+-sY/sZ: 使用SCTP INIT/COOKIE-ECHO来扫描SCTP协议端口的开放的情况
+-sO: 使用IP protocol 扫描确定目标机支持的协议类型
+-b: 使用FTP bounce scan扫描方式
+-p: Only scan specified ports
+–exclude-ports: 排除指定端口不作扫描
+-F: 快速模式, 仅扫描TOP 100的端口
+-r: 不进行端口随机打乱的操作（如无该参数, nmap会将要扫描的端口以随机顺序方式扫描, 以让nmap的扫描不易被对方防火墙检测到）
+–top-ports: 扫描开放概率最高的number个端口（nmap的作者曾经做过大规模地互联网扫描, 以此统计出网络上各种端口可能开放的概率
+–port-ratio: 扫描指定频率以上的端口。与上述–top-ports类似, 这里以概率作为参数, 让概率大于–port-ratio的端口才被扫描
+-sV: 指定让Nmap进行版本侦测
+–version-intensity: 指定版本侦测强度（0-9）, 默认为7, 数值越高, 探测出的服务越准确, 但是运行时间会比较长
+–version-light: 指定使用轻量侦测方式 (intensity 2)
+–version-all: 尝试使用所有的probes进行侦测 (intensity 9)
+–version-trace: 显示出详细的版本侦测过程信息
+-sC: 指定script脚本为默认值
+–script: 使用某个或某类脚本进行扫描, 支持通配符描述
+–script-args: 为脚本提供默认参数
+–script-args-file: 使用文件来为脚本提供参数
+–script-trace: 显示脚本执行过程中发送与接收的数据
+–script-updatedb: 更新脚本数据库, 每次更新脚本后
+–script-help: 显示脚本的帮助信息, 其中部分可以逗号分隔的文件或脚本类别
+-O: 指定Nmap进行OS侦测
+–osscan-limit: 限制Nmap只对确定的主机的进行OS探测（至少需确知该主机分别有一个open和closed的端口）
+–osscan-guess: 大胆猜测对方的主机的系统类型。由此准确性会下降不少, 但会尽可能多为用户提供潜在的操作系统
+-T<0-5>: 扫描效率, 越高越快
+–min-hostgroup/max-hostgroup: 平行的主机扫描组的大小
+–min-parallelism/max-parallelism: 并行探测
+–min-rtt-timeout/max-rtt-timeout/initial-rtt-timeout: 指定每轮探测的时间
+–max-retries: 扫描探测的上限次数设定
+–host-timeout: 设置timeout时间
+–scan-delay/–max-scan-delay: 调整两次探测之间的延迟
+–min-rate: 每秒发送数据包不少于次
+–max-rate: 每秒发送数据包不多于次
+-f; --mtu: 指定使用分片、指定数据包的MTU.
+-D: 用一组IP地址掩盖真实地址, 其中ME填入自己的IP地址
+-S: 伪装成其他IP地址
+-e: 使用特定的网络接口,指定网卡
+-g/–source-port: 使用指定源端口
+–proxies: 使用代理
+–data: 给数据包添加指定数据
+–data-string: 给数据包添加指定ASCII字符串
+–data-length: 填充随机数据让数据包长度达到Num
+–ip-options: 使用指定的IP选项来发送数据包。
+–ttl: 设置time-to-live时间,没什么用
+–spoof-mac: 伪装MAC地址, 伪装mac地址为指定值
+–badsum: 使用错误的checksum来发送数据包（正常情况下, 该类数据包被抛弃, 如果收到回复, 说明回复来自防火墙或IDS/IPS）
+-oN/-oX/-oS/-oG: 指定输出文件格式
+-oA: 用生成以上格式的文件
+-v: 这个选项使用两次, 会提供更详细的信息
+-d: 提高或设置调试级别, 最高级别-d9, 输出更多的细节
+–reason: 显示端口处于特定状态的原因
+–open: 仅显示open的端口
+–packet-trace: 显示所有的收发包
+–iflist: 打印主机网络接口和路由
+–append-output: 以追加的形式写入文件
+–resume: 重新开始中断的扫描
+–stylesheet: 指定xsl样式文件将xml转换为html
+–webxml: 参考在线样式表
+–no-stylesheet: 防止关联带有xml输出的样式表
+-6: 启用IPv6扫描
+-A: 启用OS检测, 版本检测, 脚本扫描和路由跟踪
+–datadir: 指定自定义nmap数据文件路径
+–send-eth/–send-ip: 使用原始以太网帧或ip数据包发送
+–privileged: 假设用户具有完全特权
+–unprivileged: 假设用户缺乏原始套接字特权
+-V: 打印版本号
+-h: 打印帮助摘要
+
+[nmap示例]:
+# 扫描并输出数据库信息
+nmap -sS -p 1433,1434 -f --script ms-sql-info  -oG - -oX ms-sql.xml 110.42.96.0/24
+
+# 爆破数据库
+nmap -sT -p 1433,1434 -f --script ms-sql-brute -script-args userdb=sqluser.dic,passdb=sqlpass.dic -oG - -oX ms-sql-test.xml 110.42.96.0/24
+
+# 获取远程主机的系统类型及开放端口
+nmap -sS -P0 -sV -O 110.42.96.0
+
+# 列出开放了指定端口的主机列表
+nmap -sT -p 80 -oG – 192.168.1.* | grep open
+
+# 在网络寻找所有在线主机
+nmap -sP 192.168.0.*
+nmap -sP 192.168.0.0/24
+
+# Ping指定范围内的IP地址
+nmap -sP 192.168.1.100-254
+
+# 在某段子网上查找未占用的IP
+nmap -T4 -sP 192.168.2.0/24 && egrep “00:00:00:00:00:00″ /proc/net/arp
+
+# 在局域网上扫找Conficker蠕虫病毒
+nmap -PN -T4 -p139,445 -n -v –script=smb-check-vulns –script-args safe=1 192.168.0.1-254
+
+# 扫描网络上的恶意接入点rogue APs
+nmap -A -p1-85,113,443,8080-8100 -T4 –min-hostgroup 50 –max-rtt-timeout2000 –initial-rtt-timeout 300 –max-retries 3 –host-timeout 20m–max-scan-delay 1000 -oA wapscan 10.0.0.0/8
+
+# 使用诱饵扫描方法来扫描主机端口
+nmap -sS 192.168.0.10 -D 192.168.0.2
+
+# 为一个子网列出反向DNS记录
+nmap -R -sL 209.85.229.99/27 | awk "{if($3=="not")print"("$2") no PTR";else print$3" is "$2}" | grep "("
+
+# 显示网络上共有多少台Linux及Win设备
+nmap -F -O 192.168.0.1-255 | grep "Running: " > /tmp/os; echo "$(cat /tmp/os | grep Linux \| wc -l) Linux device(s)"; echo "$(cat /tmp/os | grep Windows | wc -l) Window(s) device"
+
+# 探测Web应用错误代码
+nmap -p80,443 --script http-errors targetWebsite.com
+
+# 爆破子域
+nmap -p80,443 --script dns-brute targetWebsite.com
+nmap -p80,443 --script dns-brute --script-args dns-brute.threads=25,dns-brute.hostlist=/root/Desktop/custom-subdomain-wordlist.txt targetWebsite.com
+
+# 爬取Web应用
+nmap -vv -p80,443 --script http-errors --script-args "httpspider.url=/docs/,httpspider.maxpagecount=3,httpspider.maxdepth=1" targetwebsite.com
+
+# 探测Web应用防火墙以及防火墙指纹检测
+nmap -p80,443 --script http-waf-detect --script-args "http-waf-detect.aggro,http-waf-detect.detectBodyChanges" targetWebsite.com
+nmap -p80,443 --script http-waf-fingerprint targetWebsite.comStarting 
+nmap -p80,443 --script http-waf-fingerprint --script-args http-waf-fingerprint.intensive=1 targetWebsiteStarting
+
+# 提取图片嵌入式信息EXIF
+nmap -p80,443 --script http-exif-spider targetWebsite.com
+nmap -p80,443 --script http-exif-spider --script-args "http.max-cache-size=99999999" targetWebsite.com
+  '
+}
+
 function main() {
   if [ -z $1 ]; then
     usage simple
@@ -956,6 +962,13 @@ function main() {
     require etcdctl
     shift
     etcdctl $*
+  elif [ $1 == "py" ] || [ $1 == "py3" ] || [ $1 == "python" ] || [ $1 == "python3" ]; then
+    shift
+    if type python3 &>/dev/null; then
+      python3 $*
+    else
+      python $*
+    fi
   elif [ $1 == "td" ] || [ $1 == "tdp" ] || [ $1 == "tcpdump" ]; then
     shift
     if [ $1 == "h" ] || [ $1 == "hp" ]; then
@@ -1030,6 +1043,44 @@ function main() {
       curl -ksvIL http://${nhost}:${nport} > /dev/null
     else
       wget -qS -O- http://${nhost}:${nport} > /dev/null
+    fi
+  elif [ $1 == "px" ] || [ $1 == "goproxy" ]; then
+    shift
+    require proxy
+    if [ $# -gt 4 ];then
+      proxy $*
+    else
+      ptype="http"
+      proto="tcp"
+      pport="38080"
+      pargs="$*"
+      if [ $# -gt 0 ]; then
+        ptype=$1
+        shift
+        if [ $# -gt 0 ]; then
+          pport=$1
+          shift
+          if [ $# -gt 0 ]; then
+            proto=$1
+            shift
+            if [ $# -gt 0 ]; then
+              ptar=$1
+              shift
+            fi
+          fi
+        fi
+      fi
+      if [ "$ptype" == "h" ] || [ "$ptype" == "hp" ] || [ "$ptype" == "help" ]; then
+        proxy --help
+      elif [ "$ptype" == "http" ] || [ "$ptype" == "https" ]; then
+        proxy http -t $proto -p "0.0.0.0:$pport"
+      elif [ "$ptype" == "sock" ] || [ "$ptype" == "socks" ] || [ "$ptype" == "socks5" ]; then
+        proxy socks -t $proto -p "0.0.0.0:$pport"
+      elif [ "$ptype" == "tcp" ] || [ "$ptype" == "udp" ]; then
+        proxy $ptype -p ":$pport" -T $proto -P "$ptar"
+      else
+        proxy $pargs
+      fi
     fi
   elif [ $1 == "it" ] || [ $1 == "iptable" ] || [ $1 == "iptables" ]; then
     shift
@@ -1251,6 +1302,7 @@ function main() {
       ;;
     "pc")
       shift
+      require iptables
       if [ $# -lt 1 ]; then
         echo "error: need arguments"
       fi
@@ -1265,6 +1317,45 @@ function main() {
       for pport in $*; do
         sudo /sbin/iptables -I INPUT -p tcp --dport $pport -j $paction
       done
+      ;;
+    "px")
+      shift
+      require proxy
+      if [ $# -gt 4 ];then
+        proxy $*
+      else
+        ptype="http"
+        proto="tcp"
+        pport="38080"
+        pargs="$*"
+        if [ $# -gt 0 ]; then
+          ptype=$1
+          shift
+          if [ $# -gt 0 ]; then
+            pport=$1
+            shift
+            if [ $# -gt 0 ]; then
+              proto=$1
+              shift
+              if [ $# -gt 0 ]; then
+                ptar=$1
+                shift
+              fi
+            fi
+          fi
+        fi
+        if [ "$ptype" == "h" ] || [ "$ptype" == "hp" ] || [ "$ptype" == "help" ]; then
+          proxy --help
+        elif [ "$ptype" == "http" ] || [ "$ptype" == "https" ]; then
+          proxy http -t $proto -p "0.0.0.0:$pport"
+        elif [ "$ptype" == "sock" ] || [ "$ptype" == "socks" ] || [ "$ptype" == "socks5" ]; then
+          proxy socks -t $proto -p "0.0.0.0:$pport"
+        elif [ "$ptype" == "tcp" ] || [ "$ptype" == "udp" ]; then
+          proxy $ptype -p ":$pport" -T $proto -P "$ptar"
+        else
+          proxy $pargs
+        fi
+      fi
       ;;
     esac
   elif [ $1 == "ct" ] || [ $1 == "ssl" ] || [ $1 == "cred" ]; then
@@ -1565,41 +1656,63 @@ function main() {
         ;;
       "i" | "m" | "md" | "info" | "metadata")
         if [ ${#mandatory[@]} -eq 0 ]; then
-          curl -Gks http://$url/api/v1/metadata
-        fi
-        if [ ${#mandatory[@]} -eq 1 ]; then
-          metric="${mandatory[0]}"
-          tgl="instance"
-          insts=$(curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" |jq -r ".data[]|.instance")
-#           SIFS=$IFS
-#           IFS=$'\n'
-#           insts=($insts)
-#           IFS=$SIFS
-          insts=($insts)
-          if [ ${#insts[@]} -eq 0 ]; then
-            exit 0
-          elif [ ${#insts[@]} -eq 1 ]; then
-            tgv="${insts[0]}"
+          if [ ${#mandatory[@]} -eq 0 ] && [ $(curl -o /dev/null -s -w "%{http_code}\n" http://$url/api/v1/metadata) -lt 300 ]; then
+            curl -Gks http://$url/api/v1/metadata | jq
           else
-            echo "====== More than one instance ======"
-            for ((i = 0; i < ${#insts[@]}; i++)); do
-                echo "$i: ${insts[$i]}"
-            done
-            read -p "====== select one with number[0]: " iidx
-            if [ -z $iidx ]; then
-                iidx=0
-            fi
-            tgv=${insts[$iidx]}
+            curl -Gks http://$url/api/v1/targets/metadata | jq
           fi
-        elif [ ${#mandatory[@]} -gt 1 ]; then
-          metric="${mandatory[0]}"
-          tgl=${mandatory[1]%=*}
-          tgv=${mandatory[1]##*=}
-          if [ "$tgl" == "$tgv" ]; then
-            tgl="instance"
+        else
+          mkwd="${mandatory[0]}"
+          mandatory=("${mandatory[@]:1}")
+          if [ ${#mandatory[@]} -eq 0 ] && [ $(curl -o /dev/null -s -w "%{http_code}\n" http://$url/api/v1/metadata) -lt 300 ]; then
+            curl -Gks http://$url/api/v1/metadata | jq -r ".data|with_entries(select(.key|contains(\"$mkwd\")))"
+          else
+            mts=$(curl -Gks http://$url/api/v1/label/__name__/values | jq -r ".data[]|select(.|contains(\"$mkwd\"))")
+            mts=($mts)
+            if [ ${#mts[@]} -eq 0 ]; then
+              exit 0
+            elif [ ${#mts[@]} -eq 1 ]; then
+              metric="${mts[0]}"
+            else
+              echo "====== More than one metric ======"
+              for ((i = 0; i < ${#mts[@]}; i++)); do
+                echo "$i: ${mts[$i]}"
+              done
+              read -p "====== select one with number[0]: " midx
+              if [ -z $midx ]; then
+                midx=0
+              fi
+              metric=${mts[$midx]}
+            fi
+            if [ ${#mandatory[@]} -eq 0 ]; then
+              tgl="instance"
+              insts=$(curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" | jq -r ".data[]|.instance")
+              insts=($insts)
+              if [ ${#insts[@]} -eq 0 ]; then
+                exit 0
+              elif [ ${#insts[@]} -eq 1 ]; then
+                tgv="${insts[0]}"
+              else
+                echo "====== More than one instance ======"
+                for ((i = 0; i < ${#insts[@]}; i++)); do
+                  echo "$i: ${insts[$i]}"
+                done
+                read -p "====== select one with number[0]: " iidx
+                if [ -z $iidx ]; then
+                  iidx=0
+                fi
+                tgv=${insts[$iidx]}
+              fi
+            else
+              tgl=${mandatory[0]%=*}
+              tgv=${mandatory[0]##*=}
+              if [ "$tgl" == "$tgv" ]; then
+                tgl="instance"
+              fi
+            fi
+            curl -Gks http://$url/api/v1/targets/metadata --data-urlencode "match_target={$tgl=~\".*$tgv.*\"}" | jq -r ".data[] | select(.metric|contains(\"$metric\"))"
           fi
         fi
-        curl -Gks http://$url/api/v1/targets/metadata --data-urlencode "match_target={$tgl=~\".*$tgv.*\"}" | jq -r ".data[] | select(.metric|contains(\"$metric\"))"
         ;;
       "s" | "inst" | "series" | "instance")
         if [ ${#mandatory[@]} -eq 0 ]; then
@@ -1609,7 +1722,7 @@ function main() {
         metric="${mandatory[0]}"
         curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" | jq
         ;;
-      "l" | "v" | "lv" | "label" | "value")
+      "l" | "v" | "lv" | "lb" | "label" | "value")
         if [ ${#mandatory[@]} -eq 0 ]; then
           curl -Gks http://$url/api/v1/labels | jq
         else
