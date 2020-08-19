@@ -82,6 +82,7 @@ function usage() {
   dv,dvol                  查看docker卷列表
   dd,drm                   删除容器
   do,drmi                  删除镜像
+  drmn                     删除none镜像
   dh,dhi,dhist             查看镜像构建历史
   ds,dput,dpush            推送镜像
   dl,dget,dpull            拉取镜像
@@ -2575,6 +2576,16 @@ function main() {
           execmd "$cmd" $ip
         done
       fi
+    elif [ "$subcmd" == "drmn" ]; then
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        docker rmi -f $(docker image ls | grep '<none>' | awk '{print $3}')
+      else
+        cmd="docker rmi -f $(docker image ls | grep '<none>' | awk '{print $3}')"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
     elif [ "$subcmd" == "do" ] || [ "$subcmd" == "drmi" ]; then
       if [ -n "$kwd" ]; then
         fkwd="$kwd"
@@ -2589,7 +2600,7 @@ function main() {
           exit 0
         fi
         if [ $(docker images | grep "$fkwd" | wc -l) -lt 2 ]; then
-          if [ $(docker images | grep "$fkwd" | awk '{print $1}') == "<none>" ]; then
+          if [[ $(docker images | grep "$fkwd" | awk '{print $1}') == "<none>" ]]; then
             docker rmi -f $(docker images | grep "$fkwd" | awk '{print $3}')
           else
             docker rmi -f $(docker images | grep "$fkwd" | awk '{print $1":"$2}')
@@ -2888,6 +2899,19 @@ function main() {
       if [ ${#mandatory[@]} -gt 0 ]; then
         for fname in ${mandatory[@]}; do
           kubectl $kc $context apply -f $fname $selector $ns
+        done
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif ([ "$subcmd" == "rm" ] || [ "$subcmd" == "del" ] || [ "$subcmd" == "delete" ]) && ([[ ${mandatory[0]} =~ .yaml$ ]] || [[ ${mandatory[0]} =~ .yml$ ]] || [[ ${mandatory[0]} =~ .json$ ]]); then
+      require kubectl
+      if [ "$ns" == "--all-namespaces" ]; then
+        ns=""
+      fi
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        for fname in ${mandatory[@]}; do
+          kubectl $kc $context delete -f $fname $selector $ns
         done
       else
         echo "error: need arguments"
@@ -3508,7 +3532,12 @@ function main() {
         ;;
       "ie" | "iexe" | "iexec")
         if [ $kind == "pod" ]; then
-          kubectl $kc $context exec -it $resname -c $cname sh $ns
+          if [ ${#args[@]} -gt 0 ]; then
+            cshell=${args[0]}
+          else
+            cshell="sh"
+          fi
+          kubectl $kc $context exec -it $resname -c $cname $cshell $ns
         else
           echo "subcmd iexec not fit for $kind"
         fi
@@ -3543,11 +3572,12 @@ function main() {
         ;;
       "x" | "deb" | "debug")
         if [ "$kind" == "pod" ]; then
-          if [ "$image" == "xo" ] || [ "$image" == "xshrim/xo" ]; then
-            imgsh="$image zsh $chroot"
+          if [ ${#args[@]} -gt 0 ]; then
+            cshell=${args[0]}
           else
-            imgsh="$image sh $chroot"
+            cshell="sh"
           fi
+          imgsh="$image $cshell $chroot"
 
           cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $imgsh"
 

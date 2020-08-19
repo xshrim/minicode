@@ -120,7 +120,8 @@ RUN set -ex \
     && mkdir /share \
     && mv /usr/sbin/tcpdump /usr/bin/tcpdump \
     && echo 'alias iperf="iperf3"' >> /etc/profile \
-    && echo 'export PATH=/root/tools/:$PATH' >> /etc/profile \
+    && echo 'export PATH=/root/tools/:$PATH' >> /etcprofile \
+    && echo '. /etc/profile' >> /root/.profile \
     && export TERM='xterm-256color'; ranger --copy-config=all \
     && chgrp root /usr/bin/dumpcap \
     && chmod 750 /usr/bin/dumpcap \
