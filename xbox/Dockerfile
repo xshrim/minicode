@@ -5,9 +5,9 @@ LABEL maintainer="xshrim@yeah.net"
 WORKDIR /root/
 # py2-virtualenv \
 # apparmor issue #14140 
-
+ENV ENV="/etc/profile"
 # Settings
-COPY motd /etc/motd
+# COPY motd /etc/motd
 ADD artifacts /root/
 
 # mirrors.ustc.edu.cn
@@ -119,9 +119,8 @@ RUN set -ex \
     zsh \
     && mkdir /share \
     && mv /usr/sbin/tcpdump /usr/bin/tcpdump \
-    && echo 'alias iperf="iperf3"' >> /etc/profile \
-    && echo 'export PATH=/root/tools/:$PATH' >> /etcprofile \
-    && echo '. /etc/profile' >> /root/.profile \
+    && echo 'alias iperf="iperf3"' >> "$ENV" \
+    && echo 'export PATH=/root/tools/:$PATH' >> "$ENV" \
     && export TERM='xterm-256color'; ranger --copy-config=all \
     && chgrp root /usr/bin/dumpcap \
     && chmod 750 /usr/bin/dumpcap \
