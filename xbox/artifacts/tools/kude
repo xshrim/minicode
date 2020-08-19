@@ -3577,9 +3577,8 @@ function main() {
           else
             cshell="sh"
           fi
-          imgsh="$image $cshell $chroot"
 
-          cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $imgsh"
+          cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $image $cshell $chroot"
 
           execmd "$cmd" $haddr
         else
