@@ -1562,6 +1562,12 @@ function main() {
     if [ "$kind" == "dep" ]; then
       kind="deploy"
     fi
+    if [ "$kind" == "cr" ]; then
+      kind="clusterrole"
+    fi
+    if [ "$kind" == "crb" ]; then
+      kind="clusterrolebinding"
+    fi
 
     if ! [[ "${mandatory[0]}" =~ ^- ]]; then
       subcmd=${mandatory[0]}
