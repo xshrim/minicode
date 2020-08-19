@@ -32,7 +32,7 @@ RUN set -ex \
     cmus \
     ctop \
     curl \
-    docker \
+    docker-cli \
     docker-compose \
     dhcping \
     dfc \
