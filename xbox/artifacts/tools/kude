@@ -3573,12 +3573,13 @@ function main() {
       "x" | "deb" | "debug")
         if [ "$kind" == "pod" ]; then
           if [ ${#args[@]} -gt 0 ]; then
-            cshell=${args[0]}
+            cshell="$args"
           else
             cshell="sh"
           fi
 
           cmd="docker run --rm -it $vol --network=container:$cid --pid=container:$cid --ipc=container:$cid $image $cshell $chroot"
+          echo "$cmd"
 
           execmd "$cmd" $haddr
         else
