@@ -20,7 +20,7 @@ RUN set -ex \
     && sed -i 's/nl.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
     && apk update \
     && apk upgrade \
-    && apk add --no-cache \
+    && apk --virtual add --no-cache \
     apache2-utils \
     bash \
     bat \
@@ -134,7 +134,8 @@ RUN set -ex \
     && echo "root:root" | chpasswd \
     && addgroup -g 1111 smb \
     && adduser -D -H -G smb -s /bin/false -u 1111 smb \
-    && echo -e "smb\nsmb" | smbpasswd -a -s -c /root/smb.conf smb
+    && echo -e "smb\nsmb" | smbpasswd -a -s -c /root/smb.conf smb \
+    && rm -rf /var/cache/apk/*
 
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2   # 解决go语言程序无法在alpine执行的问题
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
