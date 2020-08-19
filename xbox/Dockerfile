@@ -113,6 +113,7 @@ RUN set -ex \
     tcpdump \
     tcptraceroute \
     tshark \
+    tmux \
     util-linux \
     vim \
     zsh \
