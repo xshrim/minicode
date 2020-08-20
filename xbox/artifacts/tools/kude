@@ -3098,7 +3098,8 @@ function main() {
         node=${nodes[$niidx]}
       fi
       nodeip=$(echo "$node" | awk '{print $6}')
-      kubectl $kc $context get pod -o wide $selector $ns | grep -E "NAME|$nodeip"
+      nodename=$(echo "$node" | awk '{print $1}')
+      kubectl $kc $context get pod -o wide $selector $ns | grep -E "NAME| $nodeip | $nodename "
     elif [ "$subcmd" == "ni" ] || [ "$subcmd" == "nodeimg" ]; then
       require kubectl
       if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
