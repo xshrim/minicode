@@ -53,7 +53,9 @@ function usage() {
   sp,sample                输出模板示例
   c,cmd                    运行linux命令
   scp                      分发本机文件
-  gi                       git一键提交并上传
+  gs                       git一键提交并上传
+  gl                       git一键拉取
+  gg                       git查看提交日志
   pq,promq                 prometheus查询api
   ghp,ghelp                查看go命令帮助
   dhp,dhelp                查看docker命令帮助
@@ -117,12 +119,17 @@ function usage() {
   au,auth                  执行kubectl auth命令
   pr,proxy                 开启kube apiserver本地代理
   tk,token                 获取serviceaccount的token
+  lb,label                 为资源增加或删除标签
+  lba,labela               为所有指定资源增加或删除标签
+  lbo,labelo               为资源增加或覆盖标签
+  lbao,labelao             为所有指定资源增加或覆盖标签
   li,lsimg                 列出k8s中所有容器使用的镜像
   lli,llimg                按行列出k8s中所有容器使用的镜像
   l,log                    查看pod内容器日志
   lf,logf                  实时查看容器日志
+  lb,label                 执行kubectl label命令
   i,insp,inspect           查看容器配置信息
-  gt,get                   查看k8s资源信息
+  f,gt,get                 查看k8s资源信息
   s,desc,describe          查看k8s资源详细信息
   wt,watch                 监视指定k8s资源状态
   w,wide                   查看k8s资源更多信息
@@ -1615,7 +1622,7 @@ function main() {
         echo "error: need arguments"
         exit 1
       fi
-    elif [ "$subcmd" == "gi" ]; then
+    elif [ "$subcmd" == "gs" ]; then
       require git
       cmsg="update"
       if [ ${#mandatory[@]} -gt 0 ]; then
@@ -1624,6 +1631,12 @@ function main() {
       git add -A .
       git commit -m "$cmsg"
       git push
+    elif [ "$subcmd" == "gl" ]; then
+      require git
+      git pull
+    elif [ "$subcmd" == "gg" ]; then
+      require git
+      git log --oneline --graph --decorate
     elif [ "$subcmd" == "pq" ] || [ "$subcmd" == "promq" ]; then
       if [ ${#mandatory[@]} -gt 0 ]; then
         sscmd="${mandatory[0]}"
@@ -3257,7 +3270,7 @@ function main() {
       fi
       if [ -z "$kwd" ] || [ $list -eq 1 ]; then
         case $subcmd in
-        "gt" | "get")
+        "f" | "gt" | "get")
           if [ -n "$kwd" ]; then
             kubectl $kc $context get $kind $selector $ns | grep "$kwd"
           else
@@ -3269,6 +3282,69 @@ function main() {
             kubectl $kc $context get $kind $selector $ns --watch | grep "$kwd"
           else
             kubectl $kc $context get $kind $selector $ns --watch
+          fi
+          ;;
+        "lb" | "lba" | "lbo" | "lbao" | "label" | "labela" | "labelo" | "labelao")
+          lbow=""
+          if [[ "$subcmd" == "lbo" ]] || [[ "$subcmd" == "lbao" ]] || [[ "$subcmd" == "labelo" ]] || [[ "$subcmd" == "labelao" ]]; then
+            lbow="--overwrite"
+          fi
+          if [[ "$subcmd" == "lba" ]] || [[ "$subcmd" == "lbao" ]] || [[ "$subcmd" == "labela" ]] || [[ "$subcmd" == "labelao" ]] || [[ "$kwd" =~ "-" ]] || [[ "$kwd" =~ "=" ]]; then
+            args=$kwd" "$args
+            kwd=""
+            kubectl $kc $context label $lbow $kind --all $args $ns
+            exit 0
+          fi
+          items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          items=($items)
+          IFS=$SIFS
+          if [ ${#items[@]} -eq 0 ]; then
+            exit 0
+          elif [ ${#items[@]} -eq 1 ]; then
+            item=${items[0]}
+            if [ "$ns" == "--all-namespaces" ]; then
+              lns=$(echo "$item" | awk '{print $1}')
+              lrs=$(echo "$item" | awk '{print $2}')
+            else
+              lns=$(echo "$item" | awk '{print $2}')
+              lrs=$(echo "$item" | awk '{print $1}')
+            fi
+            kubectl $kc $context -n $lns label $lbow $kind $lrs $args 
+          else
+            echo "====== More than one $kind ======"
+            for ((i = 0; i < ${#items[@]}; i++)); do
+              echo "$i: ${items[$i]}"
+            done
+            echo "-1: ALL"
+            read -p "====== select one with number[0]: " liidx
+            if [ -z $liidx ]; then
+              liidx=0
+            fi
+            if [ $liidx -eq -1 ]; then
+              for ((i = 0; i < ${#items[@]}; i++)); do
+                item=${items[$i]}
+                if [ "$ns" == "--all-namespaces" ]; then
+                  lns=$(echo "$item" | awk '{print $1}')
+                  lrs=$(echo "$item" | awk '{print $2}')
+                else
+                  lns=$(echo "$item" | awk '{print $2}')
+                  lrs=$(echo "$item" | awk '{print $1}')
+                fi
+                kubectl $kc $context -n $lns label $lbow $kind $lrs $args
+              done
+            else
+              item=${items[$liidx]}
+              if [ "$ns" == "--all-namespaces" ]; then
+                lns=$(echo "$item" | awk '{print $1}')
+                lrs=$(echo "$item" | awk '{print $2}')
+              else
+                lns=$(echo "$item" | awk '{print $2}')
+                lrs=$(echo "$item" | awk '{print $1}')
+              fi
+              kubectl $kc $context -n $lns label $lbow $kind $lrs $args 
+            fi
           fi
           ;;
         "w" | "wide")
@@ -3490,7 +3566,7 @@ function main() {
           echo "subcmd inspect not fit for $kind"
         fi
         ;;
-      "gt" | "get")
+      "f" | "gt" | "get")
         kubectl $kc $context get $kind $resname $ns
         ;;
       "s" | "desc" | "describe")
@@ -3504,6 +3580,13 @@ function main() {
         ;;
       "wl" | "wlabel")
         kubectl $kc $context get $kind $resname $ns -o wide --show-labels
+        ;;
+      "lb" | "lbo" | "label" | "labelo")
+        lbow=""
+        if [[ "$subcmd" == "lbo" ]] || [[ "$subcmd" == "labelo" ]]; then
+          lbow="--overwrite"
+        fi
+        kubectl $kc $context label $lbow $kind $resname $args $ns
         ;;
       "y" | "yaml")
         kubectl $kc $context get $kind $resname $ns -o yaml
