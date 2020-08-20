@@ -114,6 +114,7 @@ RUN set -ex \
     tcptraceroute \
     tshark \
     tmux \
+    xclip \
     util-linux \
     vim \
     zsh \
