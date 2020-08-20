@@ -11,7 +11,7 @@ since=""
 amount=""
 kwd=""
 list=0
-kind="pod"
+kind=""
 context=""
 selector=""
 args=""
@@ -1560,16 +1560,6 @@ function main() {
       mandatory=("${mandatory[@]}" "$@")
     fi
 
-    if [ "$kind" == "dep" ]; then
-      kind="deploy"
-    fi
-    if [ "$kind" == "cr" ]; then
-      kind="clusterrole"
-    fi
-    if [ "$kind" == "crb" ]; then
-      kind="clusterrolebinding"
-    fi
-
     if ! [[ "${mandatory[0]}" =~ ^- ]]; then
       subcmd=${mandatory[0]}
       mandatory=("${mandatory[@]:1}")
@@ -2935,6 +2925,10 @@ function main() {
             kubectl $kc $context create -f $fname $selector $ns
           done
         else
+          if [ -z $kind ] && [[ ! "${mandatory[*]}" =~ ":" ]]; then
+            kind=${mandatory[0]}
+            mandatory=("${mandatory[@]:1}")
+          fi
           kubectl $kc $context create $kind ${mandatory[@]} $selector $ns
         fi
       else
@@ -3202,6 +3196,10 @@ function main() {
       if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
         kwd="${mandatory[*]}"
       fi
+      
+      if [ -z $kind ]; then
+        kind="pod"
+      fi
 
       items=$(kubectl $kc $context get $kind --no-headers $selector $ns 2>/dev/null)
       SIFS=$IFS
@@ -3224,11 +3222,30 @@ function main() {
       done
     else
       require kubectl
+      if [ -z $kind ]; then
+        if [ ${#mandatory[@]} -gt 0 ]; then
+          kind=${mandatory[0]}
+          mandatory=("${mandatory[@]:1}")
+        else
+          kind="pod"
+        fi
+      fi
+      if [ "$kind" == "dep" ]; then
+        kind="deploy"
+      fi
+      if [ "$kind" == "np" ]; then
+        kind="networkpolicy"
+      fi
+      if [ "$kind" == "rb" ]; then
+        kind="rolebinding"
+      fi
+      if [ "$kind" == "cr" ]; then
+        kind="clusterrole"
+      fi
+      if [ "$kind" == "crb" ]; then
+        kind="clusterrolebinding"
+      fi
       if [ -z "$kwd" ]; then
-        # kwd=${mandatory[${#mandatory[@]} - 1]}
-        # if [ ${#mandatory[@]} -gt 1 ]; then
-        #   args=${mandatory[@]::${#mandatory[@]}-1}
-        # fi
         if [ ${#mandatory[@]} -gt 0 ]; then
           kwd=${mandatory[0]}
         fi
