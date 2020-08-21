@@ -63,7 +63,7 @@ function usage() {
   dr,drun                  运行容器
   drt,dtmp                 运行临时容器
   dat,dattach              attach到目标容器
-  dx,dbg                   运行共享目标容器命名空间的镜像(调试)
+  dx,ddbg                  运行共享目标容器命名空间的镜像(调试)
   dsa,dstart               启动docker容器
   dsp,dstop                停止docker容器
   de,dexe,dexec            在容器中执行命令
@@ -145,7 +145,7 @@ function usage() {
   at,attach                加入pod的命名空间
   cp,copy                  在本地和pod之间复制文件
   pf,forward,port-forward  将本地端口映射到pod端口实现端口转发
-  x,deb,debug              运行调试容器对pod进行调试
+  x,dbg,debug              运行调试容器对pod进行调试
 
 **OPTIONS**:
   -a [10m] log显示指定时间之后的日志
@@ -2125,7 +2125,7 @@ function main() {
         fi
         docker cp $prearg$sufarg
       fi
-    elif [ "$subcmd" == "dx" ] || [ "$subcmd" == "dbg" ]; then
+    elif [ "$subcmd" == "dx" ] || [ "$subcmd" == "ddbg" ]; then
       if [ -n "$kwd" ]; then
         fkwd="$kwd"
       elif [ ${#mandatory[@]} -gt 0 ]; then
@@ -3236,9 +3236,9 @@ function main() {
     else
       require kubectl
       if [ -z $kind ]; then
-        if [ ${#mandatory[@]} -gt 0 ]; then
-          kind=${mandatory[0]}
-          mandatory=("${mandatory[@]:1}")
+        if [ ${#mandatory[@]} -gt 0 ] && [ "$subcmd" != "l" ] && [ "$subcmd" != "log" ] && [ "$subcmd" != "lf" ] && [ "$subcmd" != "logf" ] && [ "$subcmd" != "i" ] && [ "$subcmd" != "insp" ] && [ "$subcmd" != "inspect" ] && [ "$subcmd" != "e" ] && [ "$subcmd" != "exe" ] && [ "$subcmd" != "exec" ] && [ "$subcmd" != "ie" ] && [ "$subcmd" != "iexe" ] && [ "$subcmd" != "iexec" ] && [ "$subcmd" != "at" ] && [ "$subcmd" != "attach" ] && [ "$subcmd" != "cp" ] && [ "$subcmd" != "copy" ] && [ "$subcmd" != "pf" ] && [ "$subcmd" != "forward" ] && [ "$subcmd" != "port-forward" ] && [ "$subcmd" != "x" ] && [ "$subcmd" != "dbg" ] && [ "$subcmd" != "debug" ]; then
+            kind=${mandatory[0]}
+            mandatory=("${mandatory[@]:1}")
         else
           kind="pod"
         fi
@@ -3671,7 +3671,7 @@ function main() {
           echo "subcmd port-forward not fit for $kind"
         fi
         ;;
-      "x" | "deb" | "debug")
+      "x" | "dbg" | "debug")
         if [ "$kind" == "pod" ]; then
           if [ ${#args[@]} -gt 0 ]; then
             cshell="$args"
