@@ -660,6 +660,7 @@ alias open='xdg-open'
 alias grep='grep --color=auto'
 alias glog='git log --oneline --graph --decorate'
 alias rsync='rsync -avP --progress'
+alias gm='gomacro'
 # docker alias
 alias dkc='docker-compose'
 alias dps='docker container ls'
