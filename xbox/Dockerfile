@@ -94,6 +94,7 @@ RUN set -ex \
     openssh-client \
     postgresql-client \
     pgcli \
+    pv \
     qperf \
     tree \
     redis \
@@ -108,6 +109,7 @@ RUN set -ex \
     strace \
     sshpass \
     speedtest-cli \
+    sysstat \
     websocat \
     websocketd \
     tzdata \

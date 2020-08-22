@@ -48,6 +48,10 @@ function usage() {
   pc,portctl,portcontrol   运行端口开放关闭命令
   py,py3,python            执行python3命令
   px,goproxy               运行goproxy代理服务器
+  ldf                      统计系统分区空间占用
+  lfd                      统计系统磁盘大小
+  ldu                      统计目录磁盘占用
+  st                       查看系统各项stat信息
   n,net                    运行网络相关命令          
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
@@ -101,6 +105,7 @@ function usage() {
   df,dfind                 查找容器配置中包含指定关键字的容器
   kf,kfind                 查找资源中包含指定关键字的资源
   cfg,config               查看kubeconfig配置
+  kg,gencfg                生成kubeconfig配置
   exp,explain              查看k8s资源描述
   expr,explainr            查看k8s资源及嵌套资源描述
   dry,dryrun               模拟执行kubectl命令
@@ -625,7 +630,7 @@ tshark -r temp.cap -R ssl -Tfields -e "ip.src" -e tcp.srcport -e ip.dst -e tcp.d
 tshark -r vmx.cap -q -n -t ad -z follow,tcp,ascii,10.1.8.130:56087,10.195.4.41:446 | more
 
 # 过滤包的时间和rtp.seq
-tshark  -i eth0 -f "udp port 5004"  -T fields -e frame.time_epoch -e rtp.seq -o rtp.heuristic_rtp:true 1>test.txt
+tshark  -i eth0 -f "udp port 5004" -T fields -e frame.time_epoch -e rtp.seq -o rtp.heuristic_rtp:true 1>test.txt
 
 # 提取各协议数据部分
 tshark -r H:/httpsession.pcap -q -n -t ad -z follow,tcp,ascii,71.6.167.142:27017,101.201.42.120:59381 | more
@@ -751,7 +756,7 @@ iptables -A FORWARD -j REJECT     # 禁止其他未允许的规则访问
 iptables -A INPUT -p tcp --dport 12345 -j DROP  # 屏蔽访问 12345 端口
 
 # 屏蔽域名
-iptables -A OUTPUT -m string --string \"foo.bar\" --algo bm --to 65535 -j DROP  # 屏蔽服务器内域名访问
+iptables -A OUTPUT -m string --string "foo.bar" --algo bm --to 65535 -j DROP  # 屏蔽服务器内域名访问
 
 # 屏蔽IP
 iptables -A INPUT -p tcp -m tcp -s 192.168.0.8 -j DROP  # 屏蔽恶意主机（比如，192.168.0.8
@@ -936,74 +941,360 @@ nmap -p80,443 --script http-exif-spider --script-args "http.max-cache-size=99999
   '
 }
 
+function mysqlhelp() {
+  echo "
+[mysql选项]:
+-?, --help: 显示帮助信息并退出
+-I, --help: 显示帮助信息并退出
+--auto-rehash: 自动补全功能，就像linux里面，按Tab键出提示差不多，下面有例子
+-A, --no-auto-rehash: 默认状态是没有自动补全功能的。-A就是不要自动补全功能
+-B, --batch: sql不使用历史文件，禁用交互
+--character-sets-dir=name: 字体集的安装目录                    
+--default-character-set=name: 设置数据库的默认字符集
+-C, --compress: 在客户端和服务器端传递信息时使用压缩
+-#, --debug[=#]: bug调用功能
+-D, --database=name: 使用哪个数据库
+--delimiter=name: mysql默认命令结束符是分号，下面有例子
+-e, --execute=name: 执行mysql的sql语句
+-E, --vertical: 垂直打印查询输出
+-f, --force: 如果有错误跳过去，继续执行下面的
+-G, --named-commands: 在query中启用内部命令
+-g, --no-named-commands: 早query中禁用内部命令
+-i, --ignore-spaces: 忽视函数名后面的空格.
+--local-infile: 启动/禁用 LOAD DATA LOCAL INFILE.
+-b, --no-beep: sql错误时，禁止嘟的一声
+-h, --host=name: 设置连接的服务器名或者Ip
+-H, --html: 以html的方式输出
+-X, --xml: 以xml的方式输出
+--line-numbers: 显示错误的行号
+-L, --skip-line-numbers: 忽略错误的行号
+-n, --unbuffered: 每执行一次sql后，刷新缓存
+--column-names: 查寻时显示列信息，默认是加上的
+-N, --skip-column-names: 不显示列信息
+-O, --set-variable=name: 设置变量用法是--set-variable=var_name=var_value
+--sigint-ignore: 忽视SIGINT符号(登录退出时Control-C的结果)
+-o, --one-database: 忽视除了为命令行中命名的默认数据库的语句。可以帮跳过日志中的其它数据库的更新。
+--pager[=name]: 使用分页器来显示查询输出，这个要在linux可以用more,less等。
+--no-pager: 不使用分页器来显示查询输出。
+-p, --password[=name]: 输入密码
+-P, --port=#: 设置端口
+--prompt=name: 设置mysql提示符
+--protocol=name: 使用什么协议
+-q, --quick: 不缓存查询的结果，顺序打印每一行。如果输出被挂起，服务器会慢下来，mysql不使用历史文件。
+-r, --raw: 写列的值而不转义转换。通常结合--batch选项使用。
+--reconnect: 如果与服务器之间的连接断开，自动尝试重新连接。禁止重新连接，使用--disable-reconnect。
+-s, --silent: 一行一行输出，中间有tab分隔
+-S, --socket=name: 连接服务器的sockey文件
+--ssl: 激活ssl连接，不激活--skip-ssl
+--ssl-ca=name: CA证书
+--ssl-capath=name: CA路径
+--ssl-cert=name: X509 证书
+--ssl-cipher=name: SSL cipher to use (implies --ssl).
+--ssl-key=name: X509 密钥名
+--ssl-verify-server-cert: 连接时审核服务器的证书
+-t, --table: 以表格的形势输出
+--tee=name: 将输出拷贝添加到给定的文件中，禁时用--disable-tee
+--no-tee: 根--disable-tee功能一样
+-u, --user=name: 用户名
+-U, --safe-updates: Only allow UPDATE and DELETE that uses keys.
+-U, --i-am-a-dummy: Synonym for option --safe-updates, -U.
+-v, --verbose: 输出mysql执行的语句
+-V, --version: 版本信息
+-w, --wait: 服务器down后，等待到重起的时间
+--connect_timeout=#: 连接前要等待的时间
+--max_allowed_packet=#: 服务器接收／发送包的最大长度
+--net_buffer_length=#: TCP/IP和套接字通信缓冲区大小。
+--select_limit=#: 使用--safe-updates时SELECT语句的自动限制
+--max_join_size=#: 使用--safe-updates时联接中的行的自动限制
+--secure-auth: 拒绝用(pre-4.1.1)的方式连接到数据库
+--server-arg=name: Send embedded server this as a parameter.
+--show-warnings: 显示警告
+
+[mysql工具]:
+myisampack: 压缩MyISAM表以产生更小的只读表的一个工具
+mysql: 交互式输入SQL语句或从文件经批处理模式执行它们的命令行工具
+mysqlacceess: 检查访问主机名、用户名和数据库组合的权限的脚本
+mysqladmin: 执行管理操作的客户程序，例如创建或删除数据库、重载授权表、将表刷新到硬盘上、重新打开日志文件以及检索版本、进程以及服务器的状态信息
+mysqlbinlog: 从二进制日志读取语句，在二进制日志文件中包含执行过的语句，可用来帮助系统从崩溃中恢复
+mysqlcheck: 检查、修复、分析以及优化表的表维护客户程序
+mysqldump: 将MySQL数据库转储到一个文件（例如SQL语句或Tab分隔符文本文件）的客户程序
+mysqlhotcopy: 当服务器在运行时，快速备份MyISAM或ISAM表的工具
+mysqlimport: 使用LOAD DATA INFILE 将文本文件导入相应的客户程序
+mysqlshow: 显示数据库、表、列以及索引相关信息的客户程序
+perror: 显示系统或MySQL错误代码含义的工具
+
+[mysql示例]:
+#检测mysql server是否正常提供服务
+mysqladmin -u sky -ppwd -h localhost ping
+
+#获取mysql当前的几个状态值
+mysqladmin -u sky -ppwd -h localhost status
+
+#获取数据库当前的连接信息
+mysqladmin -u sky -ppwd -h localhost processlist
+
+#获取当前数据库的连接数
+mysql -u root -p123456 -BNe 'select host,count(host) from processlist group by host;' information_schema
+
+#显示mysql的uptime
+mysql -e \"SHOW STATUS LIKE '%uptime%'\"|awk '/ptime/{ calc = \$NF / 3600;print \$(NF-1), calc\"Hour\" }'
+
+#查看数据库的大小
+mysql -u root -p123456-e 'select table_schema,round(sum(data_length+index_length)/1024/1024,4) from information_schema.tables group by table_schema;'
+
+#查看某个表的列信息
+mysql -u <user> --password=<password> -e \"SHOW COLUMNS FROM <table>\" <database> | awk '{print \$1}' | tr \"\n\" \",\" | sed 's/,\$//g'
+
+#执行mysql脚本
+mysql -u user-name -p password < script.sql
+
+#mysql dump数据导出
+mysqldump -uroot -T/tmp/mysqldump test test_outfile --fields-enclosed-by=\\\" --fields-terminated-by=,
+
+#mysql数据导入
+mysqlimport --user=name --password=pwd test --fields-enclosed-by=\\\" --fields-terminated-by=, /tmp/test_outfile.txt
+LOAD DATA INFILE '/tmp/test_outfile.txt' INTO TABLE test_outfile FIELDS TERMINATED BY '\"' ENCLOSED BY ',';
+
+#mysql进程监控
+ps -ef | grep 'mysqld_safe' | grep -v 'grep'
+ps -ef | grep 'mysqld' | grep -v 'mysqld_safe'| grep -v 'grep'
+
+#查看当前数据库的状态
+mysql -u root -p123456 -e 'show status'
+
+#mysqlcheck 工具程序可以检查(check),修 复( repair),分 析( analyze)和优化(optimize)MySQL Server 中的表
+mysqlcheck -u root -p123456 --all-databases
+
+#mysql qps查询  QPS = Questions(or Queries) / Seconds
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Questions\"'
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Queries\"'
+
+#mysql Key Buffer 命中率  key_buffer_read_hits = (1 - Key_reads / Key_read_requests) * 100%  key_buffer_write_hits= (1 - Key_writes / Key_write_requests) * 100%
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Key%\"'
+
+#mysql Innodb Buffer 命中率  innodb_buffer_read_hits=(1-Innodb_buffer_pool_reads/Innodb_buffer_pool_read_requests) * 100%
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Innodb_buffer_pool_read%\"'
+
+#mysql Query Cache 命中率 Query_cache_hits= (Qcache_hits / (Qcache_hits + Qcache_inserts)) * 100%
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Qcache%\"'
+
+#mysql Table Cache 状态量
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Open%\"'
+
+#mysql Thread Cache 命中率  Thread_cache_hits = (1 - Threads_created / Connections) * 100%  正常来说,Thread Cache 命中率要在 90% 以上才算比较合理。
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Thread%\"'
+
+#mysql 锁定状态:锁定状态包括表锁和行锁两种,我们可以通过系统状态变量获得锁定总次数,锁定造成其他线程等待的次数,以及锁定等待时间信息
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"%lock%\"'
+
+#mysql 复制延时量 在slave节点执行
+mysql -u root -p123456 -e 'SHOW SLAVE STATUS'
+
+#mysql Tmp table 状况 Tmp Table 的状况主要是用于监控 MySQL 使用临时表的量是否过多,是否有临时表过大而不得不从内存中换出到磁盘文件上
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Created_tmp%\"'
+
+#mysql Binlog Cache 使用状况:Binlog Cache 用于存放还未写入磁盘的 Binlog 信 息 。
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Binlog_cache%\"'
+
+#mysql nnodb_log_waits 量:Innodb_log_waits 状态变量直接反应出 Innodb Log Buffer 空间不足造成等待的次数
+mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Innodb_log_waits\"'
+  "
+}
+
 function main() {
   if [ -z $1 ]; then
     usage simple
     exit 1
-  elif [ $1 == "print" ]; then
+  elif [ "$1" == "print" ]; then
     cat $(echo $0)
-  elif [ $1 == "g" ] || [ $1 == "go" ]; then
+  elif [ "$1" == "g" ] || [ "$1" == "go" ]; then
     require go
     shift
     go $*
-  elif [ $1 == "lg" ] || [ $1 == "lgo" ]; then
+  elif [ "$1" == "lg" ] || [ "$1" == "lgo" ]; then
     require go
     shift
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go $*
-  elif [ $1 == "git" ]; then
+  elif [ "$1" == "git" ]; then
     require git
     shift
     git $*
-  elif [ $1 == "h" ] || [ $1 == "helm" ]; then
+  elif [ "$1" == "h" ] || [ "$1" == "helm" ]; then
     require helm
     shift
     helm $*
-  elif [ $1 == "kk" ]; then
+  elif [ "$1" == "kk" ]; then
     require kubectl
     shift
     kubectl kustomize $*
-  elif [ $1 == "km" ] || [ $1 == "kustomize" ]; then
+  elif [ "$1" == "km" ] || [ "$1" == "kustomize" ]; then
     require kustomize
     shift
     kustomize $*
-  elif [ $1 == "ec" ] || [ $1 == "edc" ] || [ $1 == "etcdctl" ]; then
+  elif [ "$1" == "ec" ] || [ "$1" == "edc" ] || [ "$1" == "etcdctl" ]; then
     require etcdctl
     shift
     etcdctl $*
-  elif [ $1 == "py" ] || [ $1 == "py3" ] || [ $1 == "python" ] || [ $1 == "python3" ]; then
+  elif [ "$1" == "py" ] || [ "$1" == "py3" ] || [ "$1" == "python" ] || [ "$1" == "python3" ]; then
     shift
     if type python3 &>/dev/null; then
       python3 $*
     else
       python $*
     fi
-  elif [ $1 == "td" ] || [ $1 == "tdp" ] || [ $1 == "tcpdump" ]; then
+  elif  [ "$1" == "ldf" ]; then
     shift
-    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+    if type dfc &>/dev/null; then
+      dfc | grep "$1"
+    else
+      require df column
+      df -hP | column -t | grep "$1"
+    fi
+  elif  [ "$1" == "lfd" ]; then
+    shift
+    require awk
+    awk 'BEGIN{split("B K M G T P E Z Y",v)} {if ($NF ~ "^[a-zA-Z].*[0-9]$" && $NF !~ "c[0-9]+d[0-9]+$" && $NF !~ "^loop.*"){s=1;while($((NF-1))>1024&&s<9){$((NF-1))/=1024;s++} printf "%7.2f%s\tdev/%s\n",$((NF-1)),v[s+1],$NF}}' /proc/partitions
+  elif [ "$1" == "ldu" ]; then
+    require du sort awk
+    shift
+    if [ $# -eq 0 ]; then
+      du -sb * .[^.]*| sort -nr| awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
+      # du -sh .
+    else
+      if [[ $1 =~ /$ ]]; then
+        lpath=${1%/*}
+      else
+        lpath=$1
+      fi
+      du -sb $lpath/* $lpath/.[^.]*| sort -nr| awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
+      # du -sh $1
+    fi
+  elif [ "$1" == "st" ]; then
+    shift
+    if [ "$1" == "c" ] || [ "$1" == "cpu" ]; then
+      cat /proc/cpuinfo
+    elif [ "$1" == "m" ] || [ "$1" == "mem" ]; then
+      cat /proc/meminfo
+    elif [ "$1" == "ctp" ] || [ "$1" == "ctop" ]; then
+      shift
+      require ctop
+      ctop $*
+    elif [ "$1" == "tp" ] || [ "$1" == "top" ]; then
+      shift
+      if type gotop &>/dev/null; then
+        gotop $*
+      elif type htop &>/dev/null; then
+        htop $*
+      else
+        top $*
+      fi
+    elif [ "$1" == "io" ]; then
+      shift
+      require iostat
+      iostat $*
+    elif [ "$1" == "vm" ]; then
+      shift
+      require vmstat
+      vmstat $*
+    elif [ "$1" == "mp" ]; then
+      shift
+      require mpstat
+      mpstat $*
+    elif [ "$1" == "net" ]; then
+      shift
+      require netstat
+      if [ $# -eq 0 ]; then
+        netstat -vatunlp
+      else
+        netstat $*
+      fi
+    elif [ "$1" == "pid" ]; then
+      shift
+      require pidstat
+      if [ "$1" == "c" ]; then
+        pidstat -u
+      elif [ "$1" == "m" ]; then
+        pidstat -r
+      elif [ "$1" == "d" ]; then
+        pidstat -d
+      elif [ "$1" == "w" ]; then
+        pidstat -w
+      elif [ "$1" == "t" ]; then
+        pidstat -t
+      else
+        pidstat $*
+      fi
+    elif [ "$1" == "java" ]; then
+      shift
+      if [ "$1" == "dump" ]; then
+        javadump
+      elif [ "$1" == "jps" ]; then
+        shift
+        require jps
+        jps $*
+      elif [ "$1" == "jstat" ]; then
+        shift
+        require jstat
+        jstat $*
+      elif [ "$1" == "jmap" ]; then
+        shift
+        require jmap
+        jmap $*
+      elif [ "$1" == "jhat" ]; then
+        shift
+        require jhat
+        jhat $*
+      elif [ "$1" == "jstack" ]; then
+        shift
+        require jstack
+        jstack $*
+      elif [ "$1" == "jinfo" ]; then
+        shift
+        require jinfo
+        jinfo $*
+      else
+        require java
+        java $*
+      fi
+    elif [ "$1" == "mysql" ]; then
+      shift
+      if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
+        mysqlhelp
+      elif [ "$1" == "help" ]; then
+        require mysql
+        mysql --help
+      else
+        require mysql
+        mysql $*
+      fi
+    fi
+  elif [ "$1" == "td" ] || [ "$1" == "tdp" ] || [ "$1" == "tcpdump" ]; then
+    shift
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
       tcpdumphelp
-    elif [ $1 == "help" ]; then
+    elif [ "$1" == "help" ]; then
       require tcpdump
       tcpdump --help
     else
       require tcpdump
       tcpdump $*
     fi
-  elif [ $1 == "ts" ] || [ $1 == "tsk" ] || [ $1 == "tshark" ]; then
+  elif [ "$1" == "ts" ] || [ "$1" == "tsk" ] || [ "$1" == "tshark" ]; then
     shift
-    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
       tsharkhelp
-    elif [ $1 == "help" ]; then
+    elif [ "$1" == "help" ]; then
       require tshark
       tshark --help
     else
       require tshark
       tshark $*
     fi
-  elif [ $1 == "nm" ] || [ $1 == "nmap" ]; then
+  elif [ "$1" == "nm" ] || [ "$1" == "nmap" ]; then
     shift
-    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
         nmaphelp
-      elif [ $1 == "help" ]; then
+      elif [ "$1" == "help" ]; then
         require nmap
         nmap --help
       else
@@ -1014,7 +1305,7 @@ function main() {
           nmap $*
         fi
       fi
-  elif [ $1 == "pc" ] || [ $1 == "portctl" ] || [ $1 == "portcontrol" ]; then
+  elif [ "$1" == "pc" ] || [ "$1" == "portctl" ] || [ "$1" == "portcontrol" ]; then
     shift
     if [ $# -lt 1 ]; then
       echo "error: need arguments"
@@ -1030,7 +1321,7 @@ function main() {
     for pport in $*; do
       sudo /sbin/iptables -I INPUT -p tcp --dport $pport -j $paction
     done
-  elif [ $1 == "ps" ] || [ $1 == "portstat" ] || [ $1 == "portstatus" ]; then
+  elif [ "$1" == "ps" ] || [ "$1" == "portstat" ] || [ "$1" == "portstatus" ]; then
     shift
     if [ $# -eq 1 ]; then
       nhost="127.0.0.1"
@@ -1052,7 +1343,7 @@ function main() {
     else
       wget -qS -O- http://${nhost}:${nport} > /dev/null
     fi
-  elif [ $1 == "px" ] || [ $1 == "goproxy" ]; then
+  elif [ "$1" == "px" ] || [ "$1" == "goproxy" ]; then
     shift
     require proxy
     if [ $# -gt 4 ];then
@@ -1090,18 +1381,18 @@ function main() {
         proxy $pargs
       fi
     fi
-  elif [ $1 == "it" ] || [ $1 == "iptable" ] || [ $1 == "iptables" ]; then
+  elif [ "$1" == "it" ] || [ "$1" == "iptable" ] || [ "$1" == "iptables" ]; then
     shift
-    if [ $1 == "h" ] || [ $1 == "hp" ]; then
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
       iptableshelp
-    elif [ $1 == "help" ]; then
+    elif [ "$1" == "help" ]; then
       require iptables
       iptables --help
     else
       require iptables
       iptables $*
     fi
-  elif [ $1 == "n" ] || [ $1 == "net" ]; then
+  elif [ "$1" == "n" ] || [ "$1" == "net" ]; then
     shift
     subcmd=$1
     case "$subcmd" in
@@ -1366,7 +1657,7 @@ function main() {
       fi
       ;;
     esac
-  elif [ $1 == "ct" ] || [ $1 == "ssl" ] || [ $1 == "cred" ]; then
+  elif [ "$1" == "ct" ] || [ "$1" == "ssl" ] || [ "$1" == "cred" ]; then
     require openssl
     shift
     if [ $# -ge 1 ]; then
@@ -1431,47 +1722,47 @@ function main() {
         ;;
       esac
     fi
-  elif [ $1 == "d" ] || [ $1 == "docker" ]; then
+  elif [ "$1" == "d" ] || [ "$1" == "docker" ]; then
     require docker
     shift
     docker $*
-  elif [ $1 == "dc" ] || [ $1 == "dkc" ] || [ $1 == "docker-compose" ]; then
+  elif [ "$1" == "dc" ] || [ "$1" == "dkc" ] || [ "$1" == "docker-compose" ]; then
     require docker-compose
     shift
     docker-compose $*
-  elif [ $1 == "k" ] || [ $1 == "kube" ] || [ $1 == "kubectl" ]; then
+  elif [ "$1" == "k" ] || [ "$1" == "kube" ] || [ "$1" == "kubectl" ]; then
     require kubectl
     shift
     kubectl $*
-  elif [ $1 == "ghp" ] || [ $1 == "ghelp" ]; then
+  elif [ "$1" == "ghp" ] || [ "$1" == "ghelp" ]; then
     require go
     shift
     go help $*
-  elif [ $1 == "dhp" ] || [ $1 == "dhelp" ]; then
+  elif [ "$1" == "dhp" ] || [ "$1" == "dhelp" ]; then
     require docker
     shift
     docker $* --help
-  elif [ $1 == "khp" ] || [ $1 == "khelp" ]; then
+  elif [ "$1" == "khp" ] || [ "$1" == "khelp" ]; then
     require kubectl
     shift
     kubectl $* --help
-  elif [ $1 == "dq" ] || [ $1 == "dsearch" ]; then
+  elif [ "$1" == "dq" ] || [ "$1" == "dsearch" ]; then
     require docker
     shift
     docker search $*
-  elif [ $1 == "dr" ] || [ $1 == "drun" ]; then
+  elif [ "$1" == "dr" ] || [ "$1" == "drun" ]; then
     require docker
     shift
     docker run $*
-  elif [ $1 == "drt" ] || [ $1 == "dtmp" ]; then
+  elif [ "$1" == "drt" ] || [ "$1" == "dtmp" ]; then
     require docker
     shift
     docker run -it --rm $*
-  elif [ $1 == "db" ] || [ $1 == "dbd" ]; then
+  elif [ "$1" == "db" ] || [ "$1" == "dbd" ]; then
     require docker
     shift
     docker build $*
-  elif [ $1 == "sp" ] || [ $1 == "spl" ] || [ $1 == "sample" ]; then
+  elif [ "$1" == "sp" ] || [ "$1" == "spl" ] || [ "$1" == "sample" ]; then
     shift
     skind="pod"
     if [ $# -gt 0 ]; then
@@ -2861,6 +3152,29 @@ function main() {
           echo ${items[$i]}
         fi
       done
+    elif [ "$subcmd" == "kg" ] || [ "$subcmd" == "gencfg" ]; then
+      require kubectl
+      shift
+        apiserver=$1
+        certdir=${2:-"/etc/kubernetes/ssl"}
+
+        kubectl config set-cluster default-cluster --server=${apiserver} \
+            --certificate-authority=${certdir}/kube-ca.pem \
+            --embed-certs=true \
+            --kubeconfig=admin.kubeconfig
+
+        kubectl config set-credentials default-admin \
+            --certificate-authority=${certdir}/kube-ca.pem \
+            --embed-certs=true \
+            --client-key=${certdir}/admin-key.pem \
+            --client-certificate=${certdir}/admin.pem \
+            --kubeconfig=admin.kubeconfig 
+
+        kubectl config set-context default-system --cluster=default-cluster \
+            --user=default-admin \
+            --kubeconfig=admin.kubeconfig
+
+        kubectl config use-context default-system --kubeconfig=admin.kubeconfig
     elif [ "$subcmd" == "cfg" ] || [ "$subcmd" == "config" ]; then
       require kubectl
       kubectl $kc $context config view
@@ -4104,6 +4418,90 @@ EOM
   cp ${SSL_DOMAIN}.key tls.key
   echo "cp ${SSL_DOMAIN}.crt tls.crt"
   cp ${SSL_DOMAIN}.crt tls.crt
+}
+
+function javadump() {
+    DUMP_PIDS=`ps  --no-heading -C java -f --width 1000 |awk '{print $2}'`
+    if [ -z "$DUMP_PIDS" ]; then
+    echo "The server $HOST_NAME is not started!"
+    exit 1;
+    fi
+
+    DUMP_ROOT=~/dump
+    if [ ! -d $DUMP_ROOT ]; then
+    mkdir $DUMP_ROOT
+    fi
+
+    DUMP_DATE=`date +%Y%m%d%H%M%S`
+    DUMP_DIR=$DUMP_ROOT/dump-$DUMP_DATE
+    if [ ! -d $DUMP_DIR ]; then
+    mkdir $DUMP_DIR
+    fi
+
+    for PID in $DUMP_PIDS ; do
+    #Full thread dump 用来查线程占用，死锁等问题
+    $JAVA_HOME/bin/jstack $PID > $DUMP_DIR/jstack-$PID.dump 2>&1
+    echo -e ".\c"
+    #打印出一个给定的Java进程、Java core文件或远程Debug服务器的Java配置信息，具体包括Java系统属性和JVM命令行参数。
+    $JAVA_HOME/bin/jinfo $PID > $DUMP_DIR/jinfo-$PID.dump 2>&1
+    echo -e ".\c"
+    #jstat能够动态打印jvm(Java Virtual Machine Statistics Monitoring Tool)的相关统计信息。如young gc执行的次数、full gc执行的次数，各个内存分区的空间大小和可使用量等信息。	
+    $JAVA_HOME/bin/jstat -gcutil $PID > $DUMP_DIR/jstat-gcutil-$PID.dump 2>&1
+    echo -e ".\c"
+    $JAVA_HOME/bin/jstat -gccapacity $PID > $DUMP_DIR/jstat-gccapacity-$PID.dump 2>&1
+    echo -e ".\c"
+    #未指定选项时，jmap打印共享对象的映射。对每个目标VM加载的共享对象，其起始地址、映射大小及共享对象文件的完整路径将被打印出来，	
+    $JAVA_HOME/bin/jmap $PID > $DUMP_DIR/jmap-$PID.dump 2>&1
+    echo -e ".\c"
+    #-heap打印堆情况的概要信息，包括堆配置，各堆空间的容量、已使用和空闲情况	
+    $JAVA_HOME/bin/jmap -heap $PID > $DUMP_DIR/jmap-heap-$PID.dump 2>&1
+    echo -e ".\c"
+    #-dump将jvm的堆中内存信息输出到一个文件中,然后可以通过eclipse memory analyzer进行分析
+    #注意：这个jmap使用的时候jvm是处在假死状态的，只能在服务瘫痪的时候为了解决问题来使用，否则会造成服务中断。 
+    $JAVA_HOME/bin/jmap -dump:format=b,file=$DUMP_DIR/jmap-dump-$PID.dump $PID 2>&1
+    echo -e ".\c"
+    #显示被进程打开的文件信息
+    if [ -r /usr/sbin/lsof ]; then
+        /usr/sbin/lsof -p $PID > $DUMP_DIR/lsof-$PID.dump
+        echo -e ".\c"
+    fi
+    done
+    #主要负责收集、汇报与存储系统运行信息的。
+    if [ -r /usr/bin/sar ]; then
+    /usr/bin/sar > $DUMP_DIR/sar.dump
+    echo -e ".\c"
+    fi
+    #主要负责收集、汇报与存储系统运行信息的。
+    if [ -r /usr/bin/uptime ]; then
+    /usr/bin/uptime > $DUMP_DIR/uptime.dump
+    echo -e ".\c"
+    fi
+    #内存查看
+    if [ -r /usr/bin/free ]; then
+    /usr/bin/free -t > $DUMP_DIR/free.dump
+    echo -e ".\c"
+    fi
+    #可以得到关于进程、内存、内存分页、堵塞IO、traps及CPU活动的信息。
+    if [ -r /usr/bin/vmstat ]; then
+    /usr/bin/vmstat > $DUMP_DIR/vmstat.dump
+    echo -e ".\c"
+    fi
+    #报告与CPU相关的一些统计信息
+    if [ -r /usr/bin/mpstat ]; then
+    /usr/bin/mpstat > $DUMP_DIR/mpstat.dump
+    echo -e ".\c"
+    fi
+    #报告与IO相关的一些统计信息
+    if [ -r /usr/bin/iostat ]; then
+    /usr/bin/iostat > $DUMP_DIR/iostat.dump
+    echo -e ".\c"
+    fi
+    #报告与网络相关的一些统计信息
+    if [ -r /bin/netstat ]; then
+    /bin/netstat > $DUMP_DIR/netstat.dump
+    echo -e ".\c"
+    fi
+    echo "OK!"
 }
 
 function printSample() {
