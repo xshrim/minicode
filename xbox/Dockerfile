@@ -78,6 +78,7 @@ RUN set -ex \
     mycli \
     net-snmp-tools \
     netcat-openbsd \
+    ncdu \
     nftables \
     nfs-utils \
     neofetch \
