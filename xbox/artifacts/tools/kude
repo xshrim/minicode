@@ -55,6 +55,7 @@ function usage() {
   n,net                    运行网络相关命令          
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
+  id,uuid,guid             生成随机id
   c,cmd                    运行linux命令
   scp                      分发本机文件
   gs                       git一键提交并上传
@@ -328,6 +329,29 @@ echo '
   pc                       设置端口开放关闭
   px                       运行goproxy代理服务器
 '
+}
+
+function idhelp() {
+  echo '
+**USAGE**:
+  kude id/uuid/guid [<arguments>]
+
+**COMMANDS**:
+  h,hp,help                打印id/uuid/guid命令帮助
+  uuid                     随机打印小写字母和数字组合的32字符uuid
+  uuid -                   随机打印带分隔符的小写字母和数字组合的32字符uuid
+  guid                     随机打印字母和数字组合的32字符guid
+  guid -                   随机打印带分隔符的字母和数字组合的32字符guid
+  id <num>                 随机打印num个字母和数字组合的字符
+  id n <num>               随机打印num个数字
+  id l <num>               随机打印num个小写字母
+  id u <num>               随机打印num个大写字母
+  id c <num>               随机打印num个字母
+  id nl <num>              随机打印num个小写字母和数字组合的字符
+  id nu <num>              随机打印num个大写字母和数字组合的字符
+  id nc <num>              随机打印num个字母和数字组合的字符
+  id a <num>               随机打印num个字母和数字组合的字符
+  '
 }
 
 function promqhelp() {
@@ -1773,6 +1797,64 @@ function main() {
       skind=$1
     fi
     printSample "$skind"
+  elif [ "$1" == "id" ] || [ "$1" == "uuid" ] || [ "$1" == "guid" ]; then
+    require cat tr fold head
+    if [ "$1" == "uuid" ]; then
+      shift
+      if [ "$1" == "h" ] || [ "$1" == "hp" ] || [ "$1" == "help" ]; then
+        idhelp
+      elif [ "$1" == "-" ]; then
+        a=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+        b=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 4 | head -n 1)
+        c=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 4 | head -n 1)
+        d=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 4 | head -n 1)
+        e=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
+        echo "$a-$b-$c-$d-$e"
+      else
+        cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 32 | head -n 1
+      fi
+    elif [ "$1" == "guid" ]; then
+      shift
+      if [ "$1" == "h" ] || [ "$1" == "hp" ] || [ "$1" == "help" ]; then
+        idhelp
+      elif [ "$1" == "-" ]; then
+        a=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+        b=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
+        c=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
+        d=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
+        e=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 12 | head -n 1)
+        echo "$a-$b-$c-$d-$e"
+      else
+        cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+      fi
+    else
+      shift
+      idtype="$1"
+      if [ -z $2 ]; then
+        idlen=1
+      else
+        idlen=$2
+      fi
+      if [ "$idtype" == "h" ] || [ "$idtype" == "hp" ] || [ "$idtype" == "help" ]; then
+        idhelp
+      elif [ "$idtype" == "n" ] ; then
+        cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
+      elif [ "$idtype" == "l" ] ; then
+        cat /dev/urandom | tr -dc 'a-z' | fold -w 256 | head -n 1 | head --bytes $idlen
+      elif [ "$idtype" == "u" ] ; then
+        cat /dev/urandom | tr -dc 'A-Z' | fold -w 256 | head -n 1 | head --bytes $idlen
+      elif [ "$idtype" == "c" ] ; then
+        cat /dev/urandom | tr -dc 'a-zA-Z' | fold -w 256 | head -n 1 | head --bytes $idlen
+      elif [ "$idtype" == "nl" ] ; then
+        cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
+      elif [ "$idtype" == "nu" ] ; then
+        cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
+      elif [ "$idtype" == "a" ] || [ "$idtype" == "nc" ]; then
+        cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
+      else
+        cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 256 | head -n 1 | head --bytes $idtype
+      fi
+    fi
   else
     while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
       while getopts "a:b:c:d:e:f:i:k:m:n:o:p:s:t:u:w:hjlrv" opt; do
