@@ -56,6 +56,7 @@ function usage() {
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
   id,uuid,guid             生成随机id
+  tm,time                  时间相关操作
   c,cmd                    运行linux命令
   scp                      分发本机文件
   gs                       git一键提交并上传
@@ -334,7 +335,7 @@ echo '
 function idhelp() {
   echo '
 **USAGE**:
-  kude id/uuid/guid [<arguments>]
+  kude id/uuid/guid [<commands>]
 
 **COMMANDS**:
   h,hp,help                打印id/uuid/guid命令帮助
@@ -351,6 +352,54 @@ function idhelp() {
   id nu <num>              随机打印num个大写字母和数字组合的字符
   id nc <num>              随机打印num个字母和数字组合的字符
   id a <num>               随机打印num个字母和数字组合的字符
+  '
+}
+
+function timehelp() {
+  echo '
+**USAGE**:
+  kude tm [<commands>]
+
+**COMMANDS**:
+  h,hp,help                打印time命令帮助
+  l,local                  打印当地时间
+  e,en                     以英文打印当地时间
+  u,utc                    打印utc时间
+  d,date                   仅显示日期
+  t,time                   仅显示时间
+  w,week                   仅显示星期
+  std,standard             以标准格式打印当前时间
+  fmt,format               以格式化格式打印当前时间
+  ts,timestamp             打印当前时间戳
+  tsn,tsns,timestampns     打印当前纳秒时间戳
+  tsm,tsms,timestampms     打印当前毫秒时间戳
+  cv,convert               进行字符串时间和时间戳之间的转换
+
+**FORMAT**:
+%H 小时，24小时制（00~23）
+%I 小时，12小时制（01~12）
+%k 小时，24小时制（0~23）
+%l 小时，12小时制（1~12）
+%M 分钟（00~59）
+%p 显示出AM或PM
+%r 显示时间，12小时制（hh:mm:ss %p）
+%s 从1970年1月1日00:00:00到目前经历的秒数
+%S 显示秒（00~59）
+%T 显示时间，24小时制（hh:mm:ss）
+%X 显示时间的格式（%H:%M:%S）
+%Z 显示时区，日期域（CST）
+%a 星期的简称（Sun~Sat）
+%A 星期的全称（Sunday~Saturday）
+%h,%b 月的简称（Jan~Dec）
+%B 月的全称（January~December）
+%c 日期和时间（Tue Nov 20 14:12:58 2012）
+%d 一个月的第几天（01~31）
+%x,%D 日期（mm/dd/yy）
+%j 一年的第几天（001~366）
+%m 月份（01~12）
+%w 一个星期的第几天（0代表星期天）
+%W 一年的第几个星期（00~53，星期一为第一天）
+%y 年的最后两个数字（1999则是99）
   '
 }
 
@@ -1854,6 +1903,45 @@ function main() {
       else
         cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 256 | head -n 1 | head --bytes $idtype
       fi
+    fi
+  elif [ "$1" == "tm" ] || [ "$1" == "time" ]; then
+    shift
+    if [ "$1" == "h" ] || [ "$1" == "hp" ] || [ "$1" == "help" ]; then
+      timehelp
+    elif [ "$1" == "l" ] || [ "$1" == "local" ]; then
+      date
+      date +"%Y-%m-%d %H:%M:%S"
+    elif [ "$1" == "u" ] || [ "$1" == "utc" ]; then
+      date -u
+      date -u +"%Y-%m-%d %H:%M:%S"
+    elif [ "$1" == "e" ] || [ "$1" == "en" ]; then
+      env LANG=en_US.UTF-8 date
+    elif [ "$1" == "d" ] || [ "$1" == "date" ]; then
+      date +"%Y-%m-%d"
+    elif [ "$1" == "t" ] || [ "$1" == "time" ]; then
+      date +"%H:%M:%S"
+    elif [ "$1" == "w" ] || [ "$1" == "week" ]; then
+      env LANG=en_US.UTF-8 date +%A
+    elif [ "$1" == "std" ] || [ "$1" == "standard" ]; then
+      date +%Y%m%d%H%M%S
+    elif [ "$1" == "fmt" ] || [ "$1" == "format" ]; then
+      date +"%Y-%m-%d %H:%M:%S"
+    elif [ "$1" == "ts" ] || [ "$1" == "timestamp" ]; then
+      date +%s
+    elif [ "$1" == "tsn" ] || [ "$1" == "tsns" ] || [ "$1" == "timestampns" ]; then
+      date +%s%N
+    elif [ "$1" == "tsm" ] || [ "$1" == "tsms" ] || [ "$1" == "timestampms" ]; then
+      echo $(($(date +%s%N)/1000000))
+    elif [ "$1" == "cv" ]; then
+      shift
+      if (($1)) 2> /dev/null; then
+        date -d @$1 +'%Y-%m-%d %H:%M:%S'
+      else
+        date -d "$1" +'%s'
+        date -d "$1" +'%Y-%m-%d %H:%M:%S'
+      fi
+    else
+      date $*
     fi
   else
     while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
