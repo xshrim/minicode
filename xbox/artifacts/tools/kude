@@ -3658,6 +3658,12 @@ function main() {
       if [ "$kind" == "crb" ]; then
         kind="clusterrolebinding"
       fi
+      if [ "$kind" == "vwc" ]; then
+        kind="validatingwebhookconfigurations"
+      fi
+      if [ "$kind" == "mwc" ]; then
+        kind="mutatingwebhookconfigurations"
+      fi
       if [ -z "$kwd" ]; then
         if [ ${#mandatory[@]} -gt 0 ]; then
           kwd=${mandatory[0]}
