@@ -69,7 +69,7 @@ func init() {
 
 	flag.Int64Var(&count, "c", 0, "how many logs to output, no limit if count is 0")
 	flag.DurationVar(&duration, "d", 0, "how long to output logs, this would be interval when count is 0")
-	flag.IntVar(&size, "s", 200, "size of each log (Byte)")
+	flag.IntVar(&size, "s", 0, "size of each log (Byte)")
 	flag.StringVar(&command, "r", "", "command to run")
 	flag.StringVar(&prefix, "p", "", "prefix of logs")
 	flag.BoolVar(&quit, "q", false, "exit after task completion")
@@ -312,6 +312,8 @@ func main() {
 			if err != nil {
 				gol.Fatal(err)
 			}
+		} else {
+			size = 200
 		}
 	}
 
