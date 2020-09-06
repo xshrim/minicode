@@ -19,6 +19,8 @@ chroot=""
 localrun=0
 savepath=""
 vol=""
+dryrun=""
+output=""
 
 mandatory=()
 
@@ -34,6 +36,7 @@ function usage() {
   g,go                     运行go命令
   lg,lgo                   Linux环境下禁用CGO的go命令
   h,helm                   运行helm命令
+  ht                       运行helm template命令
   d,docker                 运行docker命令
   dc,dkc,docker-compose    运行docker-compose命令
   k,kube,kubectl           运行kubectl命令
@@ -52,7 +55,9 @@ function usage() {
   lfd                      统计系统磁盘大小
   ldu                      统计目录磁盘占用
   st                       查看系统各项stat信息
-  n,net                    运行网络相关命令          
+  n,net                    运行网络相关命令
+  cu,au,createuser,adduser 创建用户
+  opt,optimize             对操作系统进行k8s环境优化
   ct,ssl,cred              加密凭证操作
   sp,sample                输出模板示例
   id,uuid,guid             生成随机id
@@ -126,6 +131,7 @@ function usage() {
   au,auth                  执行kubectl auth命令
   pr,proxy                 开启kube apiserver本地代理
   tk,token                 获取serviceaccount的token
+  cs,crtsec,createsecret   创建secret资源
   lb,label                 为资源增加或删除标签
   lba,labela               为所有指定资源增加或删除标签
   lbo,labelo               为资源增加或覆盖标签
@@ -161,11 +167,12 @@ function usage() {
   -d [savedir] rbac结构图保存目录(可选)
   -e [selector] k8s资源标签选择器
   -f [./kube/config] kubeonfig文件路径(可选)
+  -h [host] 指定目标主机ip
   -i [0] 匹配pod内容器index(可选)
   -k [kind] k8s资源类型
   -m [xo] 自定义调试工具容器(可选)
   -n [default] 查询的k8s命名空间(可选)
-  -o [host] 指定目标主机ip
+  -o [yaml] 输出格式
   -p [22] 目标主机ssh端口(可选)
   -s [admin123] 目标主机ssh密码(可选)
   -t [60] 目标主机ssh连接超时时间(可选)
@@ -175,6 +182,7 @@ function usage() {
   -l 列出满足条件的所有资源
   -r 调试容器中是否需要chroot到目标容器的文件系统
   -v 调试容器中是否需要挂载目标主机的docker.sock文件
+  -y 模拟运行命令
   -h 使用说明
 '
   if [ "$1" != "simple" ]; then
@@ -214,8 +222,14 @@ kude cmd -p 22 -s admin "ls /etc" 127.0.0.1
 # 执行本机命令
 kude cmd "scp test root@10.0.0.10:/root/test"
 
+# 批量配置免密登录
+kude -u root -s abcde@123 -j cmd 'ssh-copy-id -p 22' 10.0.0.10-20
+
 # 将本地文件分发到远程主机
 kude scp "./foo:/root/bar" 10.20.0.12-18
+
+# 自动创建用户并配置密码
+kude au foo bar
 
 # 查看主机网卡列表和详细信息
 kude net ipa
@@ -424,6 +438,33 @@ function promqhelp() {
   '
 }
 
+function cshelp() {
+  echo '
+**USAGE**:
+  kude cs <options> [<arguments>]
+
+**COMMANDS**:
+  h,hp,help                打印createsecret命令帮助
+  g,gl,generic-literal     通过literal生成通用secret资源
+  gf,generic-file          通过file生成通用secret资源
+  ge,generic-env           通过env生成通用secret资源
+  d,dr,docker-registry     生成docker registry secret资源
+  t,tl,tls                 生成tls secret资源
+
+**EXAMPLES**:
+# 生成generic secret
+kude cs gl demo foo=bar zoo=daa
+kude cs gf demo ca=ca.pem pk=key.pem ct=cert.pem file.txt
+kude cs ge demo bar.env
+
+# dryrun生成docker registry secret
+kude cs d demo -y hub.cpaas.io admin Password
+
+# dryrun生成tls secret并输出为yaml
+kude cs t demo -y -o yaml --cert=tls.cert --key=tls.key
+  '
+}
+
 function sslhelp() {
   echo '
 **USAGE**:
@@ -454,10 +495,10 @@ function gensslhelp() {
   echo ' --ca-cert: 指定复用的CA证书路径;'
   echo ' 使用示例:'
   echo ' kude ssl gen --ssl-domain=www.test.com --ssl-trusted-domain=*.test1.com,www.test2.com \ '
-  echo ' --ssl-trusted-ip=1.1.1.1,2.2.2.2,3.3.3.3 --ssl-size=2048 --ssl-date=3650'
+  echo ' --ssl-trusted-ip=1.1.1.1,2.2.2.2,3.3.3.3 --ssl-size=2048 --ca-date=18250 --ssl-date=3650 --ssl-cn=CN'
   echo ' or'
   echo ' kude ssl gen --ssl-domain=www.test.com --ssl-trusted-domain=*.test1.com,www.test2.com \ '
-  echo ' --ssl-trusted-ip=1.1.1.1,2.2.2.2 --ssl-size=2048 --ssl-date=3650 --ca-reuse=true ca-key=cakey.pem ca-cert=cacerts.pem'
+  echo ' --ssl-trusted-ip=1.1.1.1,2.2.2.2 --ssl-size=2048 --ssl-date=3650 --ssl-cn=CN --ca-reuse=true ca-key=cakey.pem ca-cert=cacerts.pem'
   echo ' ================================================================'
 }
 
@@ -1179,6 +1220,12 @@ function main() {
   if [ -z $1 ]; then
     usage simple
     exit 1
+  elif [ "$1" == "--" ]; then
+    usage simple
+    exit 0
+  elif [ "$1" == "--help" ]; then
+    usage
+    exit 0
   elif [ "$1" == "print" ]; then
     cat $(echo $0)
   elif [ "$1" == "g" ] || [ "$1" == "go" ]; then
@@ -1197,6 +1244,10 @@ function main() {
     require helm
     shift
     helm $*
+  elif [ "$1" == "ht" ]; then
+    require helm
+    shift
+    helm template $*
   elif [ "$1" == "kk" ]; then
     require kubectl
     shift
@@ -1950,7 +2001,7 @@ function main() {
     fi
   else
     while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
-      while getopts "a:b:c:d:e:f:i:k:m:n:o:p:s:t:u:w:hjlrv" opt; do
+      while getopts "a:b:c:d:e:f:i:k:m:n:o:p:s:t:u:w:hjlrvy" opt; do
         case $opt in
         a)
           since="--since $OPTARG"
@@ -1969,6 +2020,9 @@ function main() {
           ;;
         f)
           kc="--kubeconfig $OPTARG"
+          ;;
+        h)
+          host="$OPTARG"
           ;;
         i)
           idx=$OPTARG
@@ -1989,7 +2043,7 @@ function main() {
           namespace=$OPTARG
           ;;
         o)
-          host="$OPTARG"
+          output="--output $OPTARG"
           ;;
         p)
           port=$OPTARG
@@ -2012,12 +2066,16 @@ function main() {
         w)
           kwd=$OPTARG
           ;;
+        y)
+          dryrun="--dry-run"
+          ;;
         h)
           usage
           exit 0
           ;;
         \?)
           echo "Invalid option: -$OPTARG" >&2
+          usage
           exit 1
           ;;
         esac
@@ -2091,6 +2149,36 @@ function main() {
       else
         echo "error: need arguments"
         exit 1
+      fi
+    elif [ "$subcmd" == "cu" ] || [ "$subcmd" == "au" ] || [ "$subcmd" == "createuser" ] || [ "$subcmd" == "adduser" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        iuname=${mandatory[0]%/*}
+        ipasswd=${mandatory[0]##*/}
+        cmd="adduser $iuname;echo $ipasswd | passwd $iuname --stdin"
+        if [ ${#mandatory[@]} -gt 1 ]; then
+          for ip in ${mandatory[@]:1}; do
+            execmd "$cmd" $ip 
+          done
+        else
+          execmd "$cmd"
+        fi
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "opt" ] || [ "$subcmd" == "optimize" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        if type kude &> /dev/null; then
+          cppaths="$(which kude):/tmp/"
+        else
+          cppaths="./kude:/tmp/"
+        fi
+        for ip in ${mandatory[@]}; do
+          remotecp "$cppaths" $ip
+          execmd "bash /tmp/kude opt; rm -rf /tmp/kude" $ip 
+        done
+      else
+        optimize
       fi
     elif [ "$subcmd" == "gs" ]; then
       require git
@@ -3394,7 +3482,7 @@ function main() {
       fi
       if [ ${#mandatory[@]} -gt 0 ]; then
         for fname in ${mandatory[@]}; do
-          kubectl $kc $context apply -f $fname $selector $ns
+          kubectl $kc $context apply -f $fname $selector $ns $dryrun $output
         done
       else
         echo "error: need arguments"
@@ -3407,7 +3495,7 @@ function main() {
       fi
       if [ ${#mandatory[@]} -gt 0 ]; then
         for fname in ${mandatory[@]}; do
-          kubectl $kc $context delete -f $fname $selector $ns
+          kubectl $kc $context delete -f $fname $selector $ns $dryrun $output
         done
       else
         echo "error: need arguments"
@@ -3428,14 +3516,14 @@ function main() {
         done
         if [ "$isfile" == "true" ]; then
           for fname in ${mandatory[@]}; do
-            kubectl $kc $context create -f $fname $selector $ns
+            kubectl $kc $context create -f $fname $selector $ns $dryrun $output
           done
         else
           if [ -z $kind ] && [[ ! "${mandatory[*]}" =~ ":" ]]; then
             kind=${mandatory[0]}
             mandatory=("${mandatory[@]:1}")
           fi
-          kubectl $kc $context create $kind ${mandatory[@]} $selector $ns
+          kubectl $kc $context create $kind ${mandatory[@]} $selector $ns $dryrun $output
         fi
       else
         echo "error: need arguments"
@@ -3447,7 +3535,7 @@ function main() {
         ns=""
       fi
       if [ ${#mandatory[@]} -gt 1 ]; then
-        kubectl $kc $context run ${mandatory[@]} $ns
+        kubectl $kc $context run ${mandatory[@]} $ns $dryrun $output
       else
         echo "error: need arguments"
         exit 1
@@ -3469,7 +3557,7 @@ function main() {
       fi
     elif [ "$subcmd" == "a" ] || [ "$subcmd" == "all" ]; then
       require kubectl
-      kubectl $kc $context get all $selector $ns
+      kubectl $kc $context get all $selector $ns $dryrun $output
     elif [ "$subcmd" == "eg" ] || [ "$subcmd" == "etcdget" ]; then
       require etcdctl
       if [ -d /etc/kubernetes/pki ]; then
@@ -3627,6 +3715,61 @@ function main() {
       fi
       nodename=$(echo "$node" | awk '{print $1}')
       kubectl get node $nodename -o jsonpath='{.status.images[*].names[*]}' | sed 's/ /\n/g' | grep -v "@sha256"
+    elif [ "$subcmd" == "cs" ] || [ "$subcmd" == "crtsec" ] || [ "$subcmd" == "createsecret" ]; then
+      require kubectl
+      if [ "$ns" == "--all-namespaces" ]; then
+        ns=""
+      fi
+      if [ ${#mandatory[@]} -gt 1 ]; then
+        sscmd=${mandatory[0]}
+        resname=${mandatory[1]}
+        mandatory=("${mandatory[@]:2}")
+        if [ ${#mandatory[@]} -lt 1 ]; then
+          cshelp
+          exit 1
+        fi
+        if [ "$sscmd" == "h" ] || [ "$sscmd" == "hp" ] || [ "$sscmd" == "help" ]; then
+          cshelp
+          exit 0
+        elif [ "$sscmd" == "g" ] || [ "$sscmd" == "gl" ] || [ "$sscmd" == "generic-literal" ]; then
+          literals=""
+          for ((i = 0; i < ${#mandatory[@]}; i++)); do
+            literals="$literals --from-literal=${mandatory[$i]}"
+          done
+          kubectl $kc $context create secret generic $resname $literals $selector $ns $dryrun $output
+        elif [ "$sscmd" == "gf" ] || [ "$sscmd" == "generic-file" ]; then
+          files=""
+          for ((i = 0; i < ${#mandatory[@]}; i++)); do
+            files="$files --from-file=${mandatory[$i]}"
+          done
+          kubectl $kc $context create secret generic $resname $files $selector $ns $dryrun $output
+        elif [ "$sscmd" == "ge" ] || [ "$sscmd" == "generic-env" ]; then
+          kubectl $kc $context create secret generic $resname --from-env-file=${mandatory[0]} $selector $ns $dryrun $output
+        elif [ "$sscmd" == "dr" ] || [ "$sscmd" == "dr" ] || [ "$sscmd" == "docker-registry" ]; then
+          if [ ${#mandatory[@]} -lt 3 ]; then
+            cshelp
+            exit 1
+          fi
+          dserver=${mandatory[0]}
+          duname=${mandatory[1]}
+          dpasswd=${mandatory[2]}
+          kubectl $kc $context create secret docker-registry $resname --docker-server=$dserver --docker-username=$duname --docker-password=$dpasswd $selector $ns $dryrun $output
+        elif [ "$sscmd" == "t" ] || [ "$sscmd" == "tl" ] || [ "$sscmd" == "tls" ]; then
+          if [ ${#mandatory[@]} -lt 2 ]; then
+            cshelp
+            exit 1
+          fi
+          tlscert=${mandatory[0]}
+          tlskey=${mandatory[1]}
+          kubectl $kc $context create secret tls $resname --cert=$tlscert --key=$tlskey $selector $ns $dryrun $output
+        else
+          cshelp
+          exit 1
+        fi
+      else
+        cshelp
+        exit 1
+      fi
     elif [ "$subcmd" == "tk" ] || [ "$subcmd" == "token" ]; then
       require kubectl base64
       if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
@@ -3668,10 +3811,10 @@ function main() {
       kubectl $kc $context api-versions
     elif [ "$subcmd" == "ro" ] || [ "$subcmd" == "rollout" ]; then
       require kubectl
-      kubectl $kc $context rollout ${mandatory[@]} $selector $ns
+      kubectl $kc $context rollout ${mandatory[@]} $selector $ns $dryrun $output
     elif [ "$subcmd" == "au" ] || [ "$subcmd" == "auth" ]; then
       require kubectl
-      kubectl $kc $context auth "${mandatory[@]}" $ns
+      kubectl $kc $context auth "${mandatory[@]}" $ns $dryrun $output
     elif [ "$subcmd" == "pr" ] || [ "$subcmd" == "proxy" ]; then
       require kubectl
       if [[ "${mandatory[*]}" =~ ":" ]]; then
@@ -3690,7 +3833,7 @@ function main() {
           pt="8001"
         fi
       fi
-      kubectl $kc $context proxy --address $ip --port $pt
+      kubectl $kc $context proxy --address $ip --port $pt $dryrun $output
     elif [ "$subcmd" == "li" ] || [ "$subcmd" == "lsimg" ]; then
       require kubectl
       # kubectl get pods --all-namespaces -o jsonpath="{.items[*].spec.containers[*].image}"
@@ -3791,7 +3934,7 @@ function main() {
           if [[ "$subcmd" == "lba" ]] || [[ "$subcmd" == "lbao" ]] || [[ "$subcmd" == "labela" ]] || [[ "$subcmd" == "labelao" ]] || [[ "$kwd" =~ "-" ]] || [[ "$kwd" =~ "=" ]]; then
             args=$kwd" "$args
             kwd=""
-            kubectl $kc $context label $lbow $kind --all $args $ns
+            kubectl $kc $context label $lbow $kind --all $args $ns $dryrun $output
             exit 0
           fi
           items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd")
@@ -3810,7 +3953,7 @@ function main() {
               lns=$(echo "$item" | awk '{print $2}')
               lrs=$(echo "$item" | awk '{print $1}')
             fi
-            kubectl $kc $context -n $lns label $lbow $kind $lrs $args 
+            kubectl $kc $context -n $lns label $lbow $kind $lrs $args $dryrun $output
           else
             echo "====== More than one $kind ======"
             for ((i = 0; i < ${#items[@]}; i++)); do
@@ -3831,7 +3974,7 @@ function main() {
                   lns=$(echo "$item" | awk '{print $2}')
                   lrs=$(echo "$item" | awk '{print $1}')
                 fi
-                kubectl $kc $context -n $lns label $lbow $kind $lrs $args
+                kubectl $kc $context -n $lns label $lbow $kind $lrs $args $dryrun $output
               done
             else
               item=${items[$liidx]}
@@ -3842,7 +3985,7 @@ function main() {
                 lns=$(echo "$item" | awk '{print $2}')
                 lrs=$(echo "$item" | awk '{print $1}')
               fi
-              kubectl $kc $context -n $lns label $lbow $kind $lrs $args 
+              kubectl $kc $context -n $lns label $lbow $kind $lrs $args $dryrun $output
             fi
           fi
           ;;
@@ -4105,7 +4248,7 @@ function main() {
         kubectl $kc $context edit $kind $resname $ns
         ;;
       "p" | "patch")
-        kubectl $kc $context patch $kind $resname $ns --patch $args
+        kubectl $kc $context patch $kind $resname $ns --patch $args $dryrun $output
         ;;
       "rm" | "del" | "delete")
         isfile="true"
@@ -4117,10 +4260,10 @@ function main() {
         done
         if [ "$isfile" == "true" ]; then
           for fname in ${mandatory[@]}; do
-            kubectl $kc $context delete -f $fname
+            kubectl $kc $context delete -f $fname $dryrun $output
           done
         else
-          kubectl $kc $context delete $kind $resname $ns
+          kubectl $kc $context delete $kind $resname $ns $dryrun $output
         fi
         ;;
       "e" | "exe" | "exec")
@@ -4158,14 +4301,14 @@ function main() {
           else
             sufarg="$resname:"$sufarg
           fi
-          kubectl $kc $context cp $prearg$sufarg $ns
+          kubectl $kc $context cp $prearg$sufarg $ns $dryrun $output
         else
           echo "subcmd copy not fit for $kind"
         fi
         ;;
       "pf" | "forward" | "port-forward")
         if [ "$kind" == "pod" ]; then
-          kubectl $kc $context port-forward $resname $args $ns
+          kubectl $kc $context port-forward $resname $args $ns $dryrun $output
         else
           echo "subcmd port-forward not fit for $kind"
         fi
@@ -4485,6 +4628,116 @@ function remotecp() {
       fi
     done
   fi
+}
+
+function optimize() {
+    # OS调优
+    echo "
+    net.bridge.bridge-nf-call-ip6tables=1
+    net.bridge.bridge-nf-call-iptables=1
+    net.ipv4.ip_forward=1
+    net.ipv4.conf.all.forwarding=1
+    net.ipv4.neigh.default.gc_thresh1=128
+    net.ipv4.neigh.default.gc_thresh2=6144
+    net.ipv4.neigh.default.gc_thresh3=8192
+    net.ipv4.neigh.default.gc_interval=60
+    # 检查一次相邻层记录的有效性的周期。当相邻层记录失效时，将在给它发送数据前，再解析一次。默认值：60 秒。
+    net.ipv4.neigh.default.gc_stale_time=120
+
+    # 参考 https://github.com/prometheus/node_exporter#disabled-by-default
+    kernel.perf_event_paranoid=-1
+
+    # softlockup_panic如果为 1，在出现 panic 后将导致系统重启
+    kernel.softlockup_panic=0
+    kernel.watchdog_thresh=30
+    # 系统中所有进程能够同时打开的文件句柄数量
+    fs.file-max=2097152
+    # 设置每个用户可以运行的inotifywait或inotifywatch命令的进程数。
+    fs.inotify.max_user_instances=8192
+    # inotify用于监控文件系统事件，该文件中的值为调用inotify_init函数时分配给inotify队列的事件数目的最大值，超出这个值得事件被丢弃，但会触发IN_Q_OVERFLOW事件，文件系统变化越频繁，这个值就应该越大
+    fs.inotify.max_queued_events=16384
+    # IO复用epoll监听文件句柄的数量最大值
+    fs.inotify.max_user_watches=524288
+
+    # 是否禁用ipv6：0：不禁用，1：禁用
+    #net.ipv6.conf.all.disable_ipv6=0
+    #net.ipv6.conf.default.disable_ipv6=0
+    #net.ipv6.conf.lo.disable_ipv6=0
+
+    kernel.yama.ptrace_scope=0
+    vm.swappiness=0
+
+    # 可以控制core文件的文件名中是否添加pid作为扩展。
+    kernel.core_uses_pid=1
+
+    # Promote secondary addresses when the primary address is removed
+    # 0：当接口的主IP地址被移除时，删除所有次IP地址
+    # 1：当接口的主IP地址被移除时，将次IP地址提升为主IP地址
+    net.ipv4.conf.default.promote_secondaries=1
+    net.ipv4.conf.all.promote_secondaries=1
+
+    # 源路由验证
+    # see details in https://help.aliyun.com/knowledge_detail/39428.html
+    net.ipv4.conf.all.rp_filter=0
+    net.ipv4.conf.default.rp_filter=0
+    net.ipv4.conf.default.arp_announce = 2
+    net.ipv4.conf.lo.arp_announce=2
+    net.ipv4.conf.all.arp_announce=2
+
+    # see details in https://help.aliyun.com/knowledge_detail/41334.html
+    net.ipv4.tcp_syncookies=1
+    net.ipv4.tcp_fin_timeout=30
+    net.ipv4.tcp_synack_retries=2
+    net.ipv4.tcp_max_syn_backlog=8096
+    kernel.sysrq=1
+    net.ipv4.tcp_tw_recycle=0
+
+    " >> /etc/sysctl.conf
+
+    sysctl -p
+
+    # nofile优化
+    cat >> /etc/security/limits.conf <<EOF
+    * soft nofile 65535
+    * hard nofile 65536
+EOF
+
+    # docker优化
+    touch /etc/docker/daemon.json
+    cat > /etc/docker/daemon.json <<EOF
+    {
+        "oom-score-adjust": -1000,
+        "log-driver": "json-file",
+        "log-opts": {
+        "max-size": "100m",
+        "max-file": "3"
+        },
+        "max-concurrent-downloads": 10,
+        "max-concurrent-uploads": 10,
+        "insecure-registries": ["hub.ebcpaas.com"],
+        "registry-mirrors": ["https://hub.ebcpaas.com"],
+        "storage-driver": "overlay2",
+        "storage-opts": [
+        "overlay2.override_kernel_check=true"
+        ]
+    }
+EOF
+    systemctl daemon-reload && systemctl restart docker
+
+    # etcd优化
+    if pgrep etcd &>/dev/null; then
+      # cpu优先级
+      renice -n -20 -p $(pgrep etcd)
+      # disk优先级
+      ionice -c2 -n0 -p $(pgrep etcd)
+    fi
+    # network优先级
+    NETWORK_INTERFACE=eth0
+    tc qdisc add dev ${NETWORK_INTERFACE} root handle 1: prio bands 3
+    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 1 u32 match ip sport 2380 0xffff flowid 1:1
+    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 1 u32 match ip dport 2380 0xffff flowid 1:1
+    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 2 u32 match ip sport 2739 0xffff flowid 1:1
+    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 2 u32 match ip dport 2739 0xffff flowid 1:1
 }
 
 function genssl() {
