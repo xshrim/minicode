@@ -56,6 +56,7 @@ function usage() {
   ldu                      统计目录磁盘占用
   st                       查看系统各项stat信息
   n,net                    运行网络相关命令
+  ym,yum                   运行yum相关命令
   cu,au,createuser,adduser 创建用户
   opt,optimize             对操作系统进行k8s环境优化
   ct,ssl,cred              加密凭证操作
@@ -462,6 +463,25 @@ kude cs d demo -y hub.cpaas.io admin Password
 
 # dryrun生成tls secret并输出为yaml
 kude cs t demo -y -o yaml --cert=tls.cert --key=tls.key
+  '
+}
+
+function yumhelp() {
+  echo '
+**USAGE**:
+  kude yum <options> [<arguments>]
+
+**COMMANDS**:
+  h,hp                     打印yum命令帮助
+  help                     打印原yum命令帮助
+  cr,repo                  构建本地源
+  c,cfg                    配置本地源
+  d,dl                     下载rpm软件包
+  q,rq                     使用repoquery查询
+  s,sq                     搜索软件包
+  l.list                   列出软件包
+  i,inst                   安装软件包
+  r,del                    删除软件包
   '
 }
 
@@ -1520,6 +1540,55 @@ function main() {
     else
       require iptables
       iptables $*
+    fi
+  elif [ "$1" == "ym" ] || [ "$1" == "yum" ]; then
+    require yum
+    shift
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
+      yumhelp
+    elif [ "$1" == "help" ]; then
+      yum --help
+    elif [ "$1" == "cr" ] || [ "$1" == "repo" ]; then
+      require createrepo
+      shift
+      if [ -z $1 ]; then
+        createrepo .
+      else
+        createrepo $1
+      fi
+    elif [ "$1" == "c" ] || [ "$1" == "cfg" ]; then
+      shift
+      url="http://127.0.0.1:80/"
+      if [ -n $1 ]; then
+        url=$1
+      fi
+      echo -e "[private]\nname=private\nbaseurl=$url\ngpgcheck=0\nenabled=1\n" > /etc/yum.repos.d/private.repo
+      yum clean all && makecache fast
+    elif [ "$1" == "d" ] || [ "$1" == "dl" ]; then
+      shift
+      if type yumdownloader &>/dev/null; then
+        yumdownloader --resolve yum install $*
+      else
+        yum install --downloadonly --downloaddir=./ $*
+      fi
+    elif [ "$1" == "q" ] || [ "$1" == "rq" ]; then
+      require repoquery
+      shift
+      repoquery $*
+    elif [ "$1" == "s" ] || [ "$1" == "sq" ]; then
+      shift
+      yum search all $*
+    elif [ "$1" == "l" ] || [ "$1" == "list" ]; then
+      shift
+      yum list $* --showduplicates | sort -r
+    elif [ "$1" == "i" ] || [ "$1" == "inst" ]; then
+      shift
+      yum install -y $*
+    elif [ "$1" == "r" ] || [ "$1" == "del" ]; then
+      shift
+      yum remove -y $*
+    else
+      yum $*
     fi
   elif [ "$1" == "n" ] || [ "$1" == "net" ]; then
     shift
