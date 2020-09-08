@@ -1236,6 +1236,50 @@ function capitalize() {
 }
 
 #########################################################################
+# 批量ping主机
+#########################################################################
+function pping() {
+  trap "exit 1" SIGINT SIGQUIT
+  for ipaddr in $@; do
+    if [ $(echo "$ipaddr" |tr -cd 1 |wc -c) -eq 2 ]; then
+      ipd=$ipaddr
+      ipr="1-254"
+    else
+      ipd=${ipaddr%.*}
+      ipr=${ipaddr##*.}    
+    fi
+
+    ipstart=$ipr
+    ipend=$ipr
+
+    if [[ "$ipr" =~ "-" ]]; then
+      ipstart=${ipr%-*}
+      ipend=${ipr##*-}
+    fi
+
+    for ((i = $ipstart; i <= $ipend; i++)); do
+      if [ $ipd == $ipr ]; then
+        cip=$ipd
+      else
+        cip=$ipd.$i
+      fi
+      if [ ${cip##*.} -le 9 ]; then
+        sip="$cip  "
+      elif [ ${cip##*.} -le 99 ]; then
+        sip="$cip "
+      else
+        sip="$cip"
+      fi
+      if ping -c 1 -w 1 $cip &>/dev/null;then
+        echo -e "\e[1;32m $sip is up \e[0m"
+       else
+         echo -e "\e[1;31m $sip is down \e[0m"
+      fi
+    done
+  done
+}
+
+#########################################################################
 # 自动执行sudo命令(Alt+Enter)
 #########################################################################
 
