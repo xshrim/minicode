@@ -36,7 +36,6 @@ function usage() {
   g,go                     运行go命令
   lg,lgo                   Linux环境下禁用CGO的go命令
   h,helm                   运行helm命令
-  ht                       运行helm template命令
   d,docker                 运行docker命令
   dc,dkc,docker-compose    运行docker-compose命令
   k,kube,kubectl           运行kubectl命令
@@ -57,9 +56,11 @@ function usage() {
   st                       查看系统各项stat信息
   n,net                    运行网络相关命令
   ym,yum                   运行yum相关命令
+  ac,autocomplete          开启命令自动补全
   cu,au,createuser,adduser 创建用户
   opt,optimize             对操作系统进行k8s环境优化
   ct,ssl,cred              加密凭证操作
+  cv,convert               格式转换
   sp,sample                输出模板示例
   id,uuid,guid             生成随机id
   tm,time                  时间相关操作
@@ -166,11 +167,11 @@ function usage() {
   -b [100] log显示条数
   -c [context] kubernetes连接上下文(可选)
   -d [savedir] rbac结构图保存目录(可选)
-  -e [selector] k8s资源标签选择器
   -f [./kube/config] kubeonfig文件路径(可选)
   -h [host] 指定目标主机ip
   -i [0] 匹配pod内容器index(可选)
   -k [kind] k8s资源类型
+  -l [selector] k8s资源标签选择器
   -m [xo] 自定义调试工具容器(可选)
   -n [default] 查询的k8s命名空间(可选)
   -o [yaml] 输出格式
@@ -179,8 +180,8 @@ function usage() {
   -t [60] 目标主机ssh连接超时时间(可选)
   -u [root] 目标主机ssh账号(可选)
   -w [kwd] 过滤关键字
+  -g 列出满足条件的所有资源
   -j 配合cmd本机执行命令
-  -l 列出满足条件的所有资源
   -r 调试容器中是否需要chroot到目标容器的文件系统
   -v 调试容器中是否需要挂载目标主机的docker.sock文件
   -y 模拟运行命令
@@ -317,7 +318,7 @@ kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
 function nethelp() {
 echo '
 **USAGE**:
-  kude n <options> [<arguments>]
+  kude n <commands> [<arguments>]
 
 **COMMANDS**:
   h,hp,help                打印pq命令帮助
@@ -422,7 +423,7 @@ function timehelp() {
 function promqhelp() {
   echo '
 **USAGE**:
-  kude pq <options> [<arguments>]
+  kude pq <commands> [<arguments>]
 
 **COMMANDS**:
   h,hp,help                打印pq命令帮助
@@ -442,7 +443,7 @@ function promqhelp() {
 function cshelp() {
   echo '
 **USAGE**:
-  kude cs <options> [<arguments>]
+  kude cs <commands> [<arguments>]
 
 **COMMANDS**:
   h,hp,help                打印createsecret命令帮助
@@ -469,7 +470,7 @@ kude cs t demo -y -o yaml --cert=tls.cert --key=tls.key
 function yumhelp() {
   echo '
 **USAGE**:
-  kude yum <options> [<arguments>]
+  kude yum <commands> [<arguments>]
 
 **COMMANDS**:
   h,hp                     打印yum命令帮助
@@ -485,10 +486,62 @@ function yumhelp() {
   '
 }
 
+function helmhelp() {
+  echo '
+**USAGE**:
+  kude helm <commands> [<arguments>]
+
+**COMMANDS**:
+  h,hp                     打印helm命令帮助
+  help                     打印原helm命令帮助
+  t,temp,template          执行helm template命令
+  s,search                 执行helm search命令
+  sh,shub,searchhub        执行helm search hub命令
+  p,pkg,package            执行helm package命令
+  i,inst,install           执行helm install命令
+  u,upd,upgrade            执行helm upgrade命令
+  d,del,delete             执行helm delete命令
+  c,crt,create             执行helm create命令
+  f,pull,fetch             执行helm fetch命令
+  l,lst,list               执行helm list命令
+  v,vfy,verify             执行helm verify命令
+  r,rp,repo                执行helm repo命令
+  a,sts,status             执行helm status命令
+  '
+}
+
+function converthelp() {
+  echo '
+**USAGE**:
+  kude cv <commands> [<arguments>]
+
+**COMMANDS**:
+  h,hp,help                打印convert命令帮助
+  id,identify              获取图片格式特性
+  ico                      将指定图片转换为ico格式
+  img,image                将指定图片转换为指定格式
+  rs,resize                改变指定图片尺寸
+  ql,quality               图片质量压缩
+  rt,rotate                旋转图片
+  fi,flip                  上下翻转图片
+  fo,flop                  左右翻转图片
+  br,blur                  高斯模糊图片
+  bw,gray                  将图片变为黑白
+  ng,negate                将图片反色
+  ns,noise                 图片加噪音
+  pt,paint                 图片油画效果
+  cc,charcoal              图片炭笔效果
+  sp,spread                图片散射毛玻璃效果
+  sw,swirl                 图片漩涡效果
+  ri,raise                 图片凸起效果
+  bd,border                图片加边框
+  '
+}
+
 function sslhelp() {
   echo '
 **USAGE**:
-  kude ssl <options> [<arguments>]
+  kude ssl <commands> [<arguments>]
 
 **COMMANDS**:
   h,hp,help                打印ssl命令帮助
@@ -1260,10 +1313,56 @@ function main() {
     require git
     shift
     git $*
-  elif [ "$1" == "h" ] || [ "$1" == "helm" ]; then
+  elif [ "$1" == "h" ] || [ "$1" == "hm" ] || [ "$1" == "helm" ]; then
     require helm
     shift
-    helm $*
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
+      helmhelp
+    elif [ "$1" == "help" ]; then
+      require helm
+      helm --help
+    elif [ "$1" == "t" ] || [ "$1" == "temp" ] || [ "$1" == "template" ]; then
+      shift
+      helm template $*
+    elif [ "$1" == "s" ] || [ "$1" == "search" ]; then
+      shift
+      helm search $*
+    elif [ "$1" == "sh" ] || [ "$1" == "shub" ] || [ "$1" == "searchhub" ]; then
+      shift
+      helm search hub $*
+    elif [ "$1" == "p" ] || [ "$1" == "pkg" ] || [ "$1" == "package" ]; then
+      shift
+      helm package $*
+    elif [ "$1" == "i" ] || [ "$1" == "inst" ] || [ "$1" == "install" ]; then
+      shift
+      helm install $*
+    elif [ "$1" == "u" ] || [ "$1" == "upd" ] || [ "$1" == "upgrade" ]; then
+      shift
+      helm upgrade $*
+    elif [ "$1" == "d" ] || [ "$1" == "del" ] || [ "$1" == "delete" ]; then
+      shift
+      helm delete $*
+    elif [ "$1" == "c" ] || [ "$1" == "crt" ] || [ "$1" == "create" ]; then
+      shift
+      helm create $*
+    elif [ "$1" == "f" ] || [ "$1" == "pull" ] || [ "$1" == "fetch" ]; then
+      shift
+      helm fetch $*
+    elif [ "$1" == "l" ] || [ "$1" == "lst" ] || [ "$1" == "list" ]; then
+      shift
+      helm list $*
+    elif [ "$1" == "v" ] || [ "$1" == "vfy" ] || [ "$1" == "verify" ]; then
+      shift
+      helm verify $*
+    elif [ "$1" == "r" ] || [ "$1" == "rp" ] || [ "$1" == "repo" ]; then
+      shift
+      helm repo $*
+    elif [ "$1" == "a" ] || [ "$1" == "sts" ] || [ "$1" == "status" ]; then
+      shift
+      helm status $*
+    else
+      helm $*
+    fi
   elif [ "$1" == "ht" ]; then
     require helm
     shift
@@ -1488,9 +1587,17 @@ function main() {
     elif type nmap &>/dev/null; then
       nmap -p $nport $nhost
     elif type curl &>/dev/null; then
-      curl -ksvIL http://${nhost}:${nport} > /dev/null
+      if [ $nport -eq 443 ]; then
+        curl -ksvIL https://${nhost}:${nport} > /dev/null
+      else
+        curl -ksvIL http://${nhost}:${nport} > /dev/null
+      fi
     else
-      wget -qS -O- http://${nhost}:${nport} > /dev/null
+      if [ $nport -eq 443 ]; then
+        wget --no-check-certificate -qS -O- https://${nhost}:${nport} > /dev/null
+      else
+        wget --no-check-certificate -qS -O- http://${nhost}:${nport} > /dev/null
+      fi
     fi
   elif [ "$1" == "px" ] || [ "$1" == "goproxy" ]; then
     shift
@@ -1541,6 +1648,16 @@ function main() {
       require iptables
       iptables $*
     fi
+  elif [ "$1" == "ac" ] || [ "$1" == "autocomplete" ]; then
+    shift
+    if [ "$1" == "b" ] || [ "$1" == "bash" ]; then
+      source <(kubectl completion bash)
+      echo "source <(kubectl completion bash)" >> ~/.bashrc
+    elif [ "$1" == "z" ] || [ "$1" == "zsh" ]; then
+      source <(kubectl completion zsh)
+      echo "source <(kubectl completion zsh)" >> ~/.zshrc
+      # echo "if [ $commands[kubectl] ]; then source <(kubectl completion zsh); fi" >> ~/.zshrc
+    fi
   elif [ "$1" == "ym" ] || [ "$1" == "yum" ]; then
     require yum
     shift
@@ -1590,15 +1707,100 @@ function main() {
     else
       yum $*
     fi
+  elif [ "$1" == "cv" ] || [ "$1" == "convert" ]; then
+    shift
+    subcmd=$1
+    shift
+    case "$subcmd" in
+    "h" | "hp" | "help")
+      converthelp
+      ;;
+    "id" | "ientify")
+      require ientify
+      ientify $1 
+      ;;
+    "ico")
+      require convert
+      convert -background transparent -define 'icon:auto-resize=16,24,32,64' $1 favicon.ico
+      ;;
+    "rs" | "resize")
+      require convert
+      convert -resize $2 $1 output.${1##*.}
+      ;;
+    "ql" | "quality")
+      require convert
+      convert quality $2 $1 output.${1##*.}
+      ;;
+    "rt" | "rotate")
+      require convert
+      convert -rotate $2 $1 output.${1##*.}
+      ;;
+    "fi" | "flip")
+      require convert
+      convert -flip $1 output.${1##*.}
+      ;;
+    "fo" | "flop")
+      require convert
+      convert -flop $1 output.${1##*.}
+      ;;
+    "br" | "blur")
+      require convert
+      convert -blur $2 $1 output.${1##*.}
+      ;;
+    "wb" | "gray")
+      require convert
+      convert -monochrome $1 output.${1##*.}
+      ;;
+    "ng" | "negate")
+      require convert
+      convert -negate $1 output.${1##*.}
+      ;;
+    "ns" | "noise")
+      require convert
+      convert -noise $2 $1 output.${1##*.}
+      ;;
+    "pt" | "paint")
+      require convert
+      convert -paint $2 $1 output.${1##*.}
+      ;;
+    "cc" | "charcoal")
+      require convert
+      convert -charcoal $2 $1 output.${1##*.}
+      ;;
+    "sp" | "spread")
+      require convert
+      convert -spread $2 $1 output.${1##*.}
+      ;;
+    "sw" | "swirl")
+      require convert
+      convert -swirl $2 $1 output.${1##*.}
+      ;;
+    "ri" | "raise")
+      require convert
+      convert -raise $2 $1 output.${1##*.}
+      ;;
+    "bd" | "border")
+      require convert
+      convert -border $2 -bordercolor "$3" $1 output.${1##*.}
+      ;;
+    "img" | "image")
+      require convert
+      if [ $# -gt 2 ]; then
+        convert -density $3 $1 output.$2
+      else
+        convert $1 output.$2
+      fi
+      ;;
+    esac
   elif [ "$1" == "n" ] || [ "$1" == "net" ]; then
     shift
     subcmd=$1
+    shift
     case "$subcmd" in
     "h" | "hp" | "help")
       nethelp
       ;;
     "arp")
-      shift
       require arp
       if [ -z $1 ]; then
         arp -a
@@ -1607,7 +1809,6 @@ function main() {
       fi
       ;;
     "pi")
-      shift
       if type nmap &>/dev/null; then
         sudo nmap -sP --disable-arp-ping $1
       elif type fping &>/dev/null; then
@@ -1617,61 +1818,49 @@ function main() {
       fi
       ;;
     "pp")
-      shift
       pping "$@"
       ;;
     "br")
-      shift
       require brctl
       brctl $*
       ;;
     "brs")
-      shift
       require brctl
       brctl show
       ;;
     "brl")
-      shift
       require bridge
       bridge link show -d
       ;;
     "brv")
-      shift
       require bridge
       bridge vlan show -d
       ;;
     "brf")
-      shift
       require bridge
       bridge fdb show -d
       ;;
     "brm")
-      shift
       require bridge
       bridge mdb show -d
       ;;
     "ip")
-      shift
       require ip
       ip $*
       ;;
     "ipr")
-      shift
       require ip
       ip r
       ;;
     "ipa")
-      shift
       require ip jq
       getip "ipa" "$1"
       ;;
     "ipp")
-      shift
       require ip jq
       getip "ipp" "$1"
       ;;
     "ips")
-      shift
       require ip
       itfs=$(ip -j a|jq -r '.[].ifname' | grep "$1")
       itfs=($itfs)
@@ -1691,7 +1880,6 @@ function main() {
       ip -s a show dev $titf
       ;;
     "tr")
-      shift
       if ! type mtr &>/dev/null; then
         traceroute $*
       else
@@ -1703,7 +1891,6 @@ function main() {
       fi
       ;;
     "ss")
-      shift
       if ! type ss &>/dev/null; then
         if [ -z $1 ]; then
           netstat -vatunlp
@@ -1719,7 +1906,6 @@ function main() {
       fi
       ;;
     "nl")
-      shift
       if type nslookup &>/dev/null; then
         nslookup $*
       else
@@ -1727,7 +1913,6 @@ function main() {
       fi
       ;;
     "nm")
-      shift
       if [ $1 == "h" ] || [ $1 == "hp" ]; then
         nmaphelp
       elif [ $1 == "help" ]; then
@@ -1743,7 +1928,6 @@ function main() {
       fi
       ;;
     "td")
-      shift
       if [ $1 == "h" ] || [ $1 == "hp" ]; then
         tcpdumphelp
       elif [ $1 == "help" ]; then
@@ -1755,7 +1939,6 @@ function main() {
       fi
       ;;
     "ts")
-      shift
       if [ $1 == "h" ] || [ $1 == "hp" ]; then
         tsharkhelp
       elif [ $1 == "help" ]; then
@@ -1767,7 +1950,6 @@ function main() {
       fi
       ;;
     "it")
-      shift
       if [ $1 == "h" ] || [ $1 == "hp" ]; then
         iptableshelp
       elif [ $1 == "help" ]; then
@@ -1779,7 +1961,6 @@ function main() {
       fi
       ;;
     "ps")
-      shift
       if [ $# -eq 1 ]; then
         nhost="127.0.0.1"
         nport=$1
@@ -1796,13 +1977,20 @@ function main() {
       elif type nmap &>/dev/null; then
         nmap -p $nport $nhost
       elif type curl &>/dev/null; then
-        curl -ksvIL http://${nhost}:${nport} > /dev/null
+        if [ $nport -eq 443 ]; then
+          curl -ksvIL https://${nhost}:${nport} > /dev/null
+        else
+          curl -ksvIL http://${nhost}:${nport} > /dev/null
+        fi
       else
-        wget -qS -O- http://${nhost}:${nport} > /dev/null
+        if [ $nport -eq 443 ]; then
+          wget --no-check-certificate -qS -O- https://${nhost}:${nport} > /dev/null
+        else
+          wget --no-check-certificate -qS -O- https://${nhost}:${nport} > /dev/null
+        fi
       fi
       ;;
     "pc")
-      shift
       require iptables
       if [ $# -lt 1 ]; then
         echo "error: need arguments"
@@ -1820,7 +2008,6 @@ function main() {
       done
       ;;
     "px")
-      shift
       require proxy
       if [ $# -gt 4 ];then
         proxy $*
@@ -2070,7 +2257,7 @@ function main() {
     fi
   else
     while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
-      while getopts "a:b:c:d:e:f:i:k:m:n:o:p:s:t:u:w:hjlrvy" opt; do
+      while getopts "a:b:c:d:f:i:k:l:m:n:o:p:s:t:u:w:hgjrvy" opt; do
         case $opt in
         a)
           since="--since $OPTARG"
@@ -2084,11 +2271,11 @@ function main() {
         d)
           savedir="$OPTARG"
           ;;
-        e)
-          selector="--selector=$OPTARG"
-          ;;
         f)
           kc="--kubeconfig $OPTARG"
+          ;;
+        g)
+          list=1
           ;;
         h)
           host="$OPTARG"
@@ -2103,7 +2290,7 @@ function main() {
           kind=$OPTARG
           ;;
         l)
-          list=1
+          selector="--selector=$OPTARG"
           ;;
         m)
           image=$OPTARG
@@ -2442,7 +2629,7 @@ function main() {
         fi
         curl -Gks http://$url/api/v1/query_range --data-urlencode "$query" $stime $etime $step $ptimeout | jq
         ;;
-      default)
+      *)
         curl -Gks ${mandatory[*]} | jq
         ;;
       esac
@@ -3995,6 +4182,26 @@ function main() {
             kubectl $kc $context get $kind $selector $ns --watch
           fi
           ;;
+        "l" | "log")
+          if [ "$ns" == "--all-namespaces" ]; then
+            ns="default"
+          fi
+          if [ "$kind" == "pod" ]; then
+            kubectl $kc $context logs $selector $since $amount $ns --all-containers --max-log-requests 100
+          else
+            echo "subcmd log not fit for $kind"
+          fi
+          ;;
+        "lf" | "logf")
+          if [ "$ns" == "--all-namespaces" ]; then
+            ns="default"
+          fi
+          if [ "$kind" == "pod" ]; then
+            kubectl $kc $context logs -f $selector $since $amount $ns --all-containers --max-log-requests 100
+          else
+            echo "subcmd logf not fit for $kind"
+          fi
+          ;;
         "lb" | "lba" | "lbo" | "lbao" | "label" | "labela" | "labelo" | "labelao")
           lbow=""
           if [[ "$subcmd" == "lbo" ]] || [[ "$subcmd" == "lbao" ]] || [[ "$subcmd" == "labelo" ]] || [[ "$subcmd" == "labelao" ]]; then
@@ -4585,7 +4792,7 @@ function lexecmd() {
       else
         cip=$ipd.$i
       fi
-      echo "[*] $cip"
+      echo "============================== $cip =============================="
       if [ -n "$passwd" ] && type sshpass &>/dev/null; then
         sshpass $ipasswd $ecmd $iuser$cip
       else
@@ -4632,7 +4839,7 @@ function execmd() {
       else
         cip=$ipd.$i
       fi
-      echo "[*] $cip"
+      echo "============================== $cip =============================="
       if [ -n "$passwd" ] && type sshpass &>/dev/null; then
         sshpass $ipasswd ssh -t $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout $iuser$cip "$ecmd"
       else
@@ -4689,7 +4896,7 @@ function remotecp() {
       else
         cip=$ipd.$i
       fi
-      echo "[*] $cip"
+      echo "============================== $cip =============================="
       if [ -n "$passwd" ] && type sshpass &>/dev/null; then
         sshpass $ipasswd scp $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $iuser$cip:$rpath
       else
@@ -5049,6 +5256,101 @@ function javadump() {
     echo -e ".\c"
     fi
     echo "OK!"
+}
+
+function formatOutput() {
+#### usage ####
+# regions=("NAME;AGE;SCORE" "Tom Li;14;89" "Lucy;13;;" "Jack;;92")
+## regions[0]="NAME;AGE;SCORE"
+## regions[1]="Tom Li;14;89"
+## regions[2]="Lucy;13;;"
+## regions[3]="Jack;;92"
+# formatOutput "${regions[@]}"
+
+  sep="#"
+  function append_cell(){
+    #对表格追加单元格
+    #append_cell col0 "col 1" ""
+    #append_cell col3
+    local i
+    for i in "$@"; do
+        line+="|$i${sep}"
+    done
+  }
+  function check_line(){
+    if [ -n "$line" ]; then
+      c_c=$(echo $line|tr -cd "${sep}"|wc -c)
+      difference=$((${column_count}-${c_c}))
+      if [ $difference -gt 0 ]; then
+        line+=$(seq -s " " $difference|sed -r s/[0-9]\+/\|${sep}/g|sed -r  s/${sep}\ /${sep}/g)
+      fi
+    content+="${line}|\n"
+  fi
+  }
+
+  function append_line(){
+    check_line
+    line=""
+    local items=("$@")
+    for ((i = 0; i < ${#items[@]}; i++)); do
+        line+="|${items[$i]}${sep}"
+    done
+    check_line
+    line=""
+   }
+
+  function segmentation(){
+    local seg=""
+    local i
+    for i in $(seq $column_count); do 
+        seg+="+${sep}"
+    done
+    seg+="${sep}+\n"
+    echo $seg
+  }
+
+  function set_title(){
+    #表格标头，以空格分割，包含空格的字符串用引号，如
+    #set_title Column_0 "Column 1" "" Column3
+    [ -n "$title" ] && echo "Warring:表头已经定义过,重写表头和内容"
+    column_count=0
+    title=""
+    local items=("$@")
+    for ((i = 0; i < ${#items[@]}; i++)); do
+        title+="|${items[$i]}${sep}"
+        let column_count++
+    done
+    title+="|\n"
+    seg=`segmentation`
+    title="${seg}${title}${seg}"
+    content=""
+  }
+
+  function output_table(){
+    if [ ! -n "${title}" ]; then
+        echo "未设置表头，退出" && return 1
+    fi
+    append_line
+    table="${title}${content}$(segmentation)"
+    echo -e $table|column -s "${sep}" -t|awk '{if($0 ~ /^+/){gsub(" ","-",$0);print $0}else{gsub("\\(\\*\\)","\033[31m(*)\033[0m",$0);print $0}}'
+  }
+
+  local lns=("$@")
+  for ((ii = 0; ii < ${#lns[@]}; ii++)); do
+    local ln="${lns[$ii]}"
+    declare -a arr
+    IFS=';' read -ra ADDR <<< "$ln"
+    for k in "${ADDR[@]}"; do
+      arr[${#arr[*]}]="$k"
+    done
+    if [ $ii -eq 0 ]; then
+      set_title "${arr[@]}"
+    else
+      append_line "${arr[@]}"
+    fi
+    unset arr
+  done
+  output_table
 }
 
 function printSample() {
