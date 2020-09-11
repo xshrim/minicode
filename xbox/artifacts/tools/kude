@@ -49,7 +49,8 @@ function usage() {
   ps,portstat,portstatus   运行端口检测命令
   pc,portctl,portcontrol   运行端口开放关闭命令
   py,py3,python            执行python3命令
-  px,goproxy               运行goproxy代理服务器
+  px                       在http代理环境执行命令
+  pxs,goproxy              运行goproxy代理服务器
   ldf                      统计系统分区空间占用
   lfd                      统计系统磁盘大小
   ldu                      统计目录磁盘占用
@@ -242,7 +243,10 @@ kude net ips 192.168
 kude ps 10.0.0.10 80
 
 # 开启http(s)代理服务器
-kude px http
+kude pxs http
+
+# 在http(s)代理环境执行命令
+kude px 8888 curl www.google.com
 
 # 查看prometheus指标信息
 kude pq metadata 127.0.0.1:9090 process_open_fds
@@ -278,6 +282,7 @@ kude l nginx
 kude lf nginx
 kude lf -a 10 nginx
 kude log -i 1 nginx
+kude lf -l app=web
 
 # 查看k8s资源详细信息
 kude s nginx
@@ -345,7 +350,7 @@ echo '
   it                       执行iptables命令
   ps                       查看端口状态
   pc                       设置端口开放关闭
-  px                       运行goproxy代理服务器
+  pxs                      运行goproxy代理服务器
 '
 }
 
@@ -1581,7 +1586,7 @@ function main() {
       echo "error: need arguments"
     fi
     if type nc &>/dev/null; then
-      nc $nhost $nport -zv
+      nc -zv $nhost $nport
     elif type telnet &>/dev/null; then
       echo -e '\035\nquit' | telnet $nhost $nport
     elif type nmap &>/dev/null; then
@@ -1599,7 +1604,21 @@ function main() {
         wget --no-check-certificate -qS -O- http://${nhost}:${nport} > /dev/null
       fi
     fi
-  elif [ "$1" == "px" ] || [ "$1" == "goproxy" ]; then
+  elif [ "$1" == "px" ]; then
+    shift
+    if [ "$1" -gt 0 ] 2>/dev/null ;then
+      export http_proxy=http://127.0.0.1:$1
+      export https_proxy=http://127.0.0.1:$1
+    elif [[ "$1" =~ "http" ]]; then
+      export http_proxy=$1
+      export https_proxy=$1
+    else
+      export http_proxy=http://$1
+      export https_proxy=http://$1
+    fi
+    shift
+    execmd "$*"
+  elif [ "$1" == "pxs" ] || [ "$1" == "goproxy" ]; then
     shift
     require proxy
     if [ $# -gt 4 ];then
@@ -1971,7 +1990,7 @@ function main() {
         echo "error: need arguments"
       fi
       if type nc &>/dev/null; then
-        nc $nhost $nport -zv
+        nc -zv $nhost $nport
       elif type telnet &>/dev/null; then
         echo -e '\035\nquit' | telnet $nhost $nport
       elif type nmap &>/dev/null; then
@@ -2007,7 +2026,7 @@ function main() {
         sudo /sbin/iptables -I INPUT -p tcp --dport $pport -j $paction
       done
       ;;
-    "px")
+    "pxs")
       require proxy
       if [ $# -gt 4 ];then
         proxy $*
