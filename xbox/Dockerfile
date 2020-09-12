@@ -21,15 +21,12 @@ RUN set -ex \
     && apk update \
     && apk upgrade \
     && apk --virtual add --no-cache \
-    apache2-utils \
     bash \
-    bat \
     bind-tools \
     bird \
     bridge-utils \
     busybox-extras \
     conntrack-tools \
-    cmus \
     ctop \
     curl \
     docker-cli \
@@ -46,10 +43,8 @@ RUN set -ex \
     file\
     figlet \
     fio \
-    fping \
     git \
     gotop \
-    gron \
     hexdump \
     highlight \
     httpie \
@@ -78,7 +73,6 @@ RUN set -ex \
     mycli \
     net-snmp-tools \
     netcat-openbsd \
-    ncdu \
     nftables \
     nfs-utils \
     neofetch \
@@ -98,7 +92,6 @@ RUN set -ex \
     qperf \
     tree \
     redis \
-    ranger \
     rsync \
     samba \
     samba-client \
@@ -108,7 +101,6 @@ RUN set -ex \
     sqlite \
     strace \
     sshpass \
-    speedtest-cli \
     sysstat \
     websocat \
     websocketd \
@@ -125,7 +117,7 @@ RUN set -ex \
     && mv /usr/sbin/tcpdump /usr/bin/tcpdump \
     && echo 'alias iperf="iperf3"' >> "$ENV" \
     && echo 'export PATH=/root/tools/:$PATH' >> "$ENV" \
-    && export TERM='xterm-256color'; ranger --copy-config=all \
+    && echo 'export TERM="xterm-256color"' >> "$ENV" \
     && chgrp root /usr/bin/dumpcap \
     && chmod 750 /usr/bin/dumpcap \
     && setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap \

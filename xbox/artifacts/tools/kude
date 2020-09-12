@@ -39,6 +39,7 @@ function usage() {
   d,docker                 运行docker命令
   dc,dkc,docker-compose    运行docker-compose命令
   k,kube,kubectl           运行kubectl命令
+  kd                       运行kind命令
   kk                       运行kubectl kustomize命令
   km,kustomize             运行kustomize命令
   ec,edc,etcdctl           运行etcdctl命令
@@ -1404,6 +1405,47 @@ function main() {
     require helm
     shift
     helm template $*
+  elif [ "$1" == "kd" ]; then
+    require kind
+    shift
+    if [ "$1" == "h" ] || [ "$1" == "hp" ] || [ "$1" == "help" ]; then
+      kind help
+    elif [ "$1" == "cl" ] || [ "$1" == "ls" ] || [ "$1" == "list" ]; then
+      kind get clusters
+    elif [ "$1" == "rm" ] || [ "$1" == "del" ] || [ "$1" == "delete" ]; then
+      shift
+      if [ $# -gt 0 ]; then
+        for kdc in $@; do
+          kind delete cluster --name $kdc
+        done
+      elif [ $(kind get clusters | wc -l) -lt 2 ]; then
+        kind delete cluster --name $(kind get clusters)
+      else
+        echo "====== More than one cluster ======"
+        kdcs=$(kind get clusters)
+        SIFS=$IFS
+        IFS=$'\n'
+        kdcs=($kdcs)
+        IFS=$SIFS
+        for ((i = 0; i < ${#kdcs[@]}; i++)); do
+          echo "$i: ${kdcs[$i]}"
+        done
+        read -p "====== select one with number[0]: " kdidx
+        if [ -z $kdidx ]; then
+          kdidx=0
+        fi
+        kind delete cluster --name $(echo ${kdcs[$kdidx]})
+      fi
+    elif [ $# -le 1 ]; then
+      genKindConfig
+      if [ -z $1 ]; then
+        kind create cluster --name love --config /tmp/kind.yaml
+      else
+        kind create cluster --name $1 --config /tmp/kind.yaml
+      fi
+    else
+      kind $*
+    fi
   elif [ "$1" == "kk" ]; then
     require kubectl
     shift
@@ -3316,7 +3358,7 @@ function main() {
           if [ -z $diidx ]; then
             diidx=0
           fi
-          docker exec -it $(echo ${cimgs[$dcidx]} | awk '{print $1}') sh
+          docker exec -it $(echo ${cimgs[$diidx]} | awk '{print $1}') sh
         fi
       else
         cmd="docker exec -it $fkwd sh"
@@ -3349,7 +3391,7 @@ function main() {
           if [ -z $diidx ]; then
             diidx=0
           fi
-          docker attach $(echo ${cimgs[$dcidx]} | awk '{print $1}')
+          docker attach $(echo ${cimgs[$diidx]} | awk '{print $1}')
         fi
       else
         cmd="docker attach $fkwd"
@@ -3382,7 +3424,7 @@ function main() {
           if [ -z $diidx ]; then
             diidx=0
           fi
-          docker logs $(echo ${cimgs[$dcidx]} | awk '{print $1}') $since $amount
+          docker logs $(echo ${cimgs[$diidx]} | awk '{print $1}') $since $amount
         fi
       else
         cmd="docker logs $fkwd $since $amount"
@@ -3415,7 +3457,7 @@ function main() {
           if [ -z $diidx ]; then
             diidx=0
           fi
-          docker logs -f $(echo ${cimgs[$dcidx]} | awk '{print $1}') $since $amount
+          docker logs -f $(echo ${cimgs[$diidx]} | awk '{print $1}') $since $amount
         fi
       else
         cmd="docker logs -f $fkwd $since $amount"
@@ -5651,6 +5693,37 @@ function fileType() {
 
 function Debug() {
   [ "$DEBUG" == "on" ] && $@ || :
+}
+
+function genKindConfig() {
+  echo "
+kind: Cluster
+apiVersion: kind.sigs.k8s.io/v1alpha3
+kubeadmConfigPatches:
+- |
+  apiVersion: kubeadm.k8s.io/v1beta1
+  kind: ClusterConfiguration
+  metadata:
+    name: config
+  networking:
+    serviceSubnet: 10.0.0.0/16
+  imageRepository: gcr.mirrors.ustc.edu.cn/google_containers
+  nodeRegistration:
+    kubeletExtraArgs:
+      pod-infra-container-image: gcr.mirrors.ustc.edu.cn/google_containers/pause:3.1
+- |
+  apiVersion: kubeadm.k8s.io/v1beta1
+  kind: InitConfiguration
+  metadata:
+    name: config
+  networking:
+    serviceSubnet: 10.0.0.0/16
+  imageRepository: gcr.mirrors.ustc.edu.cn/google_containers
+nodes:
+- role: control-plane
+
+# kind create cluster --name love --config kind.yaml
+  " > /tmp/kind.yaml
 }
 
 function printSample() {
