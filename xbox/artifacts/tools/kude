@@ -322,7 +322,7 @@ kude debug -n xshrim -u root -p 22 -s admin123 -m netshoot nginx
 }
 
 function nethelp() {
-echo '
+  echo '
 **USAGE**:
   kude n <commands> [<arguments>]
 
@@ -524,10 +524,41 @@ function converthelp() {
 **COMMANDS**:
   h,hp,help                打印convert命令帮助
   id,identify              获取图片格式特性
+  doc,document             将指定文档转换为指定文档格式
+  img,image                将指定图片或视频转换为指定图片格式
+  vdo,video                将指定音视频转换为指定音视频格式
+  txt                      将指定文档转换为txt格式
+  htm,html                 将指定文档转换为html格式
+  docx,word                将指定文档转换为docx格式
+  md,markdown              将指定文档转换为markdown格式
+  epub                     将指定文档转换为epub格式
+  pdf                      将指定文档转换为pdf格式
+  rst                      将指定文档转换为rst格式
+  odt                      将指定文档转换为odt格式
+  rtf                      将指定文档转换为rtf格式
+  json                     将指定文档转换为json格式
   ico                      将指定图片转换为ico格式
-  img,image                将指定图片转换为指定格式
-  rs,resize                改变指定图片尺寸
-  ql,quality               图片质量压缩
+  png                      将指定图片转换为png格式
+  jpg                      将指定图片转换为jpg格式
+  bmp                      将指定图片转换为bmp格式
+  gif                      将指定图片转换为gif格式
+  tif                      将指定图片转换为tif格式
+  tiff                     将指定图片转换为tiff格式
+  webp                     将指定图片转换为webp格式
+  mp4                      将指定视频转换为mp4格式
+  avi                      将指定视频转换为avi格式
+  wmv                      将指定视频转换为wmv格式
+  3gp                      将指定视频转换为3gp格式
+  rm                       将指定视频转换为rm格式
+  rmvb                     将指定视频转换为rmvb格式
+  mkv                      将指定视频转换为mkv格式
+  mov                      将指定视频转换为mov格式
+  rs,resize                改变指定图片或视频尺寸
+  ql,sc,scale,quality      图片或视频质量压缩
+  cc,concat                音视频拼接
+  cut                      音视频或图片或pdf裁剪
+  an,audiono               去除视频中的音频
+  vn,mp3,videono           去除视频中的视频(视频转音频)
   rt,rotate                旋转图片
   fi,flip                  上下翻转图片
   fo,flop                  左右翻转图片
@@ -1395,7 +1426,7 @@ function main() {
   elif [ "$1" == "ch" ] || [ "$1" == "chp" ]; then
     shift
     xdg-open https://man.linuxde.net/$1
-  elif  [ "$1" == "ldf" ]; then
+  elif [ "$1" == "ldf" ]; then
     shift
     if type dfc &>/dev/null; then
       dfc | grep "$1"
@@ -1403,7 +1434,7 @@ function main() {
       require df column
       df -hP | column -t | grep "$1"
     fi
-  elif  [ "$1" == "lfd" ]; then
+  elif [ "$1" == "lfd" ]; then
     shift
     require awk
     awk 'BEGIN{split("B K M G T P E Z Y",v)} {if ($NF ~ "^[a-zA-Z].*[0-9]$" && $NF !~ "c[0-9]+d[0-9]+$" && $NF !~ "^loop.*"){s=1;while($((NF-1))>1024&&s<9){$((NF-1))/=1024;s++} printf "%7.2f%s\tdev/%s\n",$((NF-1)),v[s+1],$NF}}' /proc/partitions
@@ -1420,10 +1451,10 @@ function main() {
       fi
     fi
     cd $lpath
-    if [ $(ls -d .{[!.],.?}* 2> /dev/null | wc -l) -gt 0 ]; then
-      du -sb $lpath/* $lpath/.[^.]* | sort -nr| awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
+    if [ $(ls -d .{[!.],.?}* 2>/dev/null | wc -l) -gt 0 ]; then
+      du -sb $lpath/* $lpath/.[^.]* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
     else
-      du -sb $lpath/* | sort -nr| awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
+      du -sb $lpath/* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
     fi
     # du -sh $lpath
   elif [ "$1" == "st" ]; then
@@ -1550,18 +1581,18 @@ function main() {
   elif [ "$1" == "nm" ] || [ "$1" == "nmap" ]; then
     shift
     if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
-        nmaphelp
-      elif [ "$1" == "help" ]; then
-        require nmap
-        nmap --help
+      nmaphelp
+    elif [ "$1" == "help" ]; then
+      require nmap
+      nmap --help
+    else
+      require nmap
+      if [ $# -eq 1 ]; then
+        sudo nmap -sS -P0 -sV -O $1
       else
-        require nmap
-        if [ $# -eq 1 ]; then
-          sudo nmap -sS -P0 -sV -O $1
-        else
-          nmap $*
-        fi
+        nmap $*
       fi
+    fi
   elif [ "$1" == "pc" ] || [ "$1" == "portctl" ] || [ "$1" == "portcontrol" ]; then
     shift
     if [ $# -lt 1 ]; then
@@ -1597,20 +1628,20 @@ function main() {
       nmap -p $nport $nhost
     elif type curl &>/dev/null; then
       if [ $nport -eq 443 ]; then
-        curl -ksvIL https://${nhost}:${nport} > /dev/null
+        curl -ksvIL https://${nhost}:${nport} >/dev/null
       else
-        curl -ksvIL http://${nhost}:${nport} > /dev/null
+        curl -ksvIL http://${nhost}:${nport} >/dev/null
       fi
     else
       if [ $nport -eq 443 ]; then
-        wget --no-check-certificate -qS -O- https://${nhost}:${nport} > /dev/null
+        wget --no-check-certificate -qS -O- https://${nhost}:${nport} >/dev/null
       else
-        wget --no-check-certificate -qS -O- http://${nhost}:${nport} > /dev/null
+        wget --no-check-certificate -qS -O- http://${nhost}:${nport} >/dev/null
       fi
     fi
   elif [ "$1" == "px" ]; then
     shift
-    if [ "$1" -gt 0 ] 2>/dev/null ;then
+    if [ "$1" -gt 0 ] 2>/dev/null; then
       export http_proxy=http://127.0.0.1:$1
       export https_proxy=http://127.0.0.1:$1
     elif [[ "$1" =~ "http" ]]; then
@@ -1625,7 +1656,7 @@ function main() {
   elif [ "$1" == "pxs" ] || [ "$1" == "goproxy" ]; then
     shift
     require proxy
-    if [ $# -gt 4 ];then
+    if [ $# -gt 4 ]; then
       proxy $*
     else
       ptype="http"
@@ -1675,10 +1706,10 @@ function main() {
     shift
     if [ "$1" == "b" ] || [ "$1" == "bash" ]; then
       source <(kubectl completion bash)
-      echo "source <(kubectl completion bash)" >> ~/.bashrc
+      echo "source <(kubectl completion bash)" >>~/.bashrc
     elif [ "$1" == "z" ] || [ "$1" == "zsh" ]; then
       source <(kubectl completion zsh)
-      echo "source <(kubectl completion zsh)" >> ~/.zshrc
+      echo "source <(kubectl completion zsh)" >>~/.zshrc
       # echo "if [ $commands[kubectl] ]; then source <(kubectl completion zsh); fi" >> ~/.zshrc
     fi
   elif [ "$1" == "ym" ] || [ "$1" == "yum" ]; then
@@ -1702,7 +1733,7 @@ function main() {
       if [ -n $1 ]; then
         url=$1
       fi
-      echo -e "[private]\nname=private\nbaseurl=$url\ngpgcheck=0\nenabled=1\n" > /etc/yum.repos.d/private.repo
+      echo -e "[private]\nname=private\nbaseurl=$url\ngpgcheck=0\nenabled=1\n" >/etc/yum.repos.d/private.repo
       yum clean all && makecache fast
     elif [ "$1" == "d" ] || [ "$1" == "dl" ]; then
       shift
@@ -1733,88 +1764,310 @@ function main() {
   elif [ "$1" == "cv" ] || [ "$1" == "convert" ]; then
     shift
     subcmd=$1
-    shift
-    case "$subcmd" in
-    "h" | "hp" | "help")
+    if [ "$1" == "h" ] || [ "$1" == "hp" ] || [ "$1" == "help" ]; then
       converthelp
-      ;;
-    "id" | "ientify")
-      require ientify
-      ientify $1 
-      ;;
-    "ico")
-      require convert
-      convert -background transparent -define 'icon:auto-resize=16,24,32,64' $1 favicon.ico
-      ;;
-    "rs" | "resize")
-      require convert
-      convert -resize $2 $1 output.${1##*.}
-      ;;
-    "ql" | "quality")
-      require convert
-      convert quality $2 $1 output.${1##*.}
-      ;;
-    "rt" | "rotate")
-      require convert
-      convert -rotate $2 $1 output.${1##*.}
-      ;;
-    "fi" | "flip")
-      require convert
-      convert -flip $1 output.${1##*.}
-      ;;
-    "fo" | "flop")
-      require convert
-      convert -flop $1 output.${1##*.}
-      ;;
-    "br" | "blur")
-      require convert
-      convert -blur $2 $1 output.${1##*.}
-      ;;
-    "wb" | "gray")
-      require convert
-      convert -monochrome $1 output.${1##*.}
-      ;;
-    "ng" | "negate")
-      require convert
-      convert -negate $1 output.${1##*.}
-      ;;
-    "ns" | "noise")
-      require convert
-      convert -noise $2 $1 output.${1##*.}
-      ;;
-    "pt" | "paint")
-      require convert
-      convert -paint $2 $1 output.${1##*.}
-      ;;
-    "cc" | "charcoal")
-      require convert
-      convert -charcoal $2 $1 output.${1##*.}
-      ;;
-    "sp" | "spread")
-      require convert
-      convert -spread $2 $1 output.${1##*.}
-      ;;
-    "sw" | "swirl")
-      require convert
-      convert -swirl $2 $1 output.${1##*.}
-      ;;
-    "ri" | "raise")
-      require convert
-      convert -raise $2 $1 output.${1##*.}
-      ;;
-    "bd" | "border")
-      require convert
-      convert -border $2 -bordercolor "$3" $1 output.${1##*.}
-      ;;
-    "img" | "image")
-      require convert
-      if [ $# -gt 2 ]; then
-        convert -density $3 $1 output.$2
-      else
-        convert $1 output.$2
-      fi
-      ;;
-    esac
+      exit 0
+    fi
+    shift
+    if [ -z "$1" ]; then
+      echo "error: need arguments"
+      exit 1
+    fi
+    files=()
+    if [ -f "$1" ]; then
+      files[0]="$1"
+    elif [ -d "$1" ]; then
+      for f in $(ls $1 | sed "s:^:$(pwd)/:"); do
+        files+=("$f")
+      done
+    fi
+    for fl in ${files[@]}; do
+      fname="${fl%.*}"
+      case "$subcmd" in
+      "id" | "info" | "ientify")
+        if [[ $(fileType "$fl") == "image" ]]; then
+          require ientify
+          ientify "$fl"
+        elif [[ $(fileType "$fl") == "video" ]]; then
+          require ffmpeg
+          ffmpeg -i "$fl" -hide_banner
+        else
+          stat "$fl"
+        fi
+        ;;
+      "doc" | "document")
+        require pandoc
+        pandoc -s $fl -o $fname.$2 ${@:3}
+        ;;
+      "img" | "image")
+        if [[ $(fileType "$fl") == "image" ]]; then
+          require convert
+          if [ $# -gt 2 ]; then
+            convert -density $3 $fl $fname.$2
+          else
+            convert $fl $fname.$2
+          fi
+        elif [[ $(fileType "$fl") == "video" ]]; then
+          require ffmpeg
+          if [ $# -gt 2 ]; then
+            ffmpeg -i $fl -r $3 -f image2 $fname-%5d.$2
+          else
+            ffmpeg -i $fl -r $3 -f image2 $fname-%5d.$2
+          fi
+        fi
+        ;;
+      "vdo" | "video")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.$2 ${@:3}
+        ;;
+      "txt")
+        require pandoc
+        pandoc -s $fl -o $fname.html ${@:2}
+        ;;
+      "htm" | "html")
+        require pandoc
+        pandoc -s $fl -o $fname.html ${@:2}
+        ;;
+      "md" | "markdown")
+        require pandoc
+        pandoc -s $fl -o $fname.md ${@:2}
+        ;;
+      "word" | "docx")
+        require pandoc
+        pandoc -s $fl -o $fname.docx ${@:2}
+        ;;
+      "rst")
+        require pandoc
+        pandoc -s $fl -o $fname.rst ${@:2}
+        ;;
+      "odt")
+        require pandoc
+        pandoc -s $fl -o $fname.odt ${@:2}
+        ;;
+      "rtf")
+        require pandoc
+        pandoc -s $fl -o $fname.rtf ${@:2}
+        ;;
+      "json")
+        require pandoc
+        pandoc -s $fl -o $fname.json ${@:2}
+        ;;
+      "pdf")
+        require pandoc
+        pandoc -s $fl -o $fname.pdf ${@:2}
+        ;;
+      "epub")
+        require pandoc
+        pandoc -s $fl -o $fname.epub ${@:2}
+        ;;
+      "ico")
+        require convert
+        convert -background transparent -define 'icon:auto-resize=16,24,32,64' $fl $fname.ico
+        ;;
+      "png")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.png
+        else
+          convert $fl $fname.png
+        fi
+        ;;
+      "bmp")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.bmp
+        else
+          convert $fl $fname.bmp
+        fi
+        ;;
+      "jpg")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.jpg
+        else
+          convert $fl $fname.jpg
+        fi
+        ;;
+      "gif")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.gif
+        else
+          convert $fl $fname.gif
+        fi
+        ;;
+      "tiff")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.tiff
+        else
+          convert $fl $fname.tiff
+        fi
+        ;;
+      "tif")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.tif
+        else
+          convert $fl $fname.tif
+        fi
+        ;;
+      "webp")
+        require convert
+        if [ $# -gt 1 ]; then
+          convert -density $2 $fl $fname.webp
+        else
+          convert $fl $fname.webpp
+        fi
+        ;;
+      "mp4")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.mp4 ${@:2}
+        ;;
+      "avi")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.avi ${@:2}
+        ;;
+      "wmv")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.wmv ${@:2}
+        ;;
+      "rm")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.rm ${@:2}
+        ;;
+      "rmvb")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.rmvb ${@:2}
+        ;;
+      "3gp")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.3gp ${@:2}
+        ;;
+      "mkv")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.mkv ${@:2}
+        ;;
+      "mov")
+        require ffmpeg
+        ffmpeg -qscale 0 -i $fl $fname.mov ${@:2}
+        ;;
+      "an" | "audiono")
+        require ffmpeg
+        ffmpeg -an -i $fl $fl.${fl##*.} ${@:2}
+        ;;
+      "vn" | "mp3" | "videono")
+        require ffmpeg
+        ffmpeg -vn -i $fl $fname.mp3 ${@:2}
+        ;;
+      "cc" | "concat")
+        require ffmpeg
+        ffmpeg -f concat -i $fl -c $2
+        ;;
+      "rs" | "resize")
+        if [[ $(fileType "$fl") == "image" ]]; then
+          require convert
+          convert -resize $2 $fl $fl.${fl##*.}
+        elif [[ $(fileType "$fl") == "video" ]]; then
+          require ffmpeg
+          ffmpeg -i $fl -filter:v scale=$2 -c:a copy $fl.${fl##*.}
+        fi
+        ;;
+      "cut")
+        if [[ $(fileType "$fl") == "image" ]]; then
+          require convert
+          convert -crop $2 $fl $fl.${fl##*.}
+        elif [[ $(fileType "$fl") == "video" ]]; then
+          require ffmpeg
+          if [[ "$3" =~ ":" ]]; then
+            ffmpeg -i $fl -ss $2 -to $3 -codec copy $fl.${fl##*.}
+          else
+            ffmpeg -i $fl -ss $2 -t $3 -codec copy $fl.${fl##*.}
+          fi
+        elif [[ ${fl##*.} == "pdf" ]]; then
+          require gs
+          if [ $# -lt 4 ]; then
+            echo "error: need arguments"
+            exit 1
+          fi
+          if [[ "$2" == "pdf" ]]; then
+            dvc="pdfwrite"
+          else
+            dvc="$2"
+          fi
+          if [ -z "$5"]; then
+            gs -dNOPAUSE -dQUIET -dBATCH -sDEVICE=$dvc -o %03d.$2 -dFirstPage=$3 -dLastPage=$4 $fl
+          else
+            gs -dNOPAUSE -dQUIET -dBATCH -sDEVICE=$dvc -o %03d.$2 -dFirstPage=$3 -dLastPage=$4 -r$5 $fl
+          fi
+        fi
+        ;;
+      "ql" | "sc" | "scale" | "quality")
+        if [[ $(fileType "$fl") == "image" ]]; then
+          require convert
+          convert quality $2 $fl $fl.${fl##*.}
+        elif [[ $(fileType "$fl") == "video" ]]; then
+          require ffmpeg
+          ffmpeg -i $fl -vcodec libx265 -crf $2 $fl.${fl##*.}
+        elif [[ $(fileType "$fl") == "audio" ]]; then
+          require ffmpeg
+          ffmpeg -i $fl -ab $2 $fl.${fl##*.}
+        fi
+        ;;
+      "rt" | "rotate")
+        require convert
+        convert -rotate $2 $fl $fl.${fl##*.}
+        ;;
+      "fi" | "flip")
+        require convert
+        convert -flip $fl $fl.${fl##*.}
+        ;;
+      "fo" | "flop")
+        require convert
+        convert -flop $fl $fl.${fl##*.}
+        ;;
+      "br" | "blur")
+        require convert
+        convert -blur $2 $fl $fl.${fl##*.}
+        ;;
+      "wb" | "gray")
+        require convert
+        convert -monochrome $fl $l.${fl##*.}
+        ;;
+      "ng" | "negate")
+        require convert
+        convert -negate $fl $fl.${fl##*.}
+        ;;
+      "ns" | "noise")
+        require convert
+        convert -noise $2 $fl $fl.${fl##*.}
+        ;;
+      "pt" | "paint")
+        require convert
+        convert -paint $2 $fl $fl.${fl##*.}
+        ;;
+      "cc" | "charcoal")
+        require convert
+        convert -charcoal $2 $fl $fl.${fl##*.}
+        ;;
+      "sp" | "spread")
+        require convert
+        convert -spread $2 $fl $fl.${fl##*.}
+        ;;
+      "sw" | "swirl")
+        require convert
+        convert -swirl $2 $fl $fl.${fl##*.}
+        ;;
+      "ri" | "raise")
+        require convert
+        convert -raise $2 $fl $fl.${fl##*.}
+        ;;
+      "bd" | "border")
+        require convert
+        convert -border $2 -bordercolor "$3" $fl $fl.${fl##*.}
+        ;;
+      esac
+    done
   elif [ "$1" == "n" ] || [ "$1" == "net" ]; then
     shift
     subcmd=$1
@@ -1885,7 +2138,7 @@ function main() {
       ;;
     "ips")
       require ip
-      itfs=$(ip -j a|jq -r '.[].ifname' | grep "$1")
+      itfs=$(ip -j a | jq -r '.[].ifname' | grep "$1")
       itfs=($itfs)
       if [ ${#itfs[@]} -eq 1 ]; then
         titf="${itfs[0]}"
@@ -2003,15 +2256,15 @@ function main() {
         nmap -p $nport $nhost
       elif type curl &>/dev/null; then
         if [ $nport -eq 443 ]; then
-          curl -ksvIL https://${nhost}:${nport} > /dev/null
+          curl -ksvIL https://${nhost}:${nport} >/dev/null
         else
-          curl -ksvIL http://${nhost}:${nport} > /dev/null
+          curl -ksvIL http://${nhost}:${nport} >/dev/null
         fi
       else
         if [ $nport -eq 443 ]; then
-          wget --no-check-certificate -qS -O- https://${nhost}:${nport} > /dev/null
+          wget --no-check-certificate -qS -O- https://${nhost}:${nport} >/dev/null
         else
-          wget --no-check-certificate -qS -O- https://${nhost}:${nport} > /dev/null
+          wget --no-check-certificate -qS -O- https://${nhost}:${nport} >/dev/null
         fi
       fi
       ;;
@@ -2034,7 +2287,7 @@ function main() {
       ;;
     "pxs")
       require proxy
-      if [ $# -gt 4 ];then
+      if [ $# -gt 4 ]; then
         proxy $*
       else
         ptype="http"
@@ -2223,17 +2476,17 @@ function main() {
       fi
       if [ "$idtype" == "h" ] || [ "$idtype" == "hp" ] || [ "$idtype" == "help" ]; then
         idhelp
-      elif [ "$idtype" == "n" ] ; then
+      elif [ "$idtype" == "n" ]; then
         cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
-      elif [ "$idtype" == "l" ] ; then
+      elif [ "$idtype" == "l" ]; then
         cat /dev/urandom | tr -dc 'a-z' | fold -w 256 | head -n 1 | head --bytes $idlen
-      elif [ "$idtype" == "u" ] ; then
+      elif [ "$idtype" == "u" ]; then
         cat /dev/urandom | tr -dc 'A-Z' | fold -w 256 | head -n 1 | head --bytes $idlen
-      elif [ "$idtype" == "c" ] ; then
+      elif [ "$idtype" == "c" ]; then
         cat /dev/urandom | tr -dc 'a-zA-Z' | fold -w 256 | head -n 1 | head --bytes $idlen
-      elif [ "$idtype" == "nl" ] ; then
+      elif [ "$idtype" == "nl" ]; then
         cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
-      elif [ "$idtype" == "nu" ] ; then
+      elif [ "$idtype" == "nu" ]; then
         cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
       elif [ "$idtype" == "a" ] || [ "$idtype" == "nc" ]; then
         cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 256 | head -n 1 | head --bytes $idlen
@@ -2268,10 +2521,10 @@ function main() {
     elif [ "$1" == "tsn" ] || [ "$1" == "tsns" ] || [ "$1" == "timestampns" ]; then
       date +%s%N
     elif [ "$1" == "tsm" ] || [ "$1" == "tsms" ] || [ "$1" == "timestampms" ]; then
-      echo $(($(date +%s%N)/1000000))
+      echo $(($(date +%s%N) / 1000000))
     elif [ "$1" == "cv" ]; then
       shift
-      if (($1)) 2> /dev/null; then
+      if (($1)) 2>/dev/null; then
         date -d @$1 +'%Y-%m-%d %H:%M:%S'
       else
         date -d "$1" +'%s'
@@ -2438,7 +2691,7 @@ function main() {
         cmd="adduser $iuname;echo $ipasswd | passwd $iuname --stdin"
         if [ ${#mandatory[@]} -gt 1 ]; then
           for ip in ${mandatory[@]:1}; do
-            execmd "$cmd" $ip 
+            execmd "$cmd" $ip
           done
         else
           execmd "$cmd"
@@ -2449,14 +2702,14 @@ function main() {
       fi
     elif [ "$subcmd" == "opt" ] || [ "$subcmd" == "optimize" ]; then
       if [ ${#mandatory[@]} -gt 0 ]; then
-        if type kude &> /dev/null; then
+        if type kude &>/dev/null; then
           cppaths="$(which kude):/tmp/"
         else
           cppaths="./kude:/tmp/"
         fi
         for ip in ${mandatory[@]}; do
           remotecp "$cppaths" $ip
-          execmd "bash /tmp/kude opt; rm -rf /tmp/kude" $ip 
+          execmd "bash /tmp/kude opt; rm -rf /tmp/kude" $ip
         done
       else
         optimize
@@ -2487,7 +2740,7 @@ function main() {
       if [ -n "$host" ]; then
         url=$host
       elif [ ${#mandatory[@]} -gt 0 ]; then
-        if [[ "${mandatory[0]}" =~ "." ]] || [[ "${mandatory[0]}" = "localhost" ]]; then
+        if [[ "${mandatory[0]}" =~ "." ]] || [[ "${mandatory[0]}" == "localhost" ]]; then
           url="${mandatory[0]}"
           mandatory=("${mandatory[@]:1}")
         fi
@@ -2595,10 +2848,10 @@ function main() {
       "a" | "al" | "alert")
         curl -Gks http://$url/api/v1/alerts | jq
         ;;
-      "am"  | "alertmanager")
+      "am" | "alertmanager")
         curl -Gks http://$url/api/v1/alertmanagers | jq
         ;;
-      "v"  | "status")
+      "v" | "status")
         if [ ${#mandatory[@]} -eq 0 ]; then
           echo "========================== config =========================="
           curl -Gks http://$url/api/v1/status/config
@@ -3703,26 +3956,26 @@ function main() {
     elif [ "$subcmd" == "kg" ] || [ "$subcmd" == "gencfg" ]; then
       require kubectl
       shift
-        apiserver=$1
-        certdir=${2:-"/etc/kubernetes/ssl"}
+      apiserver=$1
+      certdir=${2:-"/etc/kubernetes/ssl"}
 
-        kubectl config set-cluster default-cluster --server=${apiserver} \
-            --certificate-authority=${certdir}/kube-ca.pem \
-            --embed-certs=true \
-            --kubeconfig=admin.kubeconfig
+      kubectl config set-cluster default-cluster --server=${apiserver} \
+        --certificate-authority=${certdir}/kube-ca.pem \
+        --embed-certs=true \
+        --kubeconfig=admin.kubeconfig
 
-        kubectl config set-credentials default-admin \
-            --certificate-authority=${certdir}/kube-ca.pem \
-            --embed-certs=true \
-            --client-key=${certdir}/admin-key.pem \
-            --client-certificate=${certdir}/admin.pem \
-            --kubeconfig=admin.kubeconfig 
+      kubectl config set-credentials default-admin \
+        --certificate-authority=${certdir}/kube-ca.pem \
+        --embed-certs=true \
+        --client-key=${certdir}/admin-key.pem \
+        --client-certificate=${certdir}/admin.pem \
+        --kubeconfig=admin.kubeconfig
 
-        kubectl config set-context default-system --cluster=default-cluster \
-            --user=default-admin \
-            --kubeconfig=admin.kubeconfig
+      kubectl config set-context default-system --cluster=default-cluster \
+        --user=default-admin \
+        --kubeconfig=admin.kubeconfig
 
-        kubectl config use-context default-system --kubeconfig=admin.kubeconfig
+      kubectl config use-context default-system --kubeconfig=admin.kubeconfig
     elif [ "$subcmd" == "cfg" ] || [ "$subcmd" == "config" ]; then
       require kubectl
       kubectl $kc $context config view
@@ -4126,7 +4379,7 @@ function main() {
       if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
         kwd="${mandatory[*]}"
       fi
-      
+
       if [ -z $kind ]; then
         kind="pod"
       fi
@@ -4154,8 +4407,8 @@ function main() {
       require kubectl
       if [ -z $kind ]; then
         if [ ${#mandatory[@]} -gt 0 ] && [ "$subcmd" != "l" ] && [ "$subcmd" != "log" ] && [ "$subcmd" != "lf" ] && [ "$subcmd" != "logf" ] && [ "$subcmd" != "i" ] && [ "$subcmd" != "insp" ] && [ "$subcmd" != "inspect" ] && [ "$subcmd" != "e" ] && [ "$subcmd" != "exe" ] && [ "$subcmd" != "exec" ] && [ "$subcmd" != "ie" ] && [ "$subcmd" != "iexe" ] && [ "$subcmd" != "iexec" ] && [ "$subcmd" != "at" ] && [ "$subcmd" != "attach" ] && [ "$subcmd" != "cp" ] && [ "$subcmd" != "copy" ] && [ "$subcmd" != "pf" ] && [ "$subcmd" != "forward" ] && [ "$subcmd" != "port-forward" ] && [ "$subcmd" != "x" ] && [ "$subcmd" != "dbg" ] && [ "$subcmd" != "debug" ]; then
-            kind=${mandatory[0]}
-            mandatory=("${mandatory[@]:1}")
+          kind=${mandatory[0]}
+          mandatory=("${mandatory[@]:1}")
         else
           kind="pod"
         fi
@@ -4649,22 +4902,22 @@ function require() {
 }
 
 function getip() {
-  itfs=$(ip -j a|jq -r '.[].ifname')
+  itfs=$(ip -j a | jq -r '.[].ifname')
   itfs=($itfs)
 
   ifnets=()
   for ((i = 0; i < ${#itfs[@]}; i++)); do
     itf=${itfs[$i]}
     itfi=$(ip -j a show dev $itf)
-    status=$(echo $itfi|jq -r '.[].operstate')
-    ether=$(echo $itfi|jq -r '.[].address')
+    status=$(echo $itfi | jq -r '.[].operstate')
+    ether=$(echo $itfi | jq -r '.[].address')
     if [ -z "$ether" ]; then
       ether="NA"
     fi
-    mtu=$(echo $itfi|jq -r '.[].mtu')
-    inet=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet")|.local')
-    inetprefix=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet")|.prefixlen')
-    inetdyn=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet")|.dynamic')
+    mtu=$(echo $itfi | jq -r '.[].mtu')
+    inet=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet")|.local')
+    inetprefix=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet")|.prefixlen')
+    inetdyn=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet")|.dynamic')
     if [ -z "$inetdyn" ]; then
       inetassign=""
     else
@@ -4683,9 +4936,9 @@ function getip() {
     if [ -z "$inet" ]; then
       inet="NA"
     fi
-    inet6=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet6")|.local')
-    inet6prefix=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet6")|.prefixlen')
-    inet6dyn=$(echo $itfi|jq -r '.[].addr_info[]|select(.family=="inet6")|.dynamic')
+    inet6=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet6")|.local')
+    inet6prefix=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet6")|.prefixlen')
+    inet6dyn=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet6")|.dynamic')
     if [ -z "$inet6dyn" ]; then
       inet6assign=""
     else
@@ -4710,23 +4963,23 @@ function getip() {
 
   for ((i = 0; i < ${#ifnets[@]}; i++)); do
     if [ "$1" == "ipp" ]; then
-      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}'|grep -iE '^(en|wl|ww|eth)'|grep "$2"
+      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}' | grep -iE '^(en|wl|ww|eth)' | grep "$2"
     elif [ "$1" == "ipa" ]; then
-      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}'|grep "$2"
+      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}' | grep "$2"
     else
-      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}'|grep "$1"
+      echo ${ifnets[$i]} | awk '{printf "%-20s\t%-20s\t%-30s\t%-18s\t%-6s\t%-8s\n", $1, $2, $3, $4, $5, $6}' | grep "$1"
     fi
   done
 }
 
 function pping() {
   for ipaddr in $@; do
-    if [ $(echo "$ipaddr" |tr -cd 1 |wc -c) -eq 2 ]; then
+    if [ $(echo "$ipaddr" | tr -cd 1 | wc -c) -eq 2 ]; then
       ipd=$ipaddr
       ipr="1-254"
     else
       ipd=${ipaddr%.*}
-      ipr=${ipaddr##*.}    
+      ipr=${ipaddr##*.}
     fi
 
     ipstart=$ipr
@@ -4750,10 +5003,10 @@ function pping() {
       else
         sip="$cip"
       fi
-      if ping -c 1 -w 1 $cip &>/dev/null;then
+      if ping -c 1 -w 1 $cip &>/dev/null; then
         echo -e "\e[1;32m $sip is up \e[0m"
-       else
-         echo -e "\e[1;31m $sip is down \e[0m"
+      else
+        echo -e "\e[1;31m $sip is down \e[0m"
       fi
     done
   done
@@ -4932,8 +5185,8 @@ function remotecp() {
 }
 
 function optimize() {
-    # OS调优
-    echo "
+  # OS调优
+  echo "
     net.bridge.bridge-nf-call-ip6tables=1
     net.bridge.bridge-nf-call-iptables=1
     net.ipv4.ip_forward=1
@@ -4993,19 +5246,19 @@ function optimize() {
     kernel.sysrq=1
     net.ipv4.tcp_tw_recycle=0
 
-    " >> /etc/sysctl.conf
+    " >>/etc/sysctl.conf
 
-    sysctl -p
+  sysctl -p
 
-    # nofile优化
-    cat >> /etc/security/limits.conf <<EOF
+  # nofile优化
+  cat >>/etc/security/limits.conf <<EOF
     * soft nofile 65535
     * hard nofile 65536
 EOF
 
-    # docker优化
-    touch /etc/docker/daemon.json
-    cat > /etc/docker/daemon.json <<EOF
+  # docker优化
+  touch /etc/docker/daemon.json
+  cat >/etc/docker/daemon.json <<EOF
     {
         "oom-score-adjust": -1000,
         "log-driver": "json-file",
@@ -5023,22 +5276,22 @@ EOF
         ]
     }
 EOF
-    systemctl daemon-reload && systemctl restart docker
+  systemctl daemon-reload && systemctl restart docker
 
-    # etcd优化
-    if pgrep etcd &>/dev/null; then
-      # cpu优先级
-      renice -n -20 -p $(pgrep etcd)
-      # disk优先级
-      ionice -c2 -n0 -p $(pgrep etcd)
-    fi
-    # network优先级
-    NETWORK_INTERFACE=eth0
-    tc qdisc add dev ${NETWORK_INTERFACE} root handle 1: prio bands 3
-    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 1 u32 match ip sport 2380 0xffff flowid 1:1
-    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 1 u32 match ip dport 2380 0xffff flowid 1:1
-    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 2 u32 match ip sport 2739 0xffff flowid 1:1
-    tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 2 u32 match ip dport 2739 0xffff flowid 1:1
+  # etcd优化
+  if pgrep etcd &>/dev/null; then
+    # cpu优先级
+    renice -n -20 -p $(pgrep etcd)
+    # disk优先级
+    ionice -c2 -n0 -p $(pgrep etcd)
+  fi
+  # network优先级
+  NETWORK_INTERFACE=eth0
+  tc qdisc add dev ${NETWORK_INTERFACE} root handle 1: prio bands 3
+  tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 1 u32 match ip sport 2380 0xffff flowid 1:1
+  tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 1 u32 match ip dport 2380 0xffff flowid 1:1
+  tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 2 u32 match ip sport 2739 0xffff flowid 1:1
+  tc filter add dev ${NETWORK_INTERFACE} parent 1: protocol ip prio 2 u32 match ip dport 2739 0xffff flowid 1:1
 }
 
 function genssl() {
@@ -5200,141 +5453,141 @@ EOM
 }
 
 function javadump() {
-    DUMP_PIDS=`ps  --no-heading -C java -f --width 1000 |awk '{print $2}'`
-    if [ -z "$DUMP_PIDS" ]; then
+  DUMP_PIDS=$(ps --no-heading -C java -f --width 1000 | awk '{print $2}')
+  if [ -z "$DUMP_PIDS" ]; then
     echo "The server $HOST_NAME is not started!"
-    exit 1;
-    fi
+    exit 1
+  fi
 
-    DUMP_ROOT=~/dump
-    if [ ! -d $DUMP_ROOT ]; then
+  DUMP_ROOT=~/dump
+  if [ ! -d $DUMP_ROOT ]; then
     mkdir $DUMP_ROOT
-    fi
+  fi
 
-    DUMP_DATE=`date +%Y%m%d%H%M%S`
-    DUMP_DIR=$DUMP_ROOT/dump-$DUMP_DATE
-    if [ ! -d $DUMP_DIR ]; then
+  DUMP_DATE=$(date +%Y%m%d%H%M%S)
+  DUMP_DIR=$DUMP_ROOT/dump-$DUMP_DATE
+  if [ ! -d $DUMP_DIR ]; then
     mkdir $DUMP_DIR
-    fi
+  fi
 
-    for PID in $DUMP_PIDS ; do
+  for PID in $DUMP_PIDS; do
     #Full thread dump 用来查线程占用，死锁等问题
-    $JAVA_HOME/bin/jstack $PID > $DUMP_DIR/jstack-$PID.dump 2>&1
+    $JAVA_HOME/bin/jstack $PID >$DUMP_DIR/jstack-$PID.dump 2>&1
     echo -e ".\c"
     #打印出一个给定的Java进程、Java core文件或远程Debug服务器的Java配置信息，具体包括Java系统属性和JVM命令行参数。
-    $JAVA_HOME/bin/jinfo $PID > $DUMP_DIR/jinfo-$PID.dump 2>&1
+    $JAVA_HOME/bin/jinfo $PID >$DUMP_DIR/jinfo-$PID.dump 2>&1
     echo -e ".\c"
-    #jstat能够动态打印jvm(Java Virtual Machine Statistics Monitoring Tool)的相关统计信息。如young gc执行的次数、full gc执行的次数，各个内存分区的空间大小和可使用量等信息。	
-    $JAVA_HOME/bin/jstat -gcutil $PID > $DUMP_DIR/jstat-gcutil-$PID.dump 2>&1
+    #jstat能够动态打印jvm(Java Virtual Machine Statistics Monitoring Tool)的相关统计信息。如young gc执行的次数、full gc执行的次数，各个内存分区的空间大小和可使用量等信息。
+    $JAVA_HOME/bin/jstat -gcutil $PID >$DUMP_DIR/jstat-gcutil-$PID.dump 2>&1
     echo -e ".\c"
-    $JAVA_HOME/bin/jstat -gccapacity $PID > $DUMP_DIR/jstat-gccapacity-$PID.dump 2>&1
+    $JAVA_HOME/bin/jstat -gccapacity $PID >$DUMP_DIR/jstat-gccapacity-$PID.dump 2>&1
     echo -e ".\c"
-    #未指定选项时，jmap打印共享对象的映射。对每个目标VM加载的共享对象，其起始地址、映射大小及共享对象文件的完整路径将被打印出来，	
-    $JAVA_HOME/bin/jmap $PID > $DUMP_DIR/jmap-$PID.dump 2>&1
+    #未指定选项时，jmap打印共享对象的映射。对每个目标VM加载的共享对象，其起始地址、映射大小及共享对象文件的完整路径将被打印出来，
+    $JAVA_HOME/bin/jmap $PID >$DUMP_DIR/jmap-$PID.dump 2>&1
     echo -e ".\c"
-    #-heap打印堆情况的概要信息，包括堆配置，各堆空间的容量、已使用和空闲情况	
-    $JAVA_HOME/bin/jmap -heap $PID > $DUMP_DIR/jmap-heap-$PID.dump 2>&1
+    #-heap打印堆情况的概要信息，包括堆配置，各堆空间的容量、已使用和空闲情况
+    $JAVA_HOME/bin/jmap -heap $PID >$DUMP_DIR/jmap-heap-$PID.dump 2>&1
     echo -e ".\c"
     #-dump将jvm的堆中内存信息输出到一个文件中,然后可以通过eclipse memory analyzer进行分析
-    #注意：这个jmap使用的时候jvm是处在假死状态的，只能在服务瘫痪的时候为了解决问题来使用，否则会造成服务中断。 
+    #注意：这个jmap使用的时候jvm是处在假死状态的，只能在服务瘫痪的时候为了解决问题来使用，否则会造成服务中断。
     $JAVA_HOME/bin/jmap -dump:format=b,file=$DUMP_DIR/jmap-dump-$PID.dump $PID 2>&1
     echo -e ".\c"
     #显示被进程打开的文件信息
     if [ -r /usr/sbin/lsof ]; then
-        /usr/sbin/lsof -p $PID > $DUMP_DIR/lsof-$PID.dump
-        echo -e ".\c"
+      /usr/sbin/lsof -p $PID >$DUMP_DIR/lsof-$PID.dump
+      echo -e ".\c"
     fi
-    done
-    #主要负责收集、汇报与存储系统运行信息的。
-    if [ -r /usr/bin/sar ]; then
-    /usr/bin/sar > $DUMP_DIR/sar.dump
+  done
+  #主要负责收集、汇报与存储系统运行信息的。
+  if [ -r /usr/bin/sar ]; then
+    /usr/bin/sar >$DUMP_DIR/sar.dump
     echo -e ".\c"
-    fi
-    #主要负责收集、汇报与存储系统运行信息的。
-    if [ -r /usr/bin/uptime ]; then
-    /usr/bin/uptime > $DUMP_DIR/uptime.dump
+  fi
+  #主要负责收集、汇报与存储系统运行信息的。
+  if [ -r /usr/bin/uptime ]; then
+    /usr/bin/uptime >$DUMP_DIR/uptime.dump
     echo -e ".\c"
-    fi
-    #内存查看
-    if [ -r /usr/bin/free ]; then
-    /usr/bin/free -t > $DUMP_DIR/free.dump
+  fi
+  #内存查看
+  if [ -r /usr/bin/free ]; then
+    /usr/bin/free -t >$DUMP_DIR/free.dump
     echo -e ".\c"
-    fi
-    #可以得到关于进程、内存、内存分页、堵塞IO、traps及CPU活动的信息。
-    if [ -r /usr/bin/vmstat ]; then
-    /usr/bin/vmstat > $DUMP_DIR/vmstat.dump
+  fi
+  #可以得到关于进程、内存、内存分页、堵塞IO、traps及CPU活动的信息。
+  if [ -r /usr/bin/vmstat ]; then
+    /usr/bin/vmstat >$DUMP_DIR/vmstat.dump
     echo -e ".\c"
-    fi
-    #报告与CPU相关的一些统计信息
-    if [ -r /usr/bin/mpstat ]; then
-    /usr/bin/mpstat > $DUMP_DIR/mpstat.dump
+  fi
+  #报告与CPU相关的一些统计信息
+  if [ -r /usr/bin/mpstat ]; then
+    /usr/bin/mpstat >$DUMP_DIR/mpstat.dump
     echo -e ".\c"
-    fi
-    #报告与IO相关的一些统计信息
-    if [ -r /usr/bin/iostat ]; then
-    /usr/bin/iostat > $DUMP_DIR/iostat.dump
+  fi
+  #报告与IO相关的一些统计信息
+  if [ -r /usr/bin/iostat ]; then
+    /usr/bin/iostat >$DUMP_DIR/iostat.dump
     echo -e ".\c"
-    fi
-    #报告与网络相关的一些统计信息
-    if [ -r /bin/netstat ]; then
-    /bin/netstat > $DUMP_DIR/netstat.dump
+  fi
+  #报告与网络相关的一些统计信息
+  if [ -r /bin/netstat ]; then
+    /bin/netstat >$DUMP_DIR/netstat.dump
     echo -e ".\c"
-    fi
-    echo "OK!"
+  fi
+  echo "OK!"
 }
 
 function formatOutput() {
-#### usage ####
-# regions=("NAME;AGE;SCORE" "Tom Li;14;89" "Lucy;13;;" "Jack;;92")
-## regions[0]="NAME;AGE;SCORE"
-## regions[1]="Tom Li;14;89"
-## regions[2]="Lucy;13;;"
-## regions[3]="Jack;;92"
-# formatOutput "${regions[@]}"
+  #### usage ####
+  # regions=("NAME;AGE;SCORE" "Tom Li;14;89" "Lucy;13;;" "Jack;;92")
+  ## regions[0]="NAME;AGE;SCORE"
+  ## regions[1]="Tom Li;14;89"
+  ## regions[2]="Lucy;13;;"
+  ## regions[3]="Jack;;92"
+  # formatOutput "${regions[@]}"
 
   sep="#"
-  function append_cell(){
+  function append_cell() {
     #对表格追加单元格
     #append_cell col0 "col 1" ""
     #append_cell col3
     local i
     for i in "$@"; do
-        line+="|$i${sep}"
+      line+="|$i${sep}"
     done
   }
-  function check_line(){
+  function check_line() {
     if [ -n "$line" ]; then
-      c_c=$(echo $line|tr -cd "${sep}"|wc -c)
-      difference=$((${column_count}-${c_c}))
+      c_c=$(echo $line | tr -cd "${sep}" | wc -c)
+      difference=$((${column_count} - ${c_c}))
       if [ $difference -gt 0 ]; then
-        line+=$(seq -s " " $difference|sed -r s/[0-9]\+/\|${sep}/g|sed -r  s/${sep}\ /${sep}/g)
+        line+=$(seq -s " " $difference | sed -r s/[0-9]\+/\|${sep}/g | sed -r s/${sep}\ /${sep}/g)
       fi
-    content+="${line}|\n"
-  fi
+      content+="${line}|\n"
+    fi
   }
 
-  function append_line(){
+  function append_line() {
     check_line
     line=""
     local items=("$@")
     for ((i = 0; i < ${#items[@]}; i++)); do
-        line+="|${items[$i]}${sep}"
+      line+="|${items[$i]}${sep}"
     done
     check_line
     line=""
-   }
+  }
 
-  function segmentation(){
+  function segmentation() {
     local seg=""
     local i
-    for i in $(seq $column_count); do 
-        seg+="+${sep}"
+    for i in $(seq $column_count); do
+      seg+="+${sep}"
     done
     seg+="${sep}+\n"
     echo $seg
   }
 
-  function set_title(){
+  function set_title() {
     #表格标头，以空格分割，包含空格的字符串用引号，如
     #set_title Column_0 "Column 1" "" Column3
     [ -n "$title" ] && echo "Warring:表头已经定义过,重写表头和内容"
@@ -5342,29 +5595,29 @@ function formatOutput() {
     title=""
     local items=("$@")
     for ((i = 0; i < ${#items[@]}; i++)); do
-        title+="|${items[$i]}${sep}"
-        let column_count++
+      title+="|${items[$i]}${sep}"
+      let column_count++
     done
     title+="|\n"
-    seg=`segmentation`
+    seg=$(segmentation)
     title="${seg}${title}${seg}"
     content=""
   }
 
-  function output_table(){
+  function output_table() {
     if [ ! -n "${title}" ]; then
-        echo "未设置表头，退出" && return 1
+      echo "未设置表头，退出" && return 1
     fi
     append_line
     table="${title}${content}$(segmentation)"
-    echo -e $table|column -s "${sep}" -t|awk '{if($0 ~ /^+/){gsub(" ","-",$0);print $0}else{gsub("\\(\\*\\)","\033[31m(*)\033[0m",$0);print $0}}'
+    echo -e $table | column -s "${sep}" -t | awk '{if($0 ~ /^+/){gsub(" ","-",$0);print $0}else{gsub("\\(\\*\\)","\033[31m(*)\033[0m",$0);print $0}}'
   }
 
   local lns=("$@")
   for ((ii = 0; ii < ${#lns[@]}; ii++)); do
     local ln="${lns[$ii]}"
     declare -a arr
-    IFS=';' read -ra ADDR <<< "$ln"
+    IFS=';' read -ra ADDR <<<"$ln"
     for k in "${ADDR[@]}"; do
       arr[${#arr[*]}]="$k"
     done
@@ -5376,6 +5629,28 @@ function formatOutput() {
     unset arr
   done
   output_table
+}
+
+function fileType() {
+  ext=$(echo "${1##*.}" | tr 'A-Z' 'a-z')
+  case "$ext" in
+  "ico" | "png" | "jpg" | "jpeg" | "bmp" | "gif" | "tiff" | "svg" | "webp" | "tif")
+    echo "image"
+    ;;
+  "mp3" | "mp2" | "m4a" | "wav" | "amr" | "awb" | "wma" | "ogg" | "mid" | "xmf" | "rtttl" | "smf" | "imy" | "ape" | "flac" | "aiff" | "aac" | "cd")
+    echo "audio"
+    ;;
+  "mp4" | "m4v" | "m3u8" | "3gp" | "3gpp" | "3g2" | "3gpp2" | "wmv" | "mkv" | "asf" | "asx" | "rm" | "rmvb" | "mov" | "avi" | "flv" | "vob" | "mpeg" | "dv" | "divx" | "xvid" | "mod")
+    echo "video"
+    ;;
+  *)
+    echo "doc"
+    ;;
+  esac
+}
+
+function Debug() {
+  [ "$DEBUG" == "on" ] && $@ || :
 }
 
 function printSample() {
