@@ -66,6 +66,7 @@ RUN set -ex \
     ioping \
     iozone \
     jq \
+    yq \
     kubectl \
     minio-client \
     mtr \

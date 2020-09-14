@@ -16,6 +16,7 @@ context=""
 selector=""
 args=""
 chroot=""
+neat=0
 localrun=0
 savepath=""
 vol=""
@@ -152,8 +153,8 @@ function usage() {
   wt,watch                 监视指定k8s资源状态
   w,wide                   查看k8s资源更多信息
   wl,wlabel                查看k8s资源包括label在内的更多信息
-  y,yaml                   以yaml格式查看k8s资源信息
-  j,json                   以json格式查看k8s资源信息
+  y,yn,yaml                以yaml格式查看k8s资源信息
+  j,jn,json                以json格式查看k8s资源信息
   tp,top                   查看node或pod资源占用
   ed,edit                  编辑指定k8s资源
   p,patch                  为k8s资源打补丁
@@ -185,6 +186,7 @@ function usage() {
   -w [kwd] 过滤关键字
   -g 列出满足条件的所有资源
   -j 配合cmd本机执行命令
+  -q yaml或json精简输出
   -r 调试容器中是否需要chroot到目标容器的文件系统
   -v 调试容器中是否需要挂载目标主机的docker.sock文件
   -y 模拟运行命令
@@ -2180,7 +2182,7 @@ function main() {
       ;;
     "ips")
       require ip
-      itfs=$(ip -j a | jq -r '.[].ifname' | grep "$1")
+      itfs=$(ip -j a | jq -rM '.[].ifname' | grep "$1")
       itfs=($itfs)
       if [ ${#itfs[@]} -eq 1 ]; then
         titf="${itfs[0]}"
@@ -2577,7 +2579,7 @@ function main() {
     fi
   else
     while [ $# -gt 0 ] && [[ "$1" != "--" ]]; do
-      while getopts "a:b:c:d:f:i:k:l:m:n:o:p:s:t:u:w:hgjrvy" opt; do
+      while getopts "a:b:c:d:f:i:k:l:m:n:o:p:s:t:u:w:hgjqrvy" opt; do
         case $opt in
         a)
           since="--since $OPTARG"
@@ -2623,6 +2625,9 @@ function main() {
           ;;
         p)
           port=$OPTARG
+          ;;
+        q)
+          neat=1
           ;;
         r)
           chroot="-c 'chroot /proc/1/root/'"
@@ -2809,9 +2814,9 @@ function main() {
           mkwd="${mandatory[0]}"
           mandatory=("${mandatory[@]:1}")
           if [ ${#mandatory[@]} -eq 0 ] && [ $(curl -o /dev/null -s -w "%{http_code}\n" http://$url/api/v1/metadata) -lt 300 ]; then
-            curl -Gks http://$url/api/v1/metadata | jq -r ".data|with_entries(select(.key|contains(\"$mkwd\")))"
+            curl -Gks http://$url/api/v1/metadata | jq -rM ".data|with_entries(select(.key|contains(\"$mkwd\")))"
           else
-            mts=$(curl -Gks http://$url/api/v1/label/__name__/values | jq -r ".data[]|select(.|contains(\"$mkwd\"))")
+            mts=$(curl -Gks http://$url/api/v1/label/__name__/values | jq -rM ".data[]|select(.|contains(\"$mkwd\"))")
             mts=($mts)
             if [ ${#mts[@]} -eq 0 ]; then
               exit 0
@@ -2830,7 +2835,7 @@ function main() {
             fi
             if [ ${#mandatory[@]} -eq 0 ]; then
               tgl="instance"
-              insts=$(curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" | jq -r ".data[]|.instance" | sort | uniq)
+              insts=$(curl -Gks http://$url/api/v1/series --data-urlencode "match[]=$metric" | jq -rM ".data[]|.instance" | sort | uniq)
               insts=($insts)
               if [ ${#insts[@]} -eq 0 ]; then
                 exit 0
@@ -2854,7 +2859,7 @@ function main() {
                 tgl="instance"
               fi
             fi
-            curl -Gks http://$url/api/v1/targets/metadata --data-urlencode "match_target={$tgl=~\".*$tgv.*\"}" | jq -r ".data[] | select(.metric|contains(\"$metric\"))"
+            curl -Gks http://$url/api/v1/targets/metadata --data-urlencode "match_target={$tgl=~\".*$tgv.*\"}" | jq -rM ".data[] | select(.metric|contains(\"$metric\"))"
           fi
         fi
         ;;
@@ -4620,7 +4625,7 @@ function main() {
             kubectl $kc $context describe $kind $selector $ns
           fi
           ;;
-        "y" | "yaml")
+        "y" | "yn" | "yaml")
           if [ -n "$kwd" ]; then
             items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd" 2>/dev/null)
             SIFS=$IFS
@@ -4635,13 +4640,23 @@ function main() {
                 lns=$(echo "$ns" | awk '{print $2}')
                 lrs=$(echo ${items[$i]} | awk '{print $1}')
               fi
-              kubectl $kc $context -n $lns $selector get $kind $lrs -o yaml
+              if [ $neat -eq 0 ] && [ "$subcmd" != "yn" ]; then
+                kubectl $kc $context -n $lns $selector get $kind $lrs -o yaml
+              else
+                require yq
+                kubectl $kc $context -n $lns $selector get $kind $lrs -o yaml | yq d - items.*.status | yq d - items.*.metadata.ownerReferences | yq d - items.*.metadata.managedFields | yq d - 'metadata.annotations."kubectl.kubernetes.io/last-applied-configuration"' | yq d - items.*.metadata.creationTimestamp | yq d - items.*.metadata.generation | yq d - items.*.metadata.generateName | yq d - items.*.metadata.resourceVersion | yq d - items.*.metadata.selfLink | yq d - items.*.metadata.uid | yq d - items.*.spec.template.metadata.creationTimestamp | yq d - status | yq d - metadata.ownerReferences | yq d - metadata.managedFields | yq d - metadata.creationTimestamp | yq d - metadata.generation | yq d - metadata.generateName | yq d - metadata.resourceVersion | yq d - metadata.selfLink | yq d - metadata.uid | yq d - spec.template.metadata.creationTimestamp | grep -v 'progressDeadlineSeconds: 600' | grep -v 'revisionHistoryLimit: 10' | grep -v 'dnsPolicy: ClusterFirst' | grep -v 'dnsConfig: {}' | grep -v 'enableServiceLinks: true' | grep -v 'priority: 0' | grep -v 'restartPolicy: Always' | grep -v 'schedulerName: default-scheduler' | grep -v 'securityContext: {}' | grep -v 'serviceAccountName: default' | grep -v 'terminationGracePeriodSeconds: 30' | grep -v 'terminationMessagePath: /dev/termination-log' | grep -v 'terminationMessagePolicy: File' | grep -v 'imagePullPolicy: IfNotPresent' | grep -v 'resources: {}' | grep -v 'stdin: true' | grep -v 'tty: true'
+              fi
             done
           else
-            kubectl $kc $context get $kind $selector $ns -o yaml
+            if [ $neat -eq 0 ] && [ "$subcmd" != "yn" ]; then
+              kubectl $kc $context get $kind $selector $ns -o yaml
+            else
+              require yq
+              kubectl $kc $context get $kind $selector $ns -o yaml | yq d - items.*.status | yq d - items.*.metadata.ownerReferences | yq d - items.*.metadata.managedFields | yq d - 'items.*.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration"' | yq d - items.*.metadata.creationTimestamp | yq d - items.*.metadata.generation | yq d - items.*.metadata.generateName | yq d - items.*.metadata.resourceVersion | yq d - items.*.metadata.selfLink | yq d - items.*.metadata.uid | yq d - items.*.spec.template.metadata.creationTimestamp | yq d - status | yq d - metadata.ownerReferences | yq d - metadata.managedFields | yq d - metadata.creationTimestamp | yq d - metadata.generation | yq d - metadata.generateName | yq d - metadata.resourceVersion | yq d - metadata.selfLink | yq d - metadata.uid | yq d - spec.template.metadata.creationTimestamp | grep -v 'progressDeadlineSeconds: 600' | grep -v 'revisionHistoryLimit: 10' | grep -v 'dnsPolicy: ClusterFirst' | grep -v 'dnsConfig: {}' | grep -v 'enableServiceLinks: true' | grep -v 'priority: 0' | grep -v 'restartPolicy: Always' | grep -v 'schedulerName: default-scheduler' | grep -v 'securityContext: {}' | grep -v 'serviceAccountName: default' | grep -v 'terminationGracePeriodSeconds: 30' | grep -v 'terminationMessagePath: /dev/termination-log' | grep -v 'terminationMessagePolicy: File' | grep -v 'imagePullPolicy: IfNotPresent' | grep -v 'resources: {}' | grep -v 'stdin: true' | grep -v 'tty: true'
+            fi
           fi
           ;;
-        "j" | "json")
+        "j" | "jn" | "json")
           if [ -n "$kwd" ]; then
             items=$(kubectl $kc $context get $kind --no-headers $selector $ns | grep "$kwd" 2>/dev/null)
             SIFS=$IFS
@@ -4656,10 +4671,20 @@ function main() {
                 lns=$(echo "$ns" | awk '{print $2}')
                 lrs=$(echo ${items[$i]} | awk '{print $1}')
               fi
-              kubectl $kc $context -n $lns $selector get $kind $lrs -o json
+              if [ $neat -eq 0 ] && [ "$subcmd" != "jn" ]; then
+                kubectl $kc $context -n $lns $selector get $kind $lrs -o json
+              else
+                require jq
+                kubectl $kc $context -n $lns $selector get $kind $lrs -o json | jq -rM 'del(.status)' | jq -rM 'del(.metadata.ownerReferences)' | jq -rM 'del(.metadata.managedFields)' | jq -rM 'del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")' | jq -rM 'del(.metadata.creationTimestamp)' | jq -rM 'del(.metadata.generation)' | jq -rM 'del(.metadata.generateName)' | jq -rM 'del(.metadata.resourceVersion)' | jq -rM 'del(.metadata.selfLink)' | jq -rM 'del(.metadata.uid)' | jq -rM 'del(.spec.template.metadata.creationTimestamp)' | grep -v '"progressDeadlineSeconds": 600' | grep -v '"revisionHistoryLimit": 10' | grep -v '"dnsPolicy": "ClusterFirst"' | grep -v '"dnsConfig": {}' | grep -v '"enableServiceLinks": true' | grep -v '"priority": 0' | grep -v '"restartPolicy": "Always"' | grep -v '"schedulerName": "default-scheduler"' | grep -v '"securityContext": {}' | grep -v '"serviceAccountName": "default"' | grep -v '"terminationGracePeriodSeconds": 30' | grep -v '"terminationMessagePath": "/dev/termination-log"' | grep -v '"terminationMessagePolicy": "File"' | grep -v '"imagePullPolicy": "IfNotPresent"' | grep -v '"resources": {}' | grep -v '"stdin": true' | grep -v '"tty": true'
+              fi
             done
           else
-            kubectl $kc $context get $kind $selector $ns -o json
+            if [ $neat -eq 0 ] && [ "$subcmd" != "jn" ]; then
+              kubectl $kc $context get $kind $selector $ns -o json
+            else
+              require jq
+              kubectl $kc $context get $kind $selector $ns -o json | jq -rM 'del(.items[].status)' | jq -rM 'del(.items[].metadata.ownerReferences)' | jq -rM 'del(.items[].metadata.managedFields)' | jq -rM 'del(.items[].metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")' | jq -rM 'del(.items[].metadata.creationTimestamp)' | jq -rM 'del(.items[].metadata.generation)' | jq -rM 'del(.items[].metadata.generateName)' | jq -rM 'del(.items[].metadata.resourceVersion)' | jq -rM 'del(.items[].metadata.selfLink)' | jq -rM 'del(.items[].metadata.uid)' | jq -rM 'del(.items[].spec.template.metadata.creationTimestamp)' | grep -v '"progressDeadlineSeconds": 600' | grep -v '"revisionHistoryLimit": 10' | grep -v '"dnsPolicy": "ClusterFirst"' | grep -v '"dnsConfig": {}' | grep -v '"enableServiceLinks": true' | grep -v '"priority": 0' | grep -v '"restartPolicy": "Always"' | grep -v '"schedulerName": "default-scheduler"' | grep -v '"securityContext": {}' | grep -v '"serviceAccountName": "default"' | grep -v '"terminationGracePeriodSeconds": 30' | grep -v '"terminationMessagePath": "/dev/termination-log"' | grep -v '"terminationMessagePolicy": "File"' | grep -v '"imagePullPolicy": "IfNotPresent"' | grep -v '"resources": {}' | grep -v '"stdin": true' | grep -v '"tty": true'
+            fi
           fi
           ;;
         "tp" | "top")
@@ -4744,7 +4769,7 @@ function main() {
         resname=$(echo $rs | awk '{print $1}')
       fi
 
-      if [ "$kind" == "pod" ]; then
+      if [ "$kind" == "pod" ] && [ "$subcmd" != "y" ] && [ "$subcmd" != "yn" ] && [ "$subcmd" != "yaml" ] && [ "$subcmd" != "j" ] && [ "$subcmd" != "jn" ] && [ "$subcmd" != "json" ]; then
         podinfo=$(kubectl $kc $context get pod $resname $ns -o=custom-columns=NODE:.spec.nodeName,HOST:.status.hostIP,NAME:.metadata.name,ADDR:.status.podIP,CNAME:.status.containerStatuses[$idx].name,CID:.status.containerStatuses[$idx].containerID 2>/dev/null | grep $resname)
 
         if [ $? -ne 0 ]; then
@@ -4826,11 +4851,21 @@ function main() {
         fi
         kubectl $kc $context label $lbow $kind $resname $args $ns
         ;;
-      "y" | "yaml")
-        kubectl $kc $context get $kind $resname $ns -o yaml
+      "y" | "yn" | "yaml")
+        if [ $neat -eq 0 ] && [ "$subcmd" != "yn" ]; then
+          kubectl $kc $context get $kind $resname $ns -o yaml
+        else
+          require yq
+          kubectl $kc $context get $kind $resname $ns -o yaml | yq d - items.*.status | yq d - items.*.metadata.ownerReferences | yq d - items.*.metadata.managedFields | yq d - 'metadata.annotations."kubectl.kubernetes.io/last-applied-configuration"' | yq d - items.*.metadata.creationTimestamp | yq d - items.*.metadata.generation | yq d - items.*.metadata.generateName | yq d - items.*.metadata.resourceVersion | yq d - items.*.metadata.selfLink | yq d - items.*.metadata.uid | yq d - items.*.spec.template.metadata.creationTimestamp | yq d - status | yq d - metadata.ownerReferences | yq d - metadata.managedFields | yq d - metadata.creationTimestamp | yq d - metadata.generation | yq d - metadata.generateName | yq d - metadata.resourceVersion | yq d - metadata.selfLink | yq d - metadata.uid | yq d - spec.template.metadata.creationTimestamp | grep -v 'progressDeadlineSeconds: 600' | grep -v 'revisionHistoryLimit: 10' | grep -v 'dnsPolicy: ClusterFirst' | grep -v 'dnsConfig: {}' | grep -v 'enableServiceLinks: true' | grep -v 'priority: 0' | grep -v 'restartPolicy: Always' | grep -v 'schedulerName: default-scheduler' | grep -v 'securityContext: {}' | grep -v 'serviceAccountName: default' | grep -v 'terminationGracePeriodSeconds: 30' | grep -v 'terminationMessagePath: /dev/termination-log' | grep -v 'terminationMessagePolicy: File' | grep -v 'imagePullPolicy: IfNotPresent' | grep -v 'resources: {}' | grep -v 'stdin: true' | grep -v 'tty: true'
+        fi
         ;;
-      "j" | "json")
-        kubectl $kc $context get $kind $resname $ns -o json
+      "j" | "jn" | "json")
+        if [ $neat -eq 0 ] && [ "$subcmd" != "jn" ]; then
+          kubectl $kc $context get $kind $resname $ns -o json
+        else
+          require jq
+          kubectl $kc $context get $kind $resname $ns -o json | jq -rM 'del(.status)' | jq -rM 'del(.metadata.ownerReferences)' | jq -rM 'del(.metadata.managedFields)' | jq -rM 'del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")' | jq -rM 'del(.metadata.creationTimestamp)' | jq -rM 'del(.metadata.generation)' | jq -rM 'del(.metadata.generateName)' | jq -rM 'del(.metadata.resourceVersion)' | jq -rM 'del(.metadata.selfLink)' | jq -rM 'del(.metadata.uid)' | jq -rM 'del(.spec.template.metadata.creationTimestamp)' | grep -v '"progressDeadlineSeconds": 600' | grep -v '"revisionHistoryLimit": 10' | grep -v '"dnsPolicy": "ClusterFirst"' | grep -v '"dnsConfig": {}' | grep -v '"enableServiceLinks": true' | grep -v '"priority": 0' | grep -v '"restartPolicy": "Always"' | grep -v '"schedulerName": "default-scheduler"' | grep -v '"securityContext": {}' | grep -v '"serviceAccountName": "default"' | grep -v '"terminationGracePeriodSeconds": 30' | grep -v '"terminationMessagePath": "/dev/termination-log"' | grep -v '"terminationMessagePolicy": "File"' | grep -v '"imagePullPolicy": "IfNotPresent"' | grep -v '"resources": {}' | grep -v '"stdin": true' | grep -v '"tty": true'
+        fi
         ;;
       "tp" | "top")
         if [ "$ns" == "--all-namespaces" ]; then
@@ -4944,22 +4979,22 @@ function require() {
 }
 
 function getip() {
-  itfs=$(ip -j a | jq -r '.[].ifname')
+  itfs=$(ip -j a | jq -rM '.[].ifname')
   itfs=($itfs)
 
   ifnets=()
   for ((i = 0; i < ${#itfs[@]}; i++)); do
     itf=${itfs[$i]}
     itfi=$(ip -j a show dev $itf)
-    status=$(echo $itfi | jq -r '.[].operstate')
-    ether=$(echo $itfi | jq -r '.[].address')
+    status=$(echo $itfi | jq -rM '.[].operstate')
+    ether=$(echo $itfi | jq -rM '.[].address')
     if [ -z "$ether" ]; then
       ether="NA"
     fi
-    mtu=$(echo $itfi | jq -r '.[].mtu')
-    inet=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet")|.local')
-    inetprefix=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet")|.prefixlen')
-    inetdyn=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet")|.dynamic')
+    mtu=$(echo $itfi | jq -rM '.[].mtu')
+    inet=$(echo $itfi | jq -rM '.[].addr_info[]|select(.family=="inet")|.local')
+    inetprefix=$(echo $itfi | jq -rM '.[].addr_info[]|select(.family=="inet")|.prefixlen')
+    inetdyn=$(echo $itfi | jq -rM '.[].addr_info[]|select(.family=="inet")|.dynamic')
     if [ -z "$inetdyn" ]; then
       inetassign=""
     else
@@ -4978,9 +5013,9 @@ function getip() {
     if [ -z "$inet" ]; then
       inet="NA"
     fi
-    inet6=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet6")|.local')
-    inet6prefix=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet6")|.prefixlen')
-    inet6dyn=$(echo $itfi | jq -r '.[].addr_info[]|select(.family=="inet6")|.dynamic')
+    inet6=$(echo $itfi | jq -rM '.[].addr_info[]|select(.family=="inet6")|.local')
+    inet6prefix=$(echo $itfi | jq -rM '.[].addr_info[]|select(.family=="inet6")|.prefixlen')
+    inet6dyn=$(echo $itfi | jq -rM '.[].addr_info[]|select(.family=="inet6")|.dynamic')
     if [ -z "$inet6dyn" ]; then
       inet6assign=""
     else
@@ -5723,7 +5758,7 @@ nodes:
 - role: control-plane
 
 # kind create cluster --name love --config kind.yaml
-  " > /tmp/kind.yaml
+  " >/tmp/kind.yaml
 }
 
 function printSample() {
