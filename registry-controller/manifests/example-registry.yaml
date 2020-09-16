@@ -1,0 +1,11 @@
+apiVersion: management.cattle.io/v1alpha1
+kind: Registry
+metadata:
+  name: example-registry
+spec:
+  type: harbor
+  cluster: c-mthlx
+  owner: user-7bnvc
+  url: https://regdev.ebcpaas.com
+  user: admin
+  passwd: Harbor@123
