@@ -91,6 +91,7 @@ function usage() {
   dlf,dlogf                实时查看容器日志
   dst,dstat,dstats         监控docker容器
   dq,dsearch               搜索镜像仓库
+  dck,dcheck               检查镜像仓库是否存在指定镜像列表
   db,dbd                   构建docker镜像
   dt,dtg,dtag              为镜像打标签
   dps,dlist                查看容器列表
@@ -3980,6 +3981,31 @@ function main() {
           execmd "$cmd" $ip
         done
       fi
+    elif [ "$subcmd" == "dck" ] || [ "$subcmd" == "dcheck" ]; then
+      require curl
+      if [ ${#mandatory[@]} -gt 3 ]; then
+        regurl="${mandatory[0]}"
+        reguser="${mandatory[1]}"
+        regpasswd="${mandatory[2]}"
+
+        mandatory=("${mandatory[@]:3}")
+        imagelist="${mandatory[3]}"
+        if [ -f "$imagelist" ]; then
+          while read line
+          do
+            checkimage $line $regurl $reguser $regpasswd
+            sleep 1
+          done < $imagelist
+        else
+          for line in ${mandatory[@]}
+          do
+            checkimage $line $regurl $reguser $regpasswd
+            sleep 1
+          done
+        fi
+      else
+        echo "error: need arguments"
+      fi
     elif [ "$subcmd" == "cf" ] || [ "$subcmd" == "cfind" ]; then
       grep -nr "${mandatory[*]}"
     elif [ "$subcmd" == "df" ] || [ "$subcmd" == "dfind" ]; then
@@ -5087,6 +5113,32 @@ function pping() {
       fi
     done
   done
+}
+
+function checkimage() {
+    line="$1"
+    regurl="$2"
+    reguser="$3"
+    regpasswd="$4"
+
+    repo=${line%%:*}
+    tag=${line##*:}
+    if [ "$repo" == "$tag" ] && [[ ! "$line" =~ ":" ]]; then
+        tag="latest"
+    fi
+    project=${repo%%/*}
+    rname=${repo#*/}
+    if [ "$project" == "$rname" ] && [[ ! "$line" =~ "/" ]]; then
+        project="library"
+    fi
+    
+    echo -ne "[ .... ] checking $project/$rname:$tag\r"
+    resp=$(curl -Gks -u $reguser:$regpasswd "$regurl/api/v2.0/projects/$project/repositories/$rname/artifacts/$tag/tags")
+    if [[ "$resp" =~ "NOT_FOUND" ]]; then
+        echo -e "[\033[1;31m FAIL \033[0m]"
+    else
+        echo -e "[\033[1;32m SUCC \033[0m]"
+    fi
 }
 
 function dockerpush() {
