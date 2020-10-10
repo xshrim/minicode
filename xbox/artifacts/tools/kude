@@ -90,6 +90,7 @@ function usage() {
   dlg,dlog                 查看容器日志
   dlf,dlogf                实时查看容器日志
   dst,dstat,dstats         监控docker容器
+  dreg,dregistry           启动私有镜像仓库
   dq,dsearch               搜索镜像仓库
   dck,dcheck               检查镜像仓库是否存在指定镜像列表
   db,dbd                   构建docker镜像
@@ -2462,6 +2463,11 @@ function main() {
     require docker
     shift
     docker search $*
+  elif [ "$1" == "dreg" ] || [ "$1" == "dregistry" ]; then
+    require docker
+    shift
+    # docker run ‐d ‐p 5000:5000 ‐‐restart=always ‐‐name registry ‐v /usr/docker/registry:/var/lib/registry registry:2
+    docker run ‐d ‐p 5000:5000 ‐‐restart=always ‐‐name registry registry:2
   elif [ "$1" == "dr" ] || [ "$1" == "drun" ]; then
     require docker
     shift
