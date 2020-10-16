@@ -2514,7 +2514,7 @@ EOF
     shift
     skind="pod"
     if [ $# -gt 0 ]; then
-      skind=$1
+      skind=$(aliasKind $1)
     fi
     printSample "$skind"
   elif [ "$1" == "id" ] || [ "$1" == "uuid" ] || [ "$1" == "guid" ]; then
@@ -2646,7 +2646,7 @@ EOF
           localrun=1
           ;;
         k)
-          kind=$OPTARG
+          kind=$(aliasKind $OPTARG)
           ;;
         l)
           selector="--selector=$OPTARG"
@@ -4163,7 +4163,7 @@ EOF
           done
         else
           if [ -z $kind ] && [[ ! "${mandatory[*]}" =~ ":" ]]; then
-            kind=${mandatory[0]}
+            kind=$(aliasKind ${mandatory[0]})
             mandatory=("${mandatory[@]:1}")
           fi
           kubectl $kc $context create $kind ${mandatory[@]} $selector $ns $dryrun $output
@@ -4492,7 +4492,6 @@ EOF
       if [ -z $kind ]; then
         kind="pod"
       fi
-
       items=$(kubectl $kc $context get $kind --no-headers $selector $ns 2>/dev/null)
       SIFS=$IFS
       IFS=$'\n'
@@ -4516,32 +4515,11 @@ EOF
       require kubectl
       if [ -z $kind ]; then
         if [ ${#mandatory[@]} -gt 0 ] && [ "$subcmd" != "l" ] && [ "$subcmd" != "log" ] && [ "$subcmd" != "lf" ] && [ "$subcmd" != "logf" ] && [ "$subcmd" != "i" ] && [ "$subcmd" != "insp" ] && [ "$subcmd" != "inspect" ] && [ "$subcmd" != "e" ] && [ "$subcmd" != "exe" ] && [ "$subcmd" != "exec" ] && [ "$subcmd" != "ie" ] && [ "$subcmd" != "iexe" ] && [ "$subcmd" != "iexec" ] && [ "$subcmd" != "at" ] && [ "$subcmd" != "attach" ] && [ "$subcmd" != "cp" ] && [ "$subcmd" != "copy" ] && [ "$subcmd" != "pf" ] && [ "$subcmd" != "forward" ] && [ "$subcmd" != "port-forward" ] && [ "$subcmd" != "x" ] && [ "$subcmd" != "dbg" ] && [ "$subcmd" != "debug" ]; then
-          kind=${mandatory[0]}
+          kind=$(aliasKind ${mandatory[0]})
           mandatory=("${mandatory[@]:1}")
         else
           kind="pod"
         fi
-      fi
-      if [ "$kind" == "dep" ]; then
-        kind="deploy"
-      fi
-      if [ "$kind" == "np" ]; then
-        kind="networkpolicy"
-      fi
-      if [ "$kind" == "rb" ]; then
-        kind="rolebinding"
-      fi
-      if [ "$kind" == "cr" ]; then
-        kind="clusterrole"
-      fi
-      if [ "$kind" == "crb" ]; then
-        kind="clusterrolebinding"
-      fi
-      if [ "$kind" == "vwc" ]; then
-        kind="validatingwebhookconfigurations"
-      fi
-      if [ "$kind" == "mwc" ]; then
-        kind="mutatingwebhookconfigurations"
       fi
       if [ -z "$kwd" ]; then
         if [ ${#mandatory[@]} -gt 0 ]; then
@@ -5816,6 +5794,48 @@ function fileType() {
 
 function Debug() {
   [ "$DEBUG" == "on" ] && $@ || :
+}
+
+function aliasKind() {
+  kind=$1
+  if [ "$kind" == "dep" ]; then
+    kind="deploy"
+  elif [ "$kind" == "np" ]; then
+    kind="networkpolicy"
+  elif [ "$kind" == "lr" ]; then
+    kind="limitrange"
+  elif [ "$kind" == "rq" ]; then
+    kind="resourcequota"
+  elif [ "$kind" == "rb" ]; then
+    kind="rolebinding"
+  elif [ "$kind" == "cr" ]; then
+    kind="clusterrole"
+  elif [ "$kind" == "crb" ]; then
+    kind="clusterrolebinding"
+  elif [ "$kind" == "sec" ]; then
+    kind="secret"
+  elif [ "$kind" == "pm" ]; then
+    kind="prometheus"
+  elif [ "$kind" == "pr" ]; then
+    kind="prometheusrule"
+  elif [ "$kind" == "sm" ]; then
+    kind="servicemonitor"
+  elif [ "$kind" == "am" ]; then
+    kind="alertmanager"
+  elif [ "$kind" == "pj" ]; then
+    kind="project"
+  elif [ "$kind" == "ct" ]; then
+    kind="cluster"
+  elif [ "$kind" == "app" ]; then
+    kind="application"
+  elif [ "$kind" == "crt" || "$kind" == "cert"]; then
+    kind="certificate"
+  elif [ "$kind" == "vwc" ]; then
+    kind="validatingwebhookconfigurations"
+  elif [ "$kind" == "mwc" ]; then
+    kind="mutatingwebhookconfigurations"
+  fi
+  echo $kind
 }
 
 function genKindConfig() {
