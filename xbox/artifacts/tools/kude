@@ -5828,7 +5828,7 @@ function aliasKind() {
     kind="cluster"
   elif [ "$kind" == "app" ]; then
     kind="application"
-  elif [ "$kind" == "crt" || "$kind" == "cert"]; then
+  elif [ "$kind" == "crt" ] || [ "$kind" == "cert" ]; then
     kind="certificate"
   elif [ "$kind" == "vwc" ]; then
     kind="validatingwebhookconfigurations"
