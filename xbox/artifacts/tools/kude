@@ -1416,6 +1416,41 @@ function main() {
       kind help
     elif [ "$1" == "cl" ] || [ "$1" == "ls" ] || [ "$1" == "list" ]; then
       kind get clusters
+    elif [ "$1" == "ld" ] || [ "$1" == "load" ]; then
+      shift
+      if [ $# -eq 1 ]; then
+        kind load $1 --name kind
+      elif [ $# -gt 1 ]; then
+        kind load $1 --name $2
+      fi
+    elif [ "$1" == "d" ] || [ "$1" == "dc" ]; then
+      shift
+      docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl $*
+    elif [ "$1" == "exec" ]; then
+      shift
+      if [ $# -eq 1 ]; then
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec -it $1
+      else
+        cids=$(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q)
+        if [ $(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q | wc -l) -lt 2 ]; then
+          cid=$cids
+        else
+          echo "====== More than one container ======"
+          SIFS=$IFS
+          IFS=$'\n'
+          cids=($cids)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cids[@]}; i++)); do
+            echo "$i: ${cids[$i]}"
+          done
+          read -p "====== select one with number[0]: " kcdidx
+          if [ -z $kcdidx ]; then
+            kcdidx=0
+          fi
+          cid=$(echo ${cids[$kcdidx]})
+        fi
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec -it ${cid:0:12} sh
+      fi
     elif [ "$1" == "rm" ] || [ "$1" == "del" ] || [ "$1" == "delete" ]; then
       shift
       if [ $# -gt 0 ]; then
@@ -3240,15 +3275,17 @@ EOF
             echo "$i: ${conts[$i]}"
           done
           echo "-1: ALL"
-          read -p "====== select one with number[0]: " dcidx
-          if [ -z $dcidx ]; then
+          read -p "====== select one or more with number[0]: " dcidx
+          if [ -z "$dcidx" ]; then
             dcidx=0
           fi
-          if [ $dcidx -eq -1 ]; then
-            docker rm -f $(docker ps -a | grep "$fkwd" | awk '{print $1}')
-          else
-            docker rm -f $(echo ${conts[$dcidx]} | awk '{print $1}')
-          fi
+          for item in ${dcidx[@]}; do
+            if [ $item -eq -1 ]; then
+              docker rm -f $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+            else
+              docker rm -f $(echo ${conts[$item]} | awk '{print $1}')
+            fi
+          done
         fi
       else
         cmd="docker rm -f $fkwd"
@@ -3631,11 +3668,13 @@ EOF
           for ((i = 0; i < ${#cimgs[@]}; i++)); do
             echo "$i: ${cimgs[$i]}"
           done
-          read -p "====== select one with number[0]: " diidx
+          read -p "====== select one or more with number[0]: " diidx
           if [ -z $diidx ]; then
             diidx=0
           fi
-          docker stop $(echo ${cimgs[$diidx]} | awk '{print $1}')
+          for item in ${diidx[@]}; do
+            docker stop $(echo ${cimgs[$item]} | awk '{print $1}')
+          done
         fi
       else
         cmd="docker stop $fkwd"
@@ -3795,19 +3834,21 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           echo "-1: ALL"
-          read -p "====== select one with number[0]: " diidx
+          read -p "====== select one or more with number[0]: " diidx
           if [ -z $diidx ]; then
             diidx=0
           fi
-          if [ $diidx -eq -1 ]; then
-            docker rmi -f $(docker images | grep "$fkwd" | awk '{print $1":"$2}')
-          else
-            if [ $(echo ${cimgs[$diidx]} | awk '{print $1}') == "<none>" ]; then
-              docker rmi -f $(echo ${cimgs[$diidx]} | awk '{print $3}')
+          for item in ${diidx[@]}; do
+            if [ $item -eq -1 ]; then
+              docker rmi -f $(docker images | grep "$fkwd" | awk '{print $1":"$2}')
             else
-              docker rmi -f $(echo ${cimgs[$diidx]} | awk '{print $1":"$2}')
+              if [ $(echo ${cimgs[$item]} | awk '{print $1}') == "<none>" ]; then
+                docker rmi -f $(echo ${cimgs[$item]} | awk '{print $3}')
+              else
+                docker rmi -f $(echo ${cimgs[$item]} | awk '{print $1":"$2}')
+              fi
             fi
-          fi
+          done
         fi
       else
         cmd="docker rmi -f $fkwd"
