@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 if [ "$HOST" ]; then
   sed -i "s/127.0.0.1/$HOST/g" /root/static/index.html
 fi
@@ -34,6 +32,8 @@ fi
 if [ "$HSUSER" ] && [ "$HSPASSWD" ]; then
   hsauth="--auth-type http --auth-http $HSUSER:$HSPASSWD"
 fi
+
+set -x
 
 /usr/sbin/sshd -D &
 
