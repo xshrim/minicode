@@ -1332,7 +1332,7 @@ mysql -u root -p123456 -e 'SHOW /*!50000 GLOBAL */ STATUS LIKE \"Innodb_log_wait
 }
 
 function main() {
-  if [ -z $1 ]; then
+  if [ -z "$1" ]; then
     usage simple
     exit 1
   elif [ "$1" == "--" ]; then
@@ -1444,7 +1444,7 @@ function main() {
             echo "$i: ${cids[$i]}"
           done
           read -p "====== select one with number[0]: " kcdidx
-          if [ -z $kcdidx ]; then
+          if [ -z "$kcdidx" ]; then
             kcdidx=0
           fi
           cid=$(echo ${cids[$kcdidx]})
@@ -1470,14 +1470,14 @@ function main() {
           echo "$i: ${kdcs[$i]}"
         done
         read -p "====== select one with number[0]: " kdidx
-        if [ -z $kdidx ]; then
+        if [ -z "$kdidx" ]; then
           kdidx=0
         fi
         kind delete cluster --name $(echo ${kdcs[$kdidx]})
       fi
     elif [ $# -le 1 ]; then
       # genKindConfig
-      if [ -z $1 ]; then
+      if [ -z "$1" ]; then
 cat <<EOF | kind create cluster --name= --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -1833,7 +1833,7 @@ EOF
     elif [ "$1" == "cr" ] || [ "$1" == "repo" ]; then
       require createrepo
       shift
-      if [ -z $1 ]; then
+      if [ -z "$1" ]; then
         createrepo .
       else
         createrepo $1
@@ -1841,7 +1841,7 @@ EOF
     elif [ "$1" == "c" ] || [ "$1" == "cfg" ]; then
       shift
       url="http://127.0.0.1:80/"
-      if [ -n $1 ]; then
+      if [ -n "$1" ]; then
         url=$1
       fi
       echo -e "[private]\nname=private\nbaseurl=$url\ngpgcheck=0\nenabled=1\n" >/etc/yum.repos.d/private.repo
@@ -2189,7 +2189,7 @@ EOF
       ;;
     "arp")
       require arp
-      if [ -z $1 ]; then
+      if [ -z "$1" ]; then
         arp -a
       else
         arp -a -i $1
@@ -2259,7 +2259,7 @@ EOF
           echo "$i: ${itfs[$i]}"
         done
         read -p "====== select one with number[0]: " iidx
-        if [ -z $iidx ]; then
+        if [ -z "$iidx" ]; then
           iidx=0
         fi
         titf=${itfs[$iidx]}
@@ -2270,7 +2270,7 @@ EOF
       if ! type mtr &>/dev/null; then
         traceroute $*
       else
-        if [ -z $1 ]; then
+        if [ -z "$1" ]; then
           mtr
         else
           mtr $*
@@ -2279,13 +2279,13 @@ EOF
       ;;
     "ss")
       if ! type ss &>/dev/null; then
-        if [ -z $1 ]; then
+        if [ -z "$1" ]; then
           netstat -vatunlp
         else
           netstat $*
         fi
       else
-        if [ -z $1 ]; then
+        if [ -z "$1" ]; then
           ss -asntup
         else
           ss $*
@@ -2585,7 +2585,7 @@ EOF
     else
       shift
       idtype="$1"
-      if [ -z $2 ]; then
+      if [ -z "$2" ]; then
         idlen=1
       else
         idlen=$2
@@ -2753,7 +2753,7 @@ EOF
       mandatory=("${mandatory[@]:1}")
     fi
 
-    if [ -z $subcmd ]; then
+    if [ -z "$subcmd" ]; then
       echo "need sub command"
       usage simple
       exit 1
@@ -2900,7 +2900,7 @@ EOF
                 echo "$i: ${mts[$i]}"
               done
               read -p "====== select one with number[0]: " midx
-              if [ -z $midx ]; then
+              if [ -z "$midx" ]; then
                 midx=0
               fi
               metric=${mts[$midx]}
@@ -2919,7 +2919,7 @@ EOF
                   echo "$i: ${insts[$i]}"
                 done
                 read -p "====== select one with number[0]: " iidx
-                if [ -z $iidx ]; then
+                if [ -z "$iidx" ]; then
                   iidx=0
                 fi
                 tgv=${insts[$iidx]}
@@ -3150,7 +3150,7 @@ EOF
         #         imgtag="latest"
         #       fi
         #     if [ $(docker images|grep $imgname|awk '{print $2}'|grep $imgtag|wc -l) -eq 0 ]; then
-        if [ -z $imgtag ] && [ $(docker images | grep $imgname | wc -l) -gt 1 ]; then
+        if [ -z "$imgtag" ] && [ $(docker images | grep $imgname | wc -l) -gt 1 ]; then
           #         docker pull $imgname:$imgtag
           echo "====== More than one image ======"
           imgs=$(docker images | grep $imgname | awk '{print $1":"$2}')
@@ -3164,7 +3164,7 @@ EOF
           imgtag="latest"
           echo "-1: pull $imgname:$imgtag"
           read -p "====== select one with number[0]: " iidx
-          if [ -z $iidx ]; then
+          if [ -z "$iidx" ]; then
             iidx=0
           fi
           if [ $iidx -eq -1 ]; then
@@ -3181,7 +3181,7 @@ EOF
           llib=${pimg%/*}
           limg=${pimg##*/}
         else
-          if [ -z $imgtag ]; then
+          if [ -z "$imgtag" ]; then
             imgtag="latest"
           fi
           pimg=$imgname:$imgtag
@@ -3225,13 +3225,13 @@ EOF
           rrepo="docker.io"
         fi
 
-        if [ -z $llib ]; then
+        if [ -z "$llib" ]; then
           simg=$limg
         else
           simg=$llib/$limg
         fi
 
-        if [ "$rimg" != "$limg" ] && [ -n $rimg ] && [ "$rimg" != "" ]; then
+        if [ "$rimg" != "$limg" ] && [ -n "$rimg" ] && [ "$rimg" != "" ]; then
           limg=$rimg
         fi
 
@@ -3324,7 +3324,7 @@ EOF
             echo "$i: ${conts[$i]}"
           done
           read -p "====== select one with number[0]: " dcidx
-          if [ -z $dcidx ]; then
+          if [ -z "$dcidx" ]; then
             dcidx=0
           fi
           tcid=$(echo ${conts[$dcidx]} | awk '{print $1}')
@@ -3369,7 +3369,7 @@ EOF
             echo "$i: ${conts[$i]}"
           done
           read -p "====== select one with number[0]: " dcidx
-          if [ -z $dcidx ]; then
+          if [ -z "$dcidx" ]; then
             dcidx=0
           fi
           tcid=$(echo ${conts[$dcidx]} | awk '{print $1}')
@@ -3406,7 +3406,7 @@ EOF
             echo "$i: ${conts[$i]}"
           done
           read -p "====== select one with number[0]: " dcidx
-          if [ -z $dcidx ]; then
+          if [ -z "$dcidx" ]; then
             dcidx=0
           fi
           docker exec $(echo ${conts[$dcidx]} | awk '{print $1}') $dcmd
@@ -3434,7 +3434,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker exec -it $(echo ${cimgs[$diidx]} | awk '{print $1}') sh
@@ -3467,7 +3467,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker attach $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3500,7 +3500,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker logs $(echo ${cimgs[$diidx]} | awk '{print $1}') $since $amount
@@ -3533,7 +3533,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker logs -f $(echo ${cimgs[$diidx]} | awk '{print $1}') $since $amount
@@ -3570,7 +3570,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect $(echo ${cimgs[$diidx]} | awk '{print $3}')
@@ -3603,7 +3603,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3636,7 +3636,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker start $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3669,7 +3669,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one or more with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           for item in ${diidx[@]}; do
@@ -3704,7 +3704,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker top $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3739,7 +3739,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker stats $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3783,7 +3783,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker tag $(echo ${cimgs[$diidx]} | awk '{print $3}') $ttag
@@ -3835,7 +3835,7 @@ EOF
           done
           echo "-1: ALL"
           read -p "====== select one or more with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           for item in ${diidx[@]}; do
@@ -3882,7 +3882,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker history $(echo ${cimgs[$diidx]} | awk '{print $3}')
@@ -3915,7 +3915,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect --format='{{json .NetworkSettings.Networks}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3948,7 +3948,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect --format='{{json .Config.Env}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -3981,7 +3981,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect --format='{{json .Config.Cmd}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -4014,7 +4014,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect --format='{{json .NetworkSettings.Ports}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -4047,7 +4047,7 @@ EOF
             echo "$i: ${cimgs[$i]}"
           done
           read -p "====== select one with number[0]: " diidx
-          if [ -z $diidx ]; then
+          if [ -z "$diidx" ]; then
             diidx=0
           fi
           docker inspect --format='{{json .Mounts}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
@@ -4203,7 +4203,7 @@ EOF
             kubectl $kc $context create -f $fname $selector $ns $dryrun $output
           done
         else
-          if [ -z $kind ] && [[ ! "${mandatory[*]}" =~ ":" ]]; then
+          if [ -z "$kind" ] && [[ ! "${mandatory[*]}" =~ ":" ]]; then
             kind=$(aliasKind ${mandatory[0]})
             mandatory=("${mandatory[@]:1}")
           fi
@@ -4364,7 +4364,7 @@ EOF
           echo "$i: ${nodes[$i]}"
         done
         read -p "====== select one with number[0]: " niidx
-        if [ -z $niidx ]; then
+        if [ -z "$niidx" ]; then
           niidx=0
         fi
         node=${nodes[$niidx]}
@@ -4392,7 +4392,7 @@ EOF
           echo "$i: ${nodes[$i]}"
         done
         read -p "====== select one with number[0]: " niidx
-        if [ -z $niidx ]; then
+        if [ -z "$niidx" ]; then
           niidx=0
         fi
         node=${nodes[$niidx]}
@@ -4474,7 +4474,7 @@ EOF
           echo "$i: ${sas[$i]}"
         done
         read -p "====== select one with number[0]: " siidx
-        if [ -z $siidx ]; then
+        if [ -z "$siidx" ]; then
           siidx=0
         fi
         sa=${sas[$siidx]}
@@ -4530,7 +4530,7 @@ EOF
         kwd="${mandatory[*]}"
       fi
 
-      if [ -z $kind ]; then
+      if [ -z "$kind" ]; then
         kind="pod"
       fi
       items=$(kubectl $kc $context get $kind --no-headers $selector $ns 2>/dev/null)
@@ -4554,7 +4554,7 @@ EOF
       done
     else
       require kubectl
-      if [ -z $kind ]; then
+      if [ -z "$kind" ]; then
         if [ ${#mandatory[@]} -gt 0 ] && [ "$subcmd" != "l" ] && [ "$subcmd" != "log" ] && [ "$subcmd" != "lf" ] && [ "$subcmd" != "logf" ] && [ "$subcmd" != "i" ] && [ "$subcmd" != "insp" ] && [ "$subcmd" != "inspect" ] && [ "$subcmd" != "e" ] && [ "$subcmd" != "exe" ] && [ "$subcmd" != "exec" ] && [ "$subcmd" != "ie" ] && [ "$subcmd" != "iexe" ] && [ "$subcmd" != "iexec" ] && [ "$subcmd" != "at" ] && [ "$subcmd" != "attach" ] && [ "$subcmd" != "cp" ] && [ "$subcmd" != "copy" ] && [ "$subcmd" != "pf" ] && [ "$subcmd" != "forward" ] && [ "$subcmd" != "port-forward" ] && [ "$subcmd" != "x" ] && [ "$subcmd" != "dbg" ] && [ "$subcmd" != "debug" ]; then
           kind=$(aliasKind ${mandatory[0]})
           mandatory=("${mandatory[@]:1}")
@@ -4643,7 +4643,7 @@ EOF
             done
             echo "-1: ALL"
             read -p "====== select one with number[0]: " liidx
-            if [ -z $liidx ]; then
+            if [ -z "$liidx" ]; then
               liidx=0
             fi
             if [ $liidx -eq -1 ]; then
@@ -4833,7 +4833,7 @@ EOF
         done
         # echo "====== Selected the first ======"
         read -p "====== select one with number[0]: " ridx
-        if [ -z $ridx ]; then
+        if [ -z "$ridx" ]; then
           ridx=0
         fi
         rs=${ress[$ridx]}

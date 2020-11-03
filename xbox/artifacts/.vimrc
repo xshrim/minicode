@@ -5,14 +5,14 @@
 
 set encoding=utf-8
 scriptencoding utf-8
-"识别文件编码
+" 识别文件编码
 set fileencodings=utf-8,ucs-bom,shift-jis,gb18030,gbk,gb2312,cp936
 set termencoding=utf-8
 set fileencodings=ucs-bom,utf-8,cp936
 set fileencoding=utf-8
 " 显示中文帮助
 set helplang=cn
-"语言设置
+" 语言设置
 set langmenu=zh_CN.UTF-8
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " vim主题站点：http://bytefluent.com/vivify/
@@ -22,7 +22,7 @@ set langmenu=zh_CN.UTF-8
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set t_Co=256
 set nocompatible  "去掉讨厌的有关vi一致性模式，避免以前版本的一些bug和局限
-"自定义高亮当前行
+" 自定义高亮当前行
 set cursorline
 "hi CursorLine  cterm=NONE   ctermbg=darkred ctermfg=white
 "hi CursorColumn cterm=NONE ctermbg=darkred ctermfg=white
@@ -74,24 +74,24 @@ set number
 " set relativenumber
 " 历史记录数
 set history=10000
-"搜索逐字符高亮
+" 搜索逐字符高亮
 set hlsearch
 set incsearch
 " 命令行高度
 set cmdheight=1
-"代码补全
+" 代码补全
 set completeopt=preview,menu
 "set completeopt=longest,menu
 "set completeopt=menu
-"允许不保存buffer时切换
+" 允许不保存buffer时切换
 set hidden
-"共享剪贴板
+" 共享剪贴板
 set clipboard+=unnamed
-"自动保存
+" 自动保存
 set autowrite
 "set ruler                   " 打开状态栏标尺
 "set cursorline              " 突出显示当前行
-set magic                   " 设置魔术
+set magic                    " 设置魔术
 "set guioptions-=T           " 隐藏工具栏
 "set guioptions-=m           " 隐藏菜单栏
 "set foldcolumn=0
@@ -100,15 +100,15 @@ set nofoldenable
 "set foldlevel=3
 " 去掉输入错误的提示声音
 set noerrorbells
-"去掉按Enter键或其他命令以继续提示
+" 去掉按Enter键或其他命令以继续提示
 set shortmess=atI
 " 在处理未保存或只读文件的时候，弹出确认
 set confirm
-"禁止生成临时文件
+" 禁止生成临时文件
 set nobackup
 set noswapfile
 set noundofile
-"搜索忽略大小写
+" 搜索忽略大小写
 set ignorecase
 set smartcase
 set linespace=0
@@ -136,9 +136,9 @@ set iskeyword+=_,$,@,%,#,-
 " 字符间插入的像素行数目
 set ruler           " 显示标尺
 set showcmd         " 输入的命令显示出来，看的清楚些
-"将tab替换为空格
+" 将tab替换为空格
 "nmap tt :%s/\t/    /g<CR>
-"仅需要时重绘
+" 仅需要时重绘
 "set lazyredraw
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -150,35 +150,32 @@ let mapleader="\\"
 " inoremap jo <esc>
 
 " 可以在buffer的任何地方使用鼠标（类似office中在工作区双击鼠标定位）
-"支持滚轮
+" 支持滚轮
 set mousemodel=popup
 set mouse-=a
 set selection=exclusive
 set selectmode=mouse,key
-"输入法
+" 输入法
 :let g:vimim_map='c-/'
 ":let g:vimim_cloud='sougou' " QQ云输入
 :let g:vimim_punctuation=0  " 不用中文标点
-":set pastetoggle=<F7>
 :let g:vimim_cloud=-1
-"外部粘贴
-nnoremap  :set invpaste paste? imap :set invpaste paste? set pastetoggle=
 
-"编辑模式下映射方向键使hjkl能移动光标
+" 编辑模式下映射方向键使hjkl能移动光标
 inoremap <silent><C-H> <Left>
 inoremap <silent><C-L> <Right>
 inoremap <silent><C-J> <Down>
 inoremap <silent><C-K> <Up>
 
-"大于小于号缩进
+" 大于小于号缩进
 xnoremap < <gv
 xnoremap > >gv
 
-"复制粘贴映射
+" 复制粘贴映射
 map <C-y> "+y
 map <C-p> "+gp
 
-"禁用箭头按键
+" 禁用箭头按键
 "nnoremap <left> <Nop>
 "nnoremap <right> <Nop>
 "nnoremap <up> <Nop>
@@ -191,6 +188,25 @@ map <C-p> "+gp
 "vnoremap <right> <Nop>
 "vnoremap <up> <Nop>
 "vnoremap <down> <Nop>
+
+" 外部粘贴无需手动切换paste模式
+"nnoremap :set invpaste paste? imap :set invpaste paste? set pastetoggle=
+"set pastetoggle=
+"==========
+"nnoremap <F2> :set invpaste paste?<CR>
+"imap <F2> <C-O>:set invpaste paste?<CR>
+"set pastetoggle=<F2>
+"==========
+let &t_SI .= "\<Esc>[?2004h"
+let &t_EI .= "\<Esc>[?2004l"
+
+inoremap <special> <expr> <Esc>[200~ XTermPasteBegin()
+
+function! XTermPasteBegin()
+  set pastetoggle=<Esc>[201~
+  set paste
+  return ""
+endfunction
 
 " 自定义statusline函数(ale插件实现)
 function! LinterStatus() abort
@@ -229,23 +245,24 @@ augroup filetype_dict
     autocmd FileType html set dict+=~/.vim/dict/css.dict
 augroup END
 
-"修改文件为unix格式
+" 修改文件为unix格式
 map <C-!> :call FormatClean()<CR>
 func! FormatClean()
     exec 'set fileformat=unix'
     exec 'w'
 endfunc
 
-"统一缩进
+" 统一缩进
 nnoremap <F2> gg=G<CR>
-"设置代码折叠
+" 设置代码折叠
 "map <F2> :call CodeFold()<CR>
 "func! CodeFold()
     "exec 'set foldmethod=indent'
     "zC
     "zO
 "endfunc
-"去空行
+
+" 去空行
 nnoremap <F10> :g/^\s*$/d<CR>
 
 "taglist
@@ -346,7 +363,7 @@ endfunc
 
 map <F4> :call FormatSrc()<CR><CR>
 
-"定义FormartSrc()
+" 定义FormartSrc()
 func FormatSrc()
     exec 'w'
     if &filetype ==? 'c'
@@ -369,8 +386,6 @@ func FormatSrc()
     endif
     exec 'e! %'
 endfunc
-"结束定义FormartSrc
-
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 ""实用设置
@@ -384,7 +399,7 @@ endif
 
 
 " 为C程序提供自动缩进
-"自动补全
+" 自动补全
 "":inoremap ( ()<ESC>i
 "":inoremap ) <c-r>=ClosePair(')')<CR>
 ":inoremap { {<CR>}<ESC>O
