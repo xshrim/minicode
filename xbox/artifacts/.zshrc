@@ -1,3 +1,5 @@
+# zsh debug
+# zsh -i -x -c exit
 # zmodload zsh/zprof
 # set -x
 # Path to your oh-my-zsh installation.
@@ -58,7 +60,7 @@ source /etc/profile
 #plugins=(comm zsh-syntax-highlighting zsh-autosuggestions zsh-completions colorize emoji nmap pip nvm npm redis-cli heroku fabric docker docker-compose kubectl oc helm kops)
 
 #plugins=(comm fast-syntax-highlighting zsh-autosuggestions zsh-completions colorize emoji vi-mode nmap pip nvm npm redis-cli heroku fabric docker docker-compose helm kops)
-plugins=(comm zsh-syntax-highlighting zsh-autosuggestions zsh-completions colorize history-substring-search npm pip redis-cli fabric docker docker-compose helm)
+plugins=(comm zsh-syntax-highlighting zsh-autosuggestions zsh-completions colorize history-substring-search npm pip redis-cli fabric docker docker-compose)
 
 #ZSH_THEME="powerline"
 # User configuration
