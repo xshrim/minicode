@@ -161,6 +161,7 @@ function usage() {
   ed,edit                  编辑指定k8s资源
   p,patch                  为k8s资源打补丁
   rm,del,delete            删除指定k8s资源
+  rmf,delf,deletef         强制删除指定k8s资源
   e,exe,exec               在pod中执行命令
   ie,iexe,iexec            在pod中交互式执行命令
   at,attach                加入pod的命名空间
@@ -1416,12 +1417,36 @@ function main() {
       kind help
     elif [ "$1" == "cl" ] || [ "$1" == "ls" ] || [ "$1" == "list" ]; then
       kind get clusters
+    elif [ "$1" == "info" ]; then
+      kubectl cluster-info 
+    elif [ "$1" == "ac" ] || [ "$1" == "completion" ]; then
+      shift
+      shl="bash"
+      if [ $# -gt 0 ]; then
+        shl="$1"
+      fi
+      if [ "$shl" == "bash" ]; then
+        kind completion bash > ~/.kind-completion
+        source ~/.kind-completion
+      elif [ "$shl" == "zsh" ]; then
+        mkdir -p /usr/local/share/zsh/site-functions/
+        kind completion zsh > /usr/local/share/zsh/site-functions/_kind
+        zsh -c "autoload -U compinit && compinit"
+      elif [ "$shl" == "fish" ]; then
+        kind completion fish > ~/.config/fish/completions/kind.fish
+      fi
     elif [ "$1" == "ld" ] || [ "$1" == "load" ]; then
       shift
-      if [ $# -eq 1 ]; then
-        kind load $1 --name kind
-      elif [ $# -gt 1 ]; then
-        kind load $1 --name $2
+      if [ $# -ge 1 ]; then
+        cname="kind"
+        if [ $# -gt 1 ]; then
+          cname="$2"
+        fi
+        if [ "${1##*.}" == "gz" ] || [ "${1##*.}" == "tar" ] || [ "${1##*.}" == "zip" ]; then
+          kind load image-archive $1 --name $cname
+        else 
+          kind load docker-image $1 --name $cname
+        fi
       fi
     elif [ "$1" == "d" ] || [ "$1" == "dc" ]; then
       shift
@@ -1478,7 +1503,7 @@ function main() {
     elif [ $# -le 1 ]; then
       # genKindConfig
       if [ -z "$1" ]; then
-cat <<EOF | kind create cluster --name= --config=-
+cat <<EOF | kind create cluster --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -4976,6 +5001,25 @@ EOF
           done
         else
           kubectl $kc $context delete $kind $resname $ns $dryrun $output
+        fi
+        ;;
+      "rmf" | "delf" | "deletef")
+        isfile="true"
+        for fname in ${mandatory[@]}; do
+          if ! [[ $fname =~ .yaml$ ]] && ! [[ $fname =~ .yml$ ]] && ! [[ $fname =~ .json$ ]]; then
+            isfile="false"
+            break
+          fi
+        done
+        if [ "$isfile" == "true" ]; then
+          for fname in ${mandatory[@]}; do
+            kubectl $kc $context delete -f $fname --force --grace-period=0 $dryrun $output
+          done
+        else
+          kubectl $kc $context delete $kind $resname $ns --force --grace-period=0 $dryrun $output
+          if [ $? -ne 0 ]; then
+            kubectl $kc $context patch $kind $resname $ns -p '{"metadata":{"finalizers":[]}}' --type=merge $dryrun $output
+          fi
         fi
         ;;
       "e" | "exe" | "exec")

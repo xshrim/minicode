@@ -22,7 +22,10 @@ RUN set -ex \
     && apk update \
     && apk upgrade \
     && apk --virtual add --no-cache \
+    aria2 \
+    aria2-daemon \
     bash \
+    bash-completion \
     bind-tools \
     bird \
     bridge-utils \
@@ -32,6 +35,8 @@ RUN set -ex \
     curl \
     docker-cli \
     docker-compose \
+    docker-compose-zsh-completion \
+    docker-zsh-completion \
     dhcping \
     dfc \
     dos2unix \
@@ -41,14 +46,18 @@ RUN set -ex \
     exa \
     expect \
     fabric \
+    fd \
+    fd-zsh-completion \
     file\
     figlet \
     fio \
+    fzf \
+    fzf-zsh-completion \
     git \
-    gotop \
+    git-zsh-completion \
     hexdump \
     highlight \
-    httpie \
+    helm \
     htop \
     hyperfine \
     libc6-compat \
@@ -68,6 +77,7 @@ RUN set -ex \
     iozone \
     jq \
     yq \
+    yq-zsh-completion \
     kubectl \
     minio-client \
     mtr \
@@ -95,6 +105,7 @@ RUN set -ex \
     tree \
     redis \
     rsync \
+    rsync-zsh-completion \
     samba \
     samba-client \
     samba-server \
