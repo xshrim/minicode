@@ -83,36 +83,54 @@ spec:
         #command:
         #- bash
         #- /root/run.sh
-        livenessProbe:
-          failureThreshold: 3
-          initialDelaySeconds: 10
-          periodSeconds: 2
-          successThreshold: 1
-          tcpSocket:
-            port: 2333
-          timeoutSeconds: 2
+        #livenessProbe:
+          #failureThreshold: 3
+          #initialDelaySeconds: 10
+          #periodSeconds: 2
+          #successThreshold: 1
+          #tcpSocket:
+            #port: 2333
+          #timeoutSeconds: 2
+        #readinessProbe:
+          #failureThreshold: 3
+          #initialDelaySeconds: 10
+          #periodSeconds: 2
+          #successThreshold: 2
+          #tcpSocket:
+            #port: 2333
+          #timeoutSeconds: 2
         env:
         - name: WEBHOST
           value: share.demo.com
         - name: WEBPORT
           value: 80
-        - name: HSUSER
+        - name: HSUSER               # access user for gohttpserver
           value: admin
-        - name: HSPASSWD
+        - name: HSPASSWD             # access password for gohttpserver
           value: Transfer@123
-        - name: HSDIR
+        - name: HSDIR                # directory for gohttpserver
           value: /share
-        - name: HOST
+        - name: HOST                 # default remote host which webssh connects to    
           value: 127.0.0.1
-        - name: PORT
+        - name: PORT                 # default remote port which webssh connects to
           value: "22"
-        - name: USER
+        - name: USER                 # default remote user which webssh connects with
           value: root
-        - name: PASSWD
+        - name: PASSWD               # default remote password which webssh connects with
           value: admin
-        - name: TIMEOUT
+        - name: TIMEOUT              # webssh timeout  
           value: "600"
-        - name: SSL
+        - name: SSL                  # enable ssl for webssh
+          value: "true"
+        - name: SSH         # run ssh daemon
+          value: "true"
+        - name: SAMBA       # not run samba daemon
+          value: "false"
+        - name: GOFS        # run gofs file server
+          value: "true"
+        - name: HS          # not run gohttpserver
+          value: "false"
+        - name: WEBSSH      # run webssh server
           value: "true"
         ports:
         - containerPort: 2444
@@ -127,14 +145,6 @@ spec:
         - containerPort: 22
           name: ssh
           protocol: TCP
-        readinessProbe:
-          failureThreshold: 3
-          initialDelaySeconds: 10
-          periodSeconds: 2
-          successThreshold: 2
-          tcpSocket:
-            port: 2333
-          timeoutSeconds: 2
         resources: 
           limits:
             cpu: 500m

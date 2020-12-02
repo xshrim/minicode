@@ -39,6 +39,7 @@ function usage() {
   h,helm                   运行helm命令
   d,docker                 运行docker命令
   dc,dkc,docker-compose    运行docker-compose命令
+  dcu,dcd                  启动或停止docker-compose容器
   k,kube,kubectl           运行kubectl命令
   kd                       运行kind命令
   kk                       运行kubectl kustomize命令
@@ -96,6 +97,7 @@ function usage() {
   db,dbd                   构建docker镜像
   dt,dtg,dtag              为镜像打标签
   dps,dlist                查看容器列表
+  dpt,dpst                 查看容器进程树
   dm,dim,dimg              查看镜像列表
   di,din,dinsp             查看容器配置信息
   dmi,dmin,dminsp          查看镜像配置信息
@@ -2533,6 +2535,14 @@ EOF
     require docker-compose
     shift
     docker-compose $*
+  elif [ "$1" == "dcu" ]; then
+    require docker-compose
+    shift
+    docker-compose up $*
+  elif [ "$1" == "dcd" ]; then
+    require docker-compose
+    shift
+    docker-compose down $*
   elif [ "$1" == "k" ] || [ "$1" == "kube" ] || [ "$1" == "kubectl" ]; then
     require kubectl
     shift
@@ -3437,6 +3447,37 @@ EOF
           docker exec $(echo ${conts[$dcidx]} | awk '{print $1}') $dcmd
         fi
       fi
+    elif [ "$subcmd" == "dpt" ] || [ "$subcmd" == "dpst" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+      else
+        echo "error: need arguments"
+        exit 1
+      fi
+      if [ -n "$fkwd" ]; then
+        require docker
+        if [ $(docker ps | grep "$fkwd" | wc -l) -lt 2 ]; then
+           pid=$(docker inspect --format '{{.State.Pid}}' $(docker ps | grep "$fkwd" | awk '{print $1}'))
+        else
+          echo "====== More than one container ======"
+          conts=$(docker ps --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          conts=($conts)
+          IFS=$SIFS
+          for ((i = 0; i < ${#conts[@]}; i++)); do
+            echo "$i: ${conts[$i]}"
+          done
+          read -p "====== select one with number[0]: " dcidx
+          if [ -z "$dcidx" ]; then
+            dcidx=0
+          fi
+          pid=$(docker inspect --format '{{.State.Pid}}' $(echo ${conts[$dcidx]} | awk '{print $1}'))
+        fi
+        ps -alfx | grep -- " $(ps -o ppid= $pid) \| $pid " | grep -v "grep" 
+      fi
     elif [ "$subcmd" == "die" ] || [ "$subcmd" == "diexe" ] || [ "$subcmd" == "diexec" ]; then
       if [ -n "$kwd" ]; then
         fkwd="$kwd"
@@ -3614,6 +3655,7 @@ EOF
         mandatory=("${mandatory[@]:1}")
       fi
       if [ ${#mandatory[@]} -lt 1 ]; then
+        echo "A"
         require docker
         if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
           docker inspect $(docker ps -a | grep "$fkwd" | awk '{print $1}')

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=usershell
+Comment=shell command with krunner
+X-KDE-ServiceTypes=Plasma/Runner
+Type=Service
+Icon=utilities-terminal
+X-KDE-PluginInfo-Author=papajoke
+X-KDE-PluginInfo-Name=usershell
+X-KDE-PluginInfo-Version=0.1.0
+X-KDE-PluginInfo-License=LGPLv3
+X-KDE-PluginInfo-EnabledByDefault=true
+X-Plasma-API=DBus
+X-Plasma-DBusRunner-Service=org.manjaro.shell.krunner
+X-Plasma-DBusRunner-Path=/krunner

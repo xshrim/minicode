@@ -1,0 +1,4 @@
+#/usr/share/dbus-1/services/org.manjaro.shell.krunner.service
+[D-BUS Service]
+Name=org.manjaro.shell.krunner
+Exec=/usr/lib/qt/plugins/krunner_shell.py

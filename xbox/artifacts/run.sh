@@ -35,12 +35,24 @@ fi
 
 set -x
 
-/usr/sbin/sshd -D &
+if [ "$SSH" != "false" ]; then
+  /usr/sbin/sshd -D &
+fi
 
-smbd --no-process-group --configfile /root/smb.conf &
+if [ "$SAMBA" != "false" ]; then
+  smbd --no-process-group --configfile /root/smb.conf &
+fi
 
-/root/tools/gofs -d $hsdir &
+if [ "$GOFS" != "false" ]; then
+  gofs -d $hsdir &
+fi
 
-/root/tools/gohttpserver -r $hsdir --port 2444 $hsauth --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
+if [ "$HS" != "false" ]; then
+  gohttpserver -r $hsdir --port 2444 $hsauth --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
+fi
 
-/root/webssh
+if [ "$WEBSSH" != "false" ]; then
+  /root/webssh &
+fi
+
+tail -f /dev/null

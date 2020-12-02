@@ -632,9 +632,13 @@ alias vi='vim'
 
 # type fping &>/dev/null && alias ping='fping -e'
 
-type pycp &>/dev/null && alias cp='pycp -g'
+# type pycp &>/dev/null && alias cp='pycp -g'
 
-type pymv &>/dev/null && alias mv='pymv -g'
+# type pymv &>/dev/null && alias mv='pymv -g'
+
+type acp &>/dev/null && alias cp='acp -gR'
+
+type amv &>/dev/null && alias mv='amv -g'
 
 type htop &>/dev/null && alias top='htop'
 
@@ -654,7 +658,7 @@ alias la='ls -a'
 alias l='ls'
 alias cls='clear'
 alias mkdir='mkdir -p'
-alias ps='ps -elf --sort=%mem,%cpu'
+alias ps='ps -elf'
 alias ss='ss -asntup'
 alias open='xdg-open'
 alias grep='grep --color=auto'

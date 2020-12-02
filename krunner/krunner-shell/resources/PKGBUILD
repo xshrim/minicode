@@ -1,0 +1,28 @@
+# Simple model test
+pkgname=krunner-shell-git
+_pkgname=krunner-shell
+pkgver=r10.9921711
+pkgrel=1
+pkgdesc="plasma krunner plugin run shell commands"
+arch=('any')
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+license=('GPL3')
+depends=('krunner' 'python')
+makedepends=('git')
+source=("git+https://github.com/papajoker/${_pkgname}")
+sha512sums=('SKIP')
+#install=.install
+
+pkgver() {
+  cd "${srcdir}/${_pkgname}"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  cd "${srcdir}/${_pkgname}"
+  install -d ${pkgdir}/usr/{share/{kservices5,dbus-1/services},lib/qt/plugins}
+  cp resources/org.manjaro.shell.krunner.service ${pkgdir}/usr/share/dbus-1/services/
+  cp resources/plasma-runner-ushell.desktop ${pkgdir}/usr/share/kservices5/
+  install -m755 plugin/krunner_shell.py ${pkgdir}/usr/lib/qt/plugins/krunner_shell.py
+} 

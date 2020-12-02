@@ -28,7 +28,7 @@
                     itemStyle: {
                         normal: {
                             label: {
-                                show: true
+                                show: true,
                             },
                             nodeStyle: {
                                 brushType: 'both',
@@ -236,6 +236,15 @@
                             symbolSize: 20,
                             ignore: true,
                             flag: true
+                        }, {
+                            id: 20,
+                            category: 6,
+                            name: '20',
+                            label: '小小陈大沙发舒服的萨芬撒个范德萨大概',
+                            number: 11,
+                            symbolSize: 10,
+                            ignore: true,
+                            flag: false
                         },
                     ],
                     links: [{
@@ -299,6 +308,9 @@
                         }, {
                             source: 19,
                             target: 10
+                        }, {
+                            source: 20,
+                            target: 19
                         }
                     ]
                 }]
