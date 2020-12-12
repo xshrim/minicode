@@ -1,0 +1,82 @@
+version: "3"
+
+networks:
+  loki:
+
+services:
+  loki:
+    image: grafana/loki
+    container_name: loki
+    ports:
+      - "3100:3100"
+    #volumes:
+      #- ./loki/config.yml:/etc/loki/config.yml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - loki
+
+  # fluentd和promtail二选一
+  fluentd:
+    image: grafana/fluent-plugin-loki
+    container_name: fluentd
+    command:
+      - "fluentd"
+      - "-v"
+      - "-p"
+      - "/fluentd/plugins"
+    environment:
+      LOKI_URL: http://loki:3100
+    ports:
+      - "24224:24224"
+    command:
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
+      - /var/log:/var/log
+    networks:
+      - loki
+
+  promtail:
+    image: grafana/promtail
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+      - ./promtail/config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - loki
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - loki
+
+  # fluentd configure file
+  #<match docker.**>
+    #@type file
+    #@id   output_docker1
+    #path         /fluentd/log/docker.*.log
+    #symlink_path /fluentd/log/docker.log
+    #append       true
+    #time_slice_format %Y%m%d
+    #time_slice_wait   1m
+    #time_format       %Y%m%dT%H%M%S%z
+  #</match>
+  #<match **>
+    #@type stdout
+  #</match>
+  #<match **>
+    #@type loki
+    #username "#{ENV['LOKI_USERNAME']}"
+    #password "#{ENV['LOKI_PASSWORD']}"
+    #tenant ${$.kubernetes.labels.tenant}
+    #insecure_tls true
+    #line_format json
+    #extract_kubernetes_labels true
+    #remove_keys kubernetes
+    #<label>
+      #container $.kubernetes.container
+    #</label>
+  #</match>
