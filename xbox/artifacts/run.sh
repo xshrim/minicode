@@ -1,5 +1,16 @@
 #!/bin/sh
 
+webhost=""
+webport="80"
+
+if [ "$WEBHOST" ]; then
+  webhost="$WEBHOST"
+fi
+
+if [ "$WEBPORT" ]; then
+  webport="$WEBPORT"
+fi
+
 if [ "$HOST" ]; then
   sed -i "s/127.0.0.1/$HOST/g" /root/static/index.html
 fi
@@ -44,7 +55,7 @@ if [ "$SAMBA" != "false" ]; then
 fi
 
 if [ "$GOFS" != "false" ]; then
-  gofs -d $hsdir &
+  WEBHOST=$webhost WEBPORT=$webport gofs -d $hsdir &
 fi
 
 if [ "$HS" != "false" ]; then
