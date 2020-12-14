@@ -38,7 +38,7 @@ if [ "$SSL" == "true" ]; then
   sed -i "s#ws://#wss://#g" /root/static/index.html
 fi
 
-hsdir="./"
+hsdir="/root/"
 if [ "$HSDIR" ]; then
   hsdir=$HSDIR
 fi
