@@ -111,6 +111,7 @@ function usage() {
   dl,dget,dpull            拉取镜像
   dpa,daddr                查看容器网络信息
   dpe,denv                 查看容器环境变量
+  dpl,dlp                  查看容器日志路径
   dpc,dcmd                 查看容器运行命令
   dpp,dport                查看容器端口映射
   dpm,dmnt                 查看容器卷挂载
@@ -4026,6 +4027,39 @@ EOF
           execmd "$cmd" $ip
         done
       fi
+    elif [ "$subcmd" == "dpl" ] || [ "$subcmd" == "dlp" ]; then
+      if [ -n "$kwd" ]; then
+        fkwd="$kwd"
+      elif [ ${#mandatory[@]} -gt 0 ]; then
+        fkwd="${mandatory[0]}"
+        mandatory=("${mandatory[@]:1}")
+      fi
+      if [ ${#mandatory[@]} -lt 1 ]; then
+        require docker
+        if [ $(docker ps -a | grep "$fkwd" | wc -l) -lt 2 ]; then
+          docker inspect --format='{{json .LogPath}}' $(docker ps -a | grep "$fkwd" | awk '{print $1}')
+        else
+          echo "====== More than one container ======"
+          cimgs=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}' | grep "$fkwd")
+          SIFS=$IFS
+          IFS=$'\n'
+          cimgs=($cimgs)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cimgs[@]}; i++)); do
+            echo "$i: ${cimgs[$i]}"
+          done
+          read -p "====== select one with number[0]: " diidx
+          if [ -z "$diidx" ]; then
+            diidx=0
+          fi
+          docker inspect --format='{{json .LogPath}}' $(echo ${cimgs[$diidx]} | awk '{print $1}')
+        fi
+      else
+        cmd="docker inspect --format='{{json .LogPath}}' $fkwd"
+        for ip in ${mandatory[@]}; do
+          execmd "$cmd" $ip
+        done
+      fi
     elif [ "$subcmd" == "dpc" ] || [ "$subcmd" == "dcmd" ]; then
       if [ -n "$kwd" ]; then
         fkwd="$kwd"
@@ -6099,6 +6133,10 @@ spec:
     storage: 1Gi
   accessModes:
   - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+  - hard
+  - nfsvers=4.1
   nfs:
     server: 10.10.10.10
     path: /nas
@@ -6113,6 +6151,8 @@ spec:
   selector:
     matchLabels:
       release: stable
+    matchExpressions:
+    - {key: environment, operator: In, values: [dev]}
   storageClassName: manual
   resources:
     requests:
@@ -6236,6 +6276,12 @@ spec:
   - name: storage
     persistentVolumeClaim:
       claimName: mysql-pv-claim
+  - name: config-volume
+    configMap:
+      name: special-config
+      items:
+      - key: SPECIAL_LEVEL
+        path: keys
   containers:
   - name: xo
     image: registry.io/library/xo
@@ -6251,7 +6297,7 @@ spec:
           name: special-config
           key: special.how
     command: [\"/bin/sh\"]
-    args: [\"-c\", \"while true; do echo hello; sleep 10;done\"]
+    args: [\"-c\", \"while true; do /etc/config/keys; sleep 10;done\"]
     ports:
     - containerPort: 8080
       protocol: TCP
@@ -6262,7 +6308,9 @@ spec:
     volumeMounts:
     - name: storage
       mountPath: /data
-      subPath: config
+      subPath: demo
+    - name: config-volume
+      mountPath: /etc/config
     lifecycle:
       postStart:
         exec:
@@ -6341,7 +6389,13 @@ spec:
       volumes:
       - name: storage
         persistentVolumeClaim:
-          claimName: mysql-pv-claim
+          claimName: test-pv-claim
+      - name: config-volume
+        configMap:
+          name: special-config
+          items:
+          - key: SPECIAL_LEVEL
+            path: keys
       containers:
       - name: xo
         image: registry.io/library/xo
@@ -6357,7 +6411,7 @@ spec:
               name: special-config
               key: special.how
         command: [\"/bin/sh\"]
-        args: [\"-c\", \"while true; do echo hello; sleep 10;done\"]
+        args: [\"-c\", \"while true; do cat /etc/config/keys; sleep 10;done\"]
         ports:
         - containerPort: 8080
           protocol: TCP
@@ -6368,7 +6422,9 @@ spec:
         volumeMounts:
         - name: storage
           mountPath: /data
-          subPath: config
+          subPath: demo
+        - name: config-volume
+          mountPath: /etc/config
         lifecycle:
           postStart:
             exec:
@@ -6547,6 +6603,98 @@ spec:
           restartPolicy: OnFailure
 "
 
+  local horizontalpodautoscalerSample="
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: webserver
+  namespace: default
+  labels:
+    app: webserver-hpa-cpu
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: webserver
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 80
+"
+
+  local limitrangeSample="
+apiVersion: v1  
+ kind: LimitRange  
+ metadata:  
+   name: test-limit-range  
+ spec:  
+   limits:  
+   - type: Container
+     default:  
+       memory: 512Mi  
+     defaultRequest:  
+       memory: 256Mi
+   - type: PersistentVolumeClaim
+     max:
+       storage: 2Gi
+     min:
+       storage: 1Gi
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: storagequota
+spec:
+  hard:
+    persistentvolumeclaims: "5"
+    requests.storage: "5Gi"
+"
+
+  local podsecuritypolicySample="
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: restricted-advanced
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName:  'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: false
+"
+
   local networkpolicySample="
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -6605,6 +6753,12 @@ spec:
 "
 
   case $1 in
+  "template")
+    echo "https://github.com/dennyzhang/kubernetes-yaml-templates"
+    ;;
+  "online")
+    echo "https://k8syaml.com/"
+    ;;
   "docker")
     echo "$dockerSample"
     ;;
@@ -6643,6 +6797,15 @@ spec:
     ;;
   "cj" | "cronjob")
     echo "$cronjobSample"
+    ;;
+  "hpa" | "horizontalpodautoscaler")
+    echo "$horizontalpodautoscalerSample"
+    ;;
+  "lr" | "limit" | "limitrange" | "quota")
+    echo "$limitrangeSample"
+    ;;
+  "psp" | "podsecuritypolicy")
+    echo "$podsecuritypolicySample"
     ;;
   "np" | "networkpolicy")
     echo "$networkpolicySample"

@@ -3,6 +3,9 @@
 webhost=""
 webport="80"
 
+polarisport="--port 2555"
+polarispath=""
+
 if [ "$WEBHOST" ]; then
   webhost="$WEBHOST"
 fi
@@ -44,6 +47,15 @@ if [ "$HSUSER" ] && [ "$HSPASSWD" ]; then
   hsauth="--auth-type http --auth-http $HSUSER:$HSPASSWD"
 fi
 
+if [ "$POLARISPORT" ]; then
+  polarisport="--port $POLARISPORT"
+fi
+
+if [ "$POLARISPATH" ]; then
+  polarispath="--audit-path=$POLARISPATH"
+fi
+  
+
 set -x
 
 if [ "$SSH" != "false" ]; then
@@ -64,6 +76,10 @@ fi
 
 if [ "$WEBSSH" != "false" ]; then
   /root/webssh &
+fi
+
+if [ "$POLARIS" != "false" ]; then
+  polaris dashboard $polarisport $polarispath &
 fi
 
 tail -f /dev/null

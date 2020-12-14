@@ -181,7 +181,7 @@ RUN set -ex \
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
 # 开放ssh webssh gofs gohttpserver smb端口
-EXPOSE 22 2222 2333 2444 135/tcp 137/udp 138/udp 139/tcp 445/tcp
+EXPOSE 22 2222 2333 2444 2555 135/tcp 137/udp 138/udp 139/tcp 445/tcp
 
 # CMD ["/usr/sbin/sshd", "-D"]
 CMD ["sh","/root/run.sh"]

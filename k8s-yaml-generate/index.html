@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KUBERNETES YAML GENERATE</title>
+    <script type="application/javascript">
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api');
+        xhr.setRequestHeader("type","getK8sTypes");
+        xhr.send();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4) {
+                if (xhr.status = 200) {
+                    console.log(xhr.responseText);
+                    var data = JSON.parse(xhr.responseText); //json解析方法JSON.parse 或者 eval('('+xhr.responseText+')')
+                    for (var o in data){
+                        console.log(o,data[o]);
+                        document.getElementById("yaml_type").innerHTML += '<option value="'+data[o]+'">'+data[o]+'</option>'
+                    }
+                    /*document.getElementById("all_test_taskGroup").innerHTML = "";
+                    var group = "";
+                    for (var o in data){
+                        if(group == ""){
+                            group = o;
+                        }
+                        console.log(o,data[o]);
+                        document.getElementById("all_test_taskGroup").innerHTML += '<option value="'+o+'">'+o+'</option>'
+                    }
+                    if(group != ""){
+                        loadTestTasks(group)
+                    }*/
+                }
+            }
+        };
+
+        function getTemplate() {
+            var yaml_type = document.getElementById("yaml_type");
+            var yaml_typeindex = yaml_type.selectedIndex;
+            var typeName = yaml_type.options[yaml_typeindex].text;
+            if(typeName != "Select"){
+                console.log(typeName);
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '/api');
+                xhr.setRequestHeader("type","generate");
+                xhr.setRequestHeader("yaml_type",typeName);
+                xhr.send();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4) {
+                        if (xhr.status = 200) {
+                            console.log(xhr.responseText);
+                            document.getElementById("template").value=xhr.responseText
+                        }
+                    }
+                }
+            }
+        }
+        function tidy() {
+            var template = document.getElementById("template").value;
+            console.log(template);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api');
+            xhr.setRequestHeader("type","tidy");
+            xhr.send(template);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    if (xhr.status = 200) {
+                        console.log(xhr.responseText);
+                        document.getElementById("tidyTemplate").value=xhr.responseText
+                    }
+                }
+            }
+        }
+        //onchange="getTemplate(this.options[this.options.selectedIndex].value)"
+    </script>
+</head>
+<body>
+Type：<select id="yaml_type" ></select>&nbsp;&nbsp;
+<input type="button" value="generate" onclick="getTemplate()"/>&nbsp;&nbsp;
+<input type="button" value="tidy" onclick="tidy()"/>&nbsp;&nbsp;
+<label style="color: red">kubernetes version : release-1.17</label>
+<br/>
+<br/>
+<textarea id="template" cols="100" rows="50"></textarea> ==>
+<textarea id="tidyTemplate" cols="100" rows="50"></textarea>
+</body>
+</html>

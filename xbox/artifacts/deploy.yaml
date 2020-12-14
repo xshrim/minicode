@@ -1,3 +1,56 @@
+# sa
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: polaris
+  namespace: polaris
+  labels:
+    app: polaris
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: polaris
+  labels:
+    app: polaris
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - 'nodes'
+    verbs:
+      - 'get'
+      - 'list'
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: polaris-view
+  labels:
+    app: polaris
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: polaris
+    namespace: polaris
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: polaris
+  labels:
+    app: polaris
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: polaris
+subjects:
+  - kind: ServiceAccount
+    name: polaris
+    namespace: polaris
 # server
 apiVersion: v1
 kind: Service
@@ -7,6 +60,11 @@ metadata:
   name: xos
 spec:
   ports:
+  - name: polaris
+    port: 2555
+    protocol: TCP
+    targetPort: 2555
+    nodePort: 35555
   - name: goserver
     port: 2444
     protocol: TCP
@@ -103,7 +161,7 @@ spec:
         - name: WEBHOST
           value: share.demo.com
         - name: WEBPORT
-          value: 80
+          value: "80"
         - name: HSUSER               # access user for gohttpserver
           value: admin
         - name: HSPASSWD             # access password for gohttpserver
@@ -111,7 +169,7 @@ spec:
         - name: HSDIR                # directory for gohttpserver
           value: /share
         - name: HOST                 # default remote host which webssh connects to    
-          value: 127.0.0.1
+          value: "127.0.0.1"
         - name: PORT                 # default remote port which webssh connects to
           value: "22"
         - name: USER                 # default remote user which webssh connects with
@@ -122,6 +180,8 @@ spec:
           value: "600"
         - name: SSL                  # enable ssl for webssh
           value: "true"
+        - name: POLARISPORT          # default port for polaris server
+          value: "2555"
         - name: SSH         # run ssh daemon
           value: "true"
         - name: SAMBA       # not run samba daemon
@@ -132,7 +192,12 @@ spec:
           value: "false"
         - name: WEBSSH      # run webssh server
           value: "true"
+        - name: POLARIS     # run polaris
+          value: "true"
         ports:
+        - containerPort: 2555
+          name: polaris
+          protocol: TCP
         - containerPort: 2444
           name: goserver
           protocol: TCP
@@ -237,5 +302,6 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
+      serviceAccountName: polaris
       securityContext: {}
       terminationGracePeriodSeconds: 30
