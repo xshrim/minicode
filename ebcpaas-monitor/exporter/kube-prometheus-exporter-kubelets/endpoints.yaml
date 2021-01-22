@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  creationTimestamp: "2020-05-08T09:37:35Z"
+  labels:
+    k8s-app: kubelet
+  name: kubelet
+  namespace: kube-system
+  resourceVersion: "2340195"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kubelet
+  uid: 396eaf7e-e94b-41a1-a4c5-78b9c321287d
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+    targetRef:
+      kind: Node
+      name: 25.2.20.37
+      uid: 99899e0c-8e13-4254-ac59-379518460b34
+  - ip: 25.2.20.38
+    targetRef:
+      kind: Node
+      name: 25.2.20.38
+      uid: 266f6866-c87a-479e-a163-4aff55fb3cac
+  - ip: 25.2.20.39
+    targetRef:
+      kind: Node
+      name: 25.2.20.39
+      uid: f762660a-290e-43d4-935f-8ecf6e6249f6
+  - ip: 25.2.20.40
+    targetRef:
+      kind: Node
+      name: 25.2.20.40
+      uid: 8f74b396-133b-4d93-afe2-b01c7e523f5b
+  - ip: 25.2.20.44
+    targetRef:
+      kind: Node
+      name: 25.2.20.44
+      uid: 025401f8-fdee-418b-a841-da5f1006853a
+  - ip: 25.2.20.45
+    targetRef:
+      kind: Node
+      name: 25.2.20.45
+      uid: 1da7e5fe-d84f-416b-9de8-7d1d9cbb7b8e
+  - ip: 25.2.20.46
+    targetRef:
+      kind: Node
+      name: 25.2.20.46
+      uid: 75903e9a-cf11-46a9-ba5e-259865136afb
+  - ip: 25.2.20.47
+    targetRef:
+      kind: Node
+      name: 25.2.20.47
+      uid: b170bbb2-bfd3-4999-ab07-24fc820a7dde
+  - ip: 25.2.20.48
+    targetRef:
+      kind: Node
+      name: 25.2.20.48
+      uid: 322a39b1-3306-4add-b8f3-0c0a27fa2909
+  - ip: 25.2.20.52
+    targetRef:
+      kind: Node
+      name: 25.2.20.52
+      uid: 9d54a653-3507-45c1-9399-753c21ac420d
+  - ip: 25.2.20.53
+    targetRef:
+      kind: Node
+      name: 25.2.20.53
+      uid: e12c8f97-4c93-4c24-938b-b99c0f482781
+  - ip: 25.2.20.54
+    targetRef:
+      kind: Node
+      name: 25.2.20.54
+      uid: c3205ed5-03fd-4458-ba4f-595bf1c50d81
+  - ip: 25.2.20.55
+    targetRef:
+      kind: Node
+      name: 25.2.20.55
+      uid: 492865ef-bc6c-4542-b208-76ddbc3676ed
+  ports:
+  - name: http-metrics
+    port: 10255
+    protocol: TCP
+  - name: cadvisor
+    port: 4194
+    protocol: TCP
+  - name: https-metrics
+    port: 10250
+    protocol: TCP

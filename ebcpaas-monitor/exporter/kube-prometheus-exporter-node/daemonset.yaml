@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "1"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: exporter-node
+    chart: exporter-node-0.4.5
+    component: node-exporter
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-node
+  namespace: cpaas-system
+  resourceVersion: "112485731"
+  selfLink: /apis/apps/v1/namespaces/cpaas-system/daemonsets/kube-prometheus-exporter-node
+  uid: 6a30eae6-d28e-447d-94a0-e73732d18cc1
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: kube-prometheus-exporter-node
+      component: node-exporter
+      release: kube-prometheus
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: kube-prometheus-exporter-node
+        component: node-exporter
+        release: kube-prometheus
+    spec:
+      containers:
+      - args:
+        - --web.listen-address=0.0.0.0:9100
+        - --path.rootfs=/host
+        - --no-collector.ipvs
+        image: 25.2.20.36:60080/alaudak8s/node-exporter:v0.18.0
+        imagePullPolicy: IfNotPresent
+        name: node-exporter
+        ports:
+        - containerPort: 9100
+          hostPort: 9100
+          name: metrics
+          protocol: TCP
+        - containerPort: 9323
+          hostPort: 9323
+          name: dockerd
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 50Mi
+          requests:
+            cpu: 100m
+            memory: 30Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /host
+          name: root
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kube-prometheus-exporter-node
+      serviceAccountName: kube-prometheus-exporter-node
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /
+          type: ""
+        name: root
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 13
+  desiredNumberScheduled: 13
+  numberAvailable: 13
+  numberMisscheduled: 0
+  numberReady: 13
+  observedGeneration: 1
+  updatedNumberScheduled: 13

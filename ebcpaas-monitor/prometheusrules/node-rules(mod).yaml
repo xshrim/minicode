@@ -1,0 +1,173 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+    cpaas.io/description:
+      Deployed by charts，it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+    cpaas.io/updated-at: "2020-08-05T06:37:19Z"
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Node
+    alert.cpaas.io/name: 0.0.0.0
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: ""
+    prometheus: kube-prometheus
+  name: cpaas-node-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-node-rules
+spec:
+  groups:
+    - name: general
+      rules:
+        - alert: node.cpu.utilization-94w7v-a71653ae9db7ca466ce93b2788a8c3f8
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: ' node_cpu_utilization{instance=~".*"} > 0.9'
+          for: 180s
+          labels:
+            alert_cluster: global
+            alert_indicator: node.cpu.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.9"
+            alert_involved_object_kind: Node
+            alert_involved_object_name: 0.0.0.0
+            alert_involved_object_namespace: ""
+            alert_name: node.cpu.utilization-94w7v
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium
+        - alert: node.memory.utilization-ve8ry-2c22dec34544cae102fe318e677aaaeb
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            ' node_memory_MemUsed{instance=~".*"} / node_memory_MemTotal{instance=~".*"}
+            > 0.85'
+          for: 180s
+          labels:
+            alert_cluster: global
+            alert_indicator: node.memory.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.85"
+            alert_involved_object_kind: Node
+            alert_involved_object_name: 0.0.0.0
+            alert_involved_object_namespace: ""
+            alert_name: node.memory.utilization-ve8ry
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium
+        - alert: node.load.5.per.core-8cop3-0806f1b01a0addfe33658a7b051860a8
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            avg by (instance) (node_load5{instance=~".*"}) / count by(instance) (node_cpu{mode="idle"})
+            > 1.5
+          for: 180s
+          labels:
+            alert_cluster: global
+            alert_indicator: node.load.5.per.core
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "1.5"
+            alert_involved_object_kind: Node
+            alert_involved_object_name: 0.0.0.0
+            alert_involved_object_namespace: ""
+            alert_name: node.load.5.per.core-8cop3
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium
+        # [mod]磁盘使用率告警，应该同k8s gc设置的期望状态一致
+        - alert: node.disk.space.utilization-g9s9n-b9f484d0d15350d92be66779c0b2a873
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+          expr:
+            avg by (instance, device) (node_filesystem_used{device=~"/dev/.*", instance=~".*"})
+            / avg by (instance, device) (node_filesystem_size{device=~"/dev/.*",instance=~".*"})
+            > 0.85
+          for: 180s
+          labels:
+            alert_cluster: global
+            alert_indicator: node.disk.space.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.85"
+            alert_involved_object_kind: Node
+            alert_involved_object_name: 0.0.0.0
+            alert_involved_object_namespace: ""
+            alert_name: node.disk.space.utilization-g9s9n
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium
+        - alert: node.up-f2kv0-c2dd5df985142d9d9a6001eb00ea58ab
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+          expr: up{job="node-exporter",instance=~".*"}==0
+          for: 180s
+          labels:
+            alert_cluster: global
+            alert_indicator: node.up
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ==
+            alert_indicator_threshold: "0"
+            alert_involved_object_kind: Node
+            alert_involved_object_name: 0.0.0.0
+            alert_involved_object_namespace: ""
+            alert_name: node.up-f2kv0
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium
+        # [add]节点CPU预分配资源使用率
+        - alert: cluster.resource.request.cpu.utilization-9404b-2dc4189df5f64d66805930e2d6a2c6e7
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            sum (node_resource_requests_cpu_cores) by (node) / sum (kube_node_status_allocatable_cpu_cores) by (node)
+            > 0.9
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: custom
+            alert_indicator_alias: 节点预分配CPU使用率
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.9"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.resource.request.cpu.utilization
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium
+        # [add]节点内存预分配资源使用率
+        - alert: cluster.resource.request.memory.utilization-881ba-9ca1f5312d3448cc89c3b77fad9891ad
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            sum (node_resource_requests_memory_bytes) by (node) / sum (kube_node_status_capacity_memory_bytes) by (node)
+            > 0.9
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: custom
+            alert_indicator_alias: 节点预分配内存使用率
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.9"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.resource.request.memory.utilization
+            alert_project: ""
+            alert_resource: cpaas-node-rules
+            severity: Medium

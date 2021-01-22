@@ -1,0 +1,163 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: metrics-server
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-metrics-server-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-metrics-server-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: pod.cpu.utilization-ns5en-ed7f8e14aea3a7c3ecf0dd0307c4e360
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum by (pod_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (pod_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 > 0.9
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.cpu.utilization-ns5en
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium
+    - alert: pod.memory.utilization-dmjem-165a2850316357d5c67e76a0fd6c9a83
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by(pod_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (pod_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.memory.utilization-dmjem
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium
+    - alert: workload.cpu.utilization-0h9wv-051981492c6f9a78440a5646ba36f302
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (deployment_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.cpu.utilization-0h9wv
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium
+    - alert: workload.memory.utilization-9gwaz-9152f71fe854dc992c534ce26dcde909
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (deployment_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.memory.utilization-9gwaz
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium
+    - alert: workload.pod.restarted.count-wry0t-b74aebd1b1dbd734bdb34ef845583b25
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="cpaas-system",pod=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}"}[5m]))>5
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.restarted.count-wry0t
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium
+    - alert: workload.pod.status.phase.not.running-43b6y-f7b44c9dd84f9f2582acef8cb93c6259
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(kube_pod_status_phase{namespace="cpaas-system",pod=~"metrics-server-[a-z0-9]{7,10}-[a-z0-9]{5}",phase!="Running"})>2
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.status.phase.not.running
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "2"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.status.phase.not.running-43b6y
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium
+    - alert: workload.replicas.available-42c6y-d659b619662104d7720da7d598c6984d
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: min(kube_deployment_status_replicas_available{deployment="metrics-server",namespace="cpaas-system"})<1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.replicas.available
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: metrics-server
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.replicas.available-42c6y
+        alert_project: system
+        alert_resource: cpaas-metrics-server-rules
+        severity: Medium

@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: exporter-coredns
+    chart: exporter-coredns-0.0.3
+    component: kube-dns
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-exporter-coredns
+  namespace: cpaas-system
+  resourceVersion: "4625"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-exporter-coredns
+  uid: 452a8721-7f90-4b01-9e4e-74cfd157ff86
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 15s
+    port: http-metrics-coredns
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      app: exporter-coredns
+      component: kube-dns

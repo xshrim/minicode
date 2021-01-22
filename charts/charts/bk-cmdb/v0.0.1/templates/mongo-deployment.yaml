@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mongo
+    release: {{ .Release.Name }}
+  name: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+      release: {{ .Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mongo
+        release: {{ .Release.Name }}
+    spec:
+      hostname: mongo
+      containers:
+        - args:
+            - --replSet
+            - $(MONGO_REPLICA_SET_NAME)
+            - --bind_ip_all
+          env:
+            - name: MONGO_INITDB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_DATABASE
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_INITDB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_ROOT_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_ROOT_USERNAME
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_INITDB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_USERNAME
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_REPLICA_SET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_REPLICA_SET_NAME
+                  name: {{ .Release.Name }}-configures
+          image: "{{ .Values.repository }}/{{ .Values.mongo.image }}:{{ .Values.mongo.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          startupProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - test $(echo "rs.initiate().ok || rs.status().ok" | mongo -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --quiet) -eq 1
+              #- echo "rs.initiate().ok || rs.status().ok" | mongo -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --quiet
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          name: mongo
+          ports:
+            - containerPort: 27017
+          resources:
+{{ toYaml .Values.mongo.resources | indent 12 }}
+{{- with .Values.mongo.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/
+              name: mongo-init
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: mongo-init
+          configMap:
+            name: {{ .Release.Name }}-configures

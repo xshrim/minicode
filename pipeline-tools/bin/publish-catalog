@@ -1,0 +1,149 @@
+#!/bin/bash
+set -e
+if [[ "$DEBUG" = "true" ]];then
+  set -x
+fi
+
+exiterr(){
+  echo "[ERROR]""$1"
+  exit 1
+}
+loginfo(){
+  echo "[INFO]""$1"
+}
+
+# check required env vars
+checkFunc(){
+  if [[ -z "$GIT_AUTHOR" ]];then
+    exiterr "GIT_AUTHOR variable is not set"
+  fi
+  if [[ -z "$GIT_EMAIL" ]];then
+    exiterr "GIT_EMAIL variable is not set"
+  fi
+  if [[ -z "$GIT_URL" ]];then
+    exiterr "GIT_URL variable is not set"
+  fi
+  if [[ -z "$GIT_BRANCH" ]];then
+    exiterr "GIT_BRANCH variable is not set"
+  fi
+  if [[ -z "$CATALOG_PATH" ]];then
+    exiterr "CATALOG_PAtH variable is not set"
+  fi
+  if [[ -z "$CATALOG_TEMPLATE_NAME" ]];then
+    exiterr "CATALOG_TEMPLATE_NAME variable is not set"
+  fi
+  if [[ -z "$VERSION" ]];then
+    exiterr "VERSION variable is not set"
+  fi
+  if [[ -n "$DEPLOY_KEY" ]] && [[ "${GIT_URL:0:4}" = "http" ]];then
+    exiterr "Use deploy key for SSH git URLs."
+  fi
+  if [[ -z "$DEPLOY_KEY" ]] && [[ -n "$USERNAME" ]] && [[ "${GIT_URL:0:4}" != "http" ]];then
+    exiterr "Use basic authentication for HTTP/HTTPS git URLs."
+  fi
+  if [[ -z "$DEPLOY_KEY" ]] && [[ -z "$USERNAME" ]];then
+    exiterr "Missing authentication token, please provide either DEPLOY_KEY or USERNAME/PASSWORD"
+  fi
+  loginfo "check done..."
+}
+
+prepareFunc(){
+  HOME=/root
+  DEFAULT_MESSAGE="add version $VERSION of template $CATALOG_TEMPLATE_NAME. "
+  PUSH_OPTION=""
+  git config --global user.name $GIT_AUTHOR
+  git config --global user.email $GIT_EMAIL
+
+  if [[ -z "$MESSAGE" ]];then
+    MESSAGE="$DEFAULT_MESSAGE"
+  fi
+  if [[ -n "$SKIP_SSL_VERIFY" ]];then
+    git config --global http.sslVerify false
+  fi
+  if [[ -n "$GIT_PUSH_FORCE" ]];then
+    PUSH_OPTION=" --force"
+  fi
+  if [[ -n "$DEPLOY_KEY" ]];then
+    mkdir -p ~/.ssh
+    echo "StrictHostKeyChecking no" > ~/.ssh/config
+    printf "%s" "$DEPLOY_KEY" > ~/.ssh/id_rsa
+    chmod 600 ~/.ssh/id_rsa
+  else
+    #prepare netrc file
+    if [[ -z "$MACHINE" ]];then
+      MACHINE=$(echo $GIT_URL | sed -e "s/[^/]*\/\/\([^@]*@\)\?\([^/:]*\).*/\2/")
+    fi
+    printf "machine %s\nlogin %s\npassword %s\n" "$MACHINE" "$USERNAME" "$PASSWORD" > ~/.netrc
+    chmod 600 ~/.netrc
+  fi
+
+  setSubstEnv
+
+  loginfo "prepare config done..."
+}
+
+setSubstEnv(){
+  toSubstituteVars='
+      ${CICD_GIT_REPO_NAME}
+      ${CICD_GIT_URL}
+      ${CICD_GIT_COMMIT}
+      ${CICD_GIT_REF}
+      ${CICD_GIT_BRANCH}
+      ${CICD_GIT_TAG}
+      ${CICD_TRIGGER_TYPE}
+      ${CICD_EVENT}
+      ${CICD_EXECUTION_ID}
+      ${CICD_EXECUTION_SEQUENCE}
+      ${CICD_PIPELINE_ID}
+      ${CICD_PROJECT_ID}
+      ${CICD_CLUSTER_ID}
+      ${CICD_REGISTRY}
+      ${CICD_IMAGE_REPO}
+      ${CICD_LOCAL_REGISTRY}'
+
+  if [[ -n "$CICD_SUBSTITUTE_VARS" ]];then
+    IFS=',' read -ra envArr <<< "$CICD_SUBSTITUTE_VARS"
+    for i in "${envArr[@]}"; do
+      toSubstituteVars=$(printf "%s\n\${%s}" "$toSubstituteVars" "$i")
+    done
+  fi
+  export toSubstituteVars
+}
+
+#traverse and do envsubst
+envsubstFunc(){
+  for file in `ls $1`
+  do
+    if [[ -d $1"/"$file ]];then
+      envsubstFunc $1"/"$file
+    else
+      envsubst "$toSubstituteVars"< $1"/"$file > $1"/"$file.tmp
+      mv $1"/"$file.tmp $1"/"$file
+    fi
+  done
+}
+
+gitPublishFunc(){
+  loginfo "publishing to $GIT_URL"
+  REPO_DIR=/tmp/repo
+  git clone --single-branch -b "$GIT_BRANCH" "$GIT_URL" $REPO_DIR
+  if [[ -d "$REPO_DIR/charts/$CATALOG_TEMPLATE_NAME/$VERSION" ]];then
+    loginfo "Version $VERSION of template $CATALOG_TEMPLATE_NAME exists, updating..."
+  fi
+  mkdir -p "$REPO_DIR/charts/$CATALOG_TEMPLATE_NAME/$VERSION"
+  cp -rf "$CATALOG_PATH"/* "$REPO_DIR/charts/$CATALOG_TEMPLATE_NAME/$VERSION/"
+  cd $REPO_DIR
+
+  envsubstFunc "$REPO_DIR/charts/$CATALOG_TEMPLATE_NAME/$VERSION/"
+  loginfo "variable substitution done..."
+
+  git add "$REPO_DIR/charts/$CATALOG_TEMPLATE_NAME/$VERSION/"
+  git commit --allow-empty -m "$MESSAGE"
+  git push $PUSH_OPTION
+}
+
+checkFunc
+prepareFunc
+gitPublishFunc
+
+

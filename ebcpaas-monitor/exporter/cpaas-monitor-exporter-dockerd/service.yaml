@@ -1,0 +1,2 @@
+NAME                             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+cpaas-monitor-exporter-dockerd   ClusterIP   10.199.143.101   <none>        9323/TCP   93d

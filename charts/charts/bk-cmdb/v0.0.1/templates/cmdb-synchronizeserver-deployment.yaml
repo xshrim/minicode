@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: synchronizeserver
+    release: {{ .Release.Name }}
+  name: synchronizeserver
+spec:
+  replicas: {{ .Values.cmdb.synchronizeserver.replicas }}
+  selector:
+    matchLabels:
+      app: synchronizeserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: synchronizeserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: synchronizeserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.synchronizeserver.image }}:{{ .Values.cmdb.synchronizeserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: synchronizeserver
+          ports:
+            - containerPort: 60010
+          resources:
+{{ toYaml .Values.cmdb.synchronizeserver.resources | indent 12 }}
+{{- with .Values.cmdb.synchronizeserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

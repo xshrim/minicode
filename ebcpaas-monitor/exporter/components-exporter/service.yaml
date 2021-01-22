@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:39:29Z"
+  labels:
+    chart: alauda-container-platform
+    service_name: mars
+  name: mars
+  namespace: cpaas-system
+  resourceVersion: "7000"
+  selfLink: /api/v1/namespaces/cpaas-system/services/mars
+  uid: 7733d9b7-91db-4946-9839-78377846a25d
+spec:
+  clusterIP: 10.199.177.240
+  ports:
+  - name: http-mars
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: metrics
+    port: 8081
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    service_name: mars
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

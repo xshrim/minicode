@@ -1,0 +1,182 @@
+apiVersion: apps/v1
+{{- if .Values.taskmanager.statefulset }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: {{ include "flink.fullname" . }}-taskmanager
+  labels:
+{{ include "flink.labels" . | indent 4 }}
+    component: taskmanager
+  annotations:
+  {{- range $key, $value := .Values.taskmanager.annotations }}
+    {{ $key | quote }}: {{ $value | quote }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.taskmanager.replicaCount }}
+  {{- if .Values.taskmanager.statefulset }}
+  podManagementPolicy: {{ .Values.taskmanager.podManagementPolicy }}
+  {{- else }}
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "flink.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      component: taskmanager
+  {{- if .Values.taskmanager.statefulset }}
+  serviceName: {{ include "flink.fullname" . }}-taskmanager
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "flink.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        component: taskmanager
+      annotations:
+      {{- range $key, $value := .Values.taskmanager.podAnnotations }}
+        {{ $key | quote }}: {{ $value | quote }}
+      {{- end }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccount: {{ include "taskmanager.serviceAccount" . }}
+      initContainers:
+      {{- range $ct, $params := .Values.taskmanager.initContainers }}
+        - name: {{ $ct }}
+          image: {{ $params.image }}
+          command:
+          {{- range $params.command }}
+            - {{ . }}
+          {{- end }}
+      {{- end }}
+      containers:
+        - name: taskmanager
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: {{ .Values.flink.workDir }}
+          command:
+            - "/bin/bash"
+            - "-c"
+            - {{ include "taskmanager.command" . | quote }}
+          env:
+            - name: JVM_ARGS
+              value: {{ tpl .Values.taskmanager.jvmArgs . | quote }}
+          {{- if .Values.extraEnvs }}
+          {{- toYaml .Values.extraEnvs | nindent 12 }}
+          {{- end }}
+          {{- if .Values.jobmanager.extraEnvs }}
+          {{- toYaml .Values.taskmanager.extraEnvs | nindent 12 }}
+          {{- end }}
+          envFrom:
+          {{- if and .Values.secrets.bitnamiSealedSecrets.enabled .Values.secrets.bitnamiSealedSecrets.sealedSecretEnvs }}
+            - secretRef:
+                name: {{ .Release.Name }}-secretenvs
+          {{- end }}
+          ports:
+          {{- range $name, $port := .Values.taskmanager.ports }}
+            - containerPort: {{ $port }}
+              name: {{ $name }}
+          {{- end }}
+          {{- if .Values.flink.monitoring.enabled }}
+            - containerPort: {{ .Values.flink.monitoring.port }}
+              name: metrics
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.taskmanager.ports.rpc }}
+            initialDelaySeconds: {{ .Values.taskmanager.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.taskmanager.livenessProbe.periodSeconds }}
+          volumeMounts:
+            - name: flink-config-volume
+              mountPath: {{ .Values.flink.workDir }}/conf
+          {{- if and .Values.taskmanager.persistent.enabled .Values.taskmanager.statefulset }}
+            - name: taskmanager-data
+              mountPath: {{ .Values.taskmanager.persistent.mountPath }}
+          {{- end }}
+          {{- range $secret := .Values.secrets.kubernetesSecrets }}
+            {{- if $secret.mountPath }}
+              {{- if $secret.keys }}
+                {{- range $key := $secret.keys }}
+            - name: {{ include "flink.fullname" $ }}-{{ $secret.name }}
+              mountPath: {{ $secret.mountPath }}/{{ $key }}
+              subPath: {{ $key }}
+              readOnly: true
+                {{- end }}
+              {{- else }}
+            - name: {{ include "flink.fullname" $ }}-{{ $secret.name }}
+              mountPath: {{ $secret.mountPath }}
+              readOnly: true
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.taskmanager.extraVolumeMounts -}}
+            {{ toYaml .Values.taskmanager.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+          {{- if and (and .Values.secrets.bitnamiSealedSecrets.enabled .Values.secrets.bitnamiSealedSecrets.sealedSecretFiles) .Values.secrets.bitnamiSealedSecrets.sealedSecretFilesPath }}
+            - name: sealed-secret-files
+              mountPath: {{ .Values.secrets.bitnamiSealedSecrets.sealedSecretFilesPath }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.taskmanager.resources | nindent 12 }}
+
+      volumes:
+        - name: flink-config-volume
+          configMap:
+            name: {{ include "flink.fullname" . }}-config
+            items:
+              - key: flink-conf-taskmanager.yaml
+                path: flink-conf.yaml
+              - key: log4j.properties
+                path: log4j.properties
+              - key: security.properties
+                path: security.properties
+              {{- if .Values.jobmanager.highAvailability.enabled }}
+              - key: masters
+                path: masters
+              {{- end }}
+      {{- range .Values.secrets.kubernetesSecrets }}
+        - name: {{ include "flink.fullname" $ }}-{{ .name }}
+          secret:
+            secretName: {{ .name }}
+      {{- end }}
+      {{- if .Values.taskmanager.extraVolumes -}}
+        {{ toYaml .Values.taskmanager.extraVolumes | nindent 8 }}
+      {{- end }}
+      {{- if and (and .Values.secrets.bitnamiSealedSecrets.enabled .Values.secrets.bitnamiSealedSecrets.sealedSecretFiles) .Values.secrets.bitnamiSealedSecrets.sealedSecretFilesPath }}
+        - name: sealed-secret-files
+          secret:
+            secretName: {{ .Release.Name }}-secretfiles
+      {{- end }}
+
+      {{- with .Values.taskmanager.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.taskmanager.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.taskmanager.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- if and .Values.taskmanager.persistent.enabled .Values.taskmanager.statefulset }}
+  volumeClaimTemplates:
+    - metadata:
+        name: taskmanager-data
+        annotations:
+          volume.alpha.kubernetes.io/storage-class: {{ .Values.taskmanager.persistent.storageClass }}
+        labels:
+{{ include "flink.labels" . | indent 10 }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.taskmanager.persistent.size }}
+{{- end }}

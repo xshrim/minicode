@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: operationserver
+    release: {{ .Release.Name }}
+  name: operationserver
+spec:
+  replicas: {{ .Values.cmdb.operationserver.replicas }}
+  selector:
+    matchLabels:
+      app: operationserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: operationserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: operationserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.operationserver.image }}:{{ .Values.cmdb.operationserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: operationserver
+          ports:
+            - containerPort: 60011
+          resources:
+{{ toYaml .Values.cmdb.operationserver.resources | indent 12 }}
+{{- with .Values.cmdb.operationserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

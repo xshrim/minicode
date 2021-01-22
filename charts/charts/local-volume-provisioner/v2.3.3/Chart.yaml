@@ -1,0 +1,10 @@
+apiVersion: v1
+version: 2.3.3
+description: local provisioner chart 
+name: local-volume-provisioner
+icon: file://../logo.png
+appVersion: 2.3.3
+keywords:
+  - storage
+  - local
+engine: gotpl

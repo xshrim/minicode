@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cacheservice
+    release: {{ .Release.Name }}
+  name: cacheservice
+spec:
+  replicas: {{ .Values.cmdb.cacheservice.replicas }}
+  selector:
+    matchLabels:
+      app: cacheservice
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: cacheservice
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: cacheservice
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.cacheservice.image }}:{{ .Values.cmdb.cacheservice.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: cacheservice
+          ports:
+            - containerPort: 60008
+          resources:
+{{ toYaml .Values.cmdb.cacheservice.resources | indent 12 }}
+{{- with .Values.cmdb.cacheservice.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: eventserver
+    release: {{ .Release.Name }}
+  name: eventserver
+spec:
+  replicas: {{ .Values.cmdb.eventserver.replicas }}
+  selector:
+    matchLabels:
+      app: eventserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: eventserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: eventserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.eventserver.image }}:{{ .Values.cmdb.eventserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: eventserver
+          ports:
+            - containerPort: 60009
+          resources:
+{{ toYaml .Values.cmdb.eventserver.resources | indent 12 }}
+{{- with .Values.cmdb.eventserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

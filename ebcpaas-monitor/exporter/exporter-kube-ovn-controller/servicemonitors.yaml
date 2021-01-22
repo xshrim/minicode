@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:41Z"
+  generation: 1
+  labels:
+    app: exporter-kube-ovn-controller
+    chart: exporter-kube-ovn-0.1.0
+    component: kube-ovn-exporter
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: cpaas-monitor
+  name: exporter-kube-ovn-controller
+  namespace: cpaas-system
+  resourceVersion: "4480"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/exporter-kube-ovn-controller
+  uid: 9bd0d7be-15d9-4155-bdb6-71d103f00a40
+spec:
+  endpoints:
+  - interval: 15s
+    port: metrics
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      app: kube-ovn-controller

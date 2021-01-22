@@ -1,0 +1,106 @@
+rancher_min_version: 2.4.8
+categories:
+  - Monitoring
+  - Observability
+  - Trace
+questions:
+  - variable: replicas
+    default: 1
+    description: "同时启动几个云鹰实例。多个云鹰实例需使用同一个数据库实例。"
+    label: 实例副本数
+    type: int
+    group: "云鹰基础设置"
+  - variable: defaultImage
+    default: true
+    description: "使用默认镜像"
+    label: 使用默认镜像
+    type: boolean
+    show_subquestion_if: false
+    group: "云鹰基础设置"
+    subquestions:
+      - variable: image.repository
+        default: "ebtelemetry/ebtelemetry"
+        description: "云鹰平台 Docker 镜像名称"
+        type: string
+        label: 镜像名称
+      - variable: image.tag
+        default: "v7.1.5-ebcpaas-5"
+        description: "云鹰平台 Docker 镜像标签"
+        type: string
+        label: 镜像标签
+      - variable: image.sha
+        default: ""
+        description: "云鹰平台 Docker 镜像 Hash"
+        type: string
+        label: 镜像 Hash
+      - variable: pullPolicy
+        default: IfNotPresent
+        description: "指定镜像拉取策略"
+        type: enum
+        options:
+          - IfNotPresent
+          - Always
+          - Never
+        label: 镜像拉取策略
+  - variable: ingress.enabled
+    default: true
+    description: "为云鹰平台配置 Ingress"
+    label: 启用负载均衡
+    type: boolean
+    show_subquestion_if: true
+    group: "云鹰 Ingress 设置"
+    subquestions:
+      - variable: ingress.path
+        default: "/ebtelemetry"
+        description: "云鹰平台子路径"
+        type: string
+        label: path
+      - variable: ingress.hosts
+        default: "ebtelemetry.d.ebcpaas.com"
+        description: "云鹰平台域名"
+        type: hostname
+        label: path
+  - variable: resources.limits.cpu
+    default: ""
+    type: string
+    label: CPU限制
+    group: "容器的资源请求和限制"
+  - variable: resources.limits.memory
+    default: ""
+    type: string
+    label: 内存限制
+    group: "容器的资源请求和限制"
+  - variable: resources.requests.cpu
+    default: ""
+    type: string
+    label: 预留CPU
+    group: "容器的资源请求和限制"
+  - variable: resources.requests.memory
+    default: ""
+    type: string
+    label: 预留内存
+    group: "容器的资源请求和限制"
+  - variable: persistence.enabled
+    default: true
+    type: boolean
+    label: 是否开启持久化
+    group: "存储选项"
+    show_subquestion_if: true
+    subquestions:
+      - variable: persistence.storageClassName
+        default: "nas"
+        type: storageclass
+        label: 存储类
+      - variable: persistence.accessModes
+        default: "ReadWriteOnce"
+        description: "ReadWriteOnce单主机读写, ReadOnlyMany多主机只读, ReadWriteMany多主机读写"
+        type: enum
+        label: 访问模型
+        options:
+          - "ReadWriteOnce"
+          - "ReadOnlyMany"
+          - "ReadWriteMany"
+      - variable: persistence.size
+        default: "1Gi"
+        type: string
+        label: 卷容量

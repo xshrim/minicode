@@ -1,30 +1,22 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	_ "shebinbin.com/alertSyslog/memtodb"
-	"shebinbin.com/alertSyslog/service"
-	"shebinbin.com/alertSyslog/signalscan"
-	"shebinbin.com/alertSyslog/zapLogger"
+	// _ "alertsyslog/src/memtodb"
+	"alertsyslog/src/service"
+	"alertsyslog/src/signalscan"
+	"net/http"
 )
 
-var logger = zapLogger.LoggerFactory()
-
 func main() {
-	app := iris.New()
 
-	app.Get("/", service.Welcome)
-
-	app.Post("/api/syslog", service.ApiSyslog)
-
-	app.Get("/printmem", service.PrintMemData)
-
-	app.Get("/api/project/{action:string}/{ename:string}/{zhname:string}",
+	http.HandleFunc("/", service.Welcome)
+	http.HandleFunc("/api/syslog", service.ApiSyslog)
+	http.HandleFunc("/printmem", service.PrintMemData)
+	http.HandleFunc("/api/project/",
 		service.ProNameMaintain)
+	http.HandleFunc("/check", service.CheckAlert)
 
-	err := app.Run(iris.Addr(":10901"), iris.WithCharset("UTF-8"))
-	if err == nil {
-		logger.Error("alertSyslog组件服务器启动失败！err :", err)
-	}
+	go http.ListenAndServe("0.0.0.0:10901", nil)
+
 	signalscan.ScanSignal()
 }

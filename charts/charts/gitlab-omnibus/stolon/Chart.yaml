@@ -1,0 +1,15 @@
+apiVersion: v1
+name: stolon
+version: 0.8.1
+appVersion: 0.13.0
+home: https://github.com/sorintlab/stolon
+description: Stolon Helm Chart for Kubernetes.
+icon: https://i.imgur.com/tIW8sAW.png
+sources:
+  - https://github.com/sorintlab/stolon
+  - https://github.com/lwolf/stolon-chart
+maintainers:
+  - name: Sergey Nuzhdin
+    email: ipaq.lw@gmail.com
+  - name: Ryan Luckie
+    email: rluckie@cisco.com

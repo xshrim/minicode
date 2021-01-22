@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:37:42Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    operated-prometheus: "true"
+    service.kubernetes.io/headless: ""
+  name: prometheus-operated
+  namespace: cpaas-system
+  resourceVersion: "121571607"
+  selfLink: /api/v1/namespaces/cpaas-system/endpoints/prometheus-operated
+  uid: 87f0ce7d-d875-4575-9fef-9fbbdc334be3
+subsets:
+- addresses:
+  - hostname: prometheus-kube-prometheus-0
+    ip: 10.199.12.26
+    nodeName: 25.2.20.53
+    targetRef:
+      kind: Pod
+      name: prometheus-kube-prometheus-0
+      namespace: cpaas-system
+      resourceVersion: "121540431"
+      uid: 4ebd21fe-bcc0-405e-a934-3f962cb14a07
+  ports:
+  - name: web
+    port: 9090
+    protocol: TCP

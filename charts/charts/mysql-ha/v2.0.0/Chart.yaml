@@ -1,0 +1,16 @@
+apiVersion: v1
+appVersion: 5.7.13
+description: MySQL cluster with a single master and zero or more slave replicas
+home: https://www.mysql.com/
+icon: file://../logo.png
+keywords:
+- mysql
+- database
+- sql
+maintainers:
+- email: helmchart-mysql@jasonpoon.ca
+  name: jpoon
+- email: urakiny@gmail.com
+  name: aisuko
+name: mysqlha
+version: 2.0.0

@@ -1,0 +1,9 @@
+dependencies:
+- name: hdfs
+  repository: https://gradiant.github.io/charts
+  version: 0.1.8
+- name: zookeeper
+  repository: https://kubernetes-charts-incubator.storage.googleapis.com/
+  version: 2.1.3
+digest: sha256:079ff4d42f1992cef99a68f685b65aa23ba3eae5f8f89fd669f3291c6ada923d
+generated: "2020-05-14T10:30:24.694071024Z"

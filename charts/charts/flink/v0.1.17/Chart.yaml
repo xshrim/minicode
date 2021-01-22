@@ -1,0 +1,10 @@
+apiVersion: v1
+appVersion: 1.10.1
+description: Chart for Apache Flink
+home: https://github.com/riskfocus/helm-charts-public
+icon: file://../logo.png
+maintainers:
+- email: charts-maintainers@riskfocus.com
+  name: charts-maintainers
+name: flink
+version: 0.1.17

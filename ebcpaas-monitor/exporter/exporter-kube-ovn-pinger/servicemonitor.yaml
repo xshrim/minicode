@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:41Z"
+  generation: 1
+  labels:
+    app: exporter-kube-ovn-pinger
+    chart: exporter-kube-ovn-0.1.0
+    component: kube-ovn-exporter
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: cpaas-monitor
+  name: exporter-kube-ovn-pinger
+  namespace: cpaas-system
+  resourceVersion: "4479"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/exporter-kube-ovn-pinger
+  uid: 61be4e68-b986-4d80-8f2f-0ce630f3acef
+spec:
+  endpoints:
+  - interval: 15s
+    port: metrics
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      app: kube-ovn-pinger

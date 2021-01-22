@@ -1,0 +1,185 @@
+{
+    "root": {
+        "data": {
+            "id": "c46sd1ovqjk0",
+            "created": 1594774453100,
+            "text": "指标监控"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "c46tdf8tetc0",
+                    "created": 1594777303713,
+                    "text": "指标度量",
+                    "layout_right_offset": {
+                        "x": -1,
+                        "y": 37.5
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46tdkbyb1c0",
+                            "created": 1594777314787,
+                            "text": "反映状态的量化数据",
+                            "layout_right_offset": {
+                                "x": 34,
+                                "y": 2.5
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c46tf741jcw0",
+                            "created": 1594777442739,
+                            "text": "硬件, 系统, 应用, 业务",
+                            "layout_right_offset": {
+                                "x": 33.5,
+                                "y": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c46te153fhs0",
+                            "created": 1594777351377,
+                            "text": "告警, 定位, 预测, 弹性处理",
+                            "layout_right_offset": {
+                                "x": 35,
+                                "y": -1.5
+                            }
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c46td9rtkm80",
+                    "created": 1594777291802,
+                    "text": "时序数据",
+                    "layout_right_offset": {
+                        "x": -3,
+                        "y": 14
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46tn07chd40",
+                            "created": 1594778054614,
+                            "text": "基于时间的一系列数据",
+                            "layout_right_offset": {
+                                "x": 37.5,
+                                "y": 4
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c46tm0j4ttc0",
+                            "created": 1594777976963,
+                            "text": "多写少读无更新",
+                            "layout_right_offset": {
+                                "x": 38,
+                                "y": 0.5
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c46tnosy2hs0",
+                            "created": 1594778108163,
+                            "text": "累计速度快,大规模写入, 时序分析聚合",
+                            "layout_right_offset": {
+                                "x": 36.5,
+                                "y": 2.5
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c46tjdqvcco0",
+                            "created": 1594777770637,
+                            "text": "度量, 数据点, 时间戳",
+                            "layout_right_offset": {
+                                "x": 38.5,
+                                "y": 0
+                            }
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c4721ytcxk00",
+                    "created": 1594801795933,
+                    "text": "黄金指标",
+                    "layout_right_offset": {
+                        "x": 0,
+                        "y": -18.5
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c47222db8dk0",
+                            "created": 1594801803670,
+                            "text": "延迟: 服务请求所需时间",
+                            "layout_right_offset": {
+                                "x": 36,
+                                "y": 2.5
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c472299cwvs0",
+                            "created": 1594801818669,
+                            "text": "流量: 请求量/率",
+                            "layout_right_offset": {
+                                "x": 38.5,
+                                "y": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c4722quxvxs0",
+                            "created": 1594801856979,
+                            "text": "错误: 系统错误请求量/率",
+                            "layout_right_offset": {
+                                "x": 37.5,
+                                "y": -2.5
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c4723bt403c0",
+                            "created": 1594801902581,
+                            "text": "饱和度: 资源负荷程度/拐点",
+                            "layout_right_offset": {
+                                "x": 37.5,
+                                "y": -1.5
+                            }
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "right",
+    "theme": "fresh-purple",
+    "version": "1.4.43"
+}

@@ -1,0 +1,102 @@
+categories:
+- Database
+labels:
+  io.rancher.certified: experimental
+questions:
+- variable: postgresqlUsername
+  default: "postgres"
+  type: string
+  description: "使用`postgres`拥有超级用户的权限"
+  label: "username"
+  group: "通用设置"
+- variable: postgresqlPassword
+  type: password
+  required: true
+  description: "管理员帐号的密码"
+  label: "密码"
+  show_if: "postgresqlUsername=postgres"
+  group: "通用设置"
+- variable: postgresqlPostgresPassword
+  type: password
+  required: true
+  description: "管理员帐号的密码"
+  label: "postgres password"
+  show_if: "postgresqlUsername!=postgres"
+  group: "通用设置"
+- variable: service.port
+  type: int
+  default: 5432
+  required: true
+  label: "port"
+  group: "通用设置"
+
+- variable: replication.enabled
+  default: true
+  type: boolean
+  label: 副本集
+  group: "副本集"
+- variable: replication.user
+  type: string
+  required: true
+  description: "slave使用的username"
+  label: "slave username"
+  show_if: "replication.enabled=true"
+  group: "副本集"
+- variable: replication.password
+  type: password
+  required: true
+  description: "slave使用的password"
+  label: "slave password"
+  show_if: "replication.enabled=true"
+  group: "副本集"
+- variable: replication.slaveReplicas
+  type: int
+  default: 2
+  required: true
+  description: "slave使用的password"
+  label: "slave 数量"
+  show_if: "replication.enabled=true"
+  group: "副本集"
+
+
+- variable: persistence.enabled
+  default: true
+  type: boolean
+  label: 持久化
+  group: "持久化"
+- variable: persistence.existingClaim
+  description: "使用现有的PVC，必须在绑定前创建，如果PVC与其他组件共享，请指定其subPath"
+  type: pvc
+  label: 使用已存在的PVC
+  show_if: "persistence.enabled=true"
+  group: "持久化"
+- variable: persistence.storageClass
+  default: ""
+  description: "使用指定为配置卷的存储类。或者将使用默认的存储类。"
+  type: storageclass
+  label: 存储类
+  show_if: "persistence.enabled=true"
+  group: "持久化"
+- variable: persistence.subPath
+  default: "postgres/"
+  type: string
+  label: 子路径
+  show_if: "persistence.enabled=true"
+  group: "持久化"
+- variable: persistence.accessMode
+  default: "ReadWriteMany"
+  description: "ReadWriteOnce单主机读写, ReadOnlyMany多主机只读, ReadWriteMany多主机读写"
+  type: enum
+  label: 访问模型
+  show_if: "persistence.enabled=true"
+  group: "持久化"
+  options:
+  - "ReadWriteOnce"
+  - "ReadOnlyMany"
+  - "ReadWriteMany"
+- variable: persistence.size
+  default: "10Gi"
+  type: string
+  label: 卷容量
+  show_if: "persistence.enabled=true"
+  group: "持久化"

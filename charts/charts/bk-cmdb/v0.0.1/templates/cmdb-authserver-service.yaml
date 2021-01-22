@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: authserver
+    release: {{ .Release.Name }}
+  name: authserver
+spec:
+  ports:
+    - name: "http"
+      port: 60014
+      targetPort: 60014
+  selector:
+    app: authserver
+    release: {{ .Release.Name }}

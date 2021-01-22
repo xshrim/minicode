@@ -1,11 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: syslog
   name: syslogapi
-  namespace: system-ebcpaas
+  namespace: cpaas-system
 spec:
+  selector:
+    matchLabels:
+      app: syslog
   replicas: 1
   template:
     metadata:
@@ -13,94 +16,89 @@ spec:
         app: syslog
     spec:
       tolerations:
-      - key: "app"
-        operator: "Equal"
-        value: "ebcpaas"
-        effect: "NoSchedule"
-      nodeSelector:
-        app: ebcpaas
+        - key: "app"
+          operator: "Equal"
+          value: "ebcpaas"
+          effect: "NoSchedule"
       containers:
-      - name: syslog-mysql
-        image: mysql:5.7
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "Root@123"
-        - name: MYSQL_DATABASE
-          value: "syslogdb"
-        - name: MYSQL_USER
-          value: "syslogapi"
-        - name: MYSQL_PASSWORD
-          value: "Syslog_1234"
-        resources: {}
-        ports:
-        - containerPort: 3306
-        volumeMounts:
-        - name: mysql
-          subPath: data
-          mountPath: /var/lib/mysql
-        workingDir: /
-      - name: syslog-api
-        image: syslogapi:1.3
-        imagePullPolicy: IfNotPresent
-        command: 
-        - /root/syslogapi
-        env:
-        - name: ALERT_RECOVER # 告警事件名
-          value: "RECOVER"
-        - name: ALERT_NODE_NAME # 告警节点名
-          value: "JT-MONITOR-ITM-01"
-        - name: ALERT_DURATION # 重复告警间隔时间
-          value: "1800"
-        - name: LOG_LEVEL # 本地日志级别
-          value: "info"
-        - name: API_TOKEN # paas平台api访问token
-          value: "73c5b38918a8c18e18794f042531f0afc2fc3281"
-        - name: API_URL # cpaas平台api访问url
-          value: "http://106.13.128.140:32001/v1"
-        - name: DBERR_COUNT # mysql断连告警间隔
-          value: "7"
-        - name: MYSQL_CONF # mysql数据库连接配置
-          value: "syslogapi:Syslog_1234@/syslogdb"
-        - name: YW_ALERT # 业务告警开关
-          value: "true"
-        - name: ORG_NAME # 组织名/根账号
-          value: "ebcpaasadmin"
-        - name: EI_NAME # 事件集成名
-          value: "CEGS"
-        - name: BE_NAME # 业务事件名
-          value: "CEGS"
-        - name: ALERT_TAG # 告警标记
-          value: "2OMNIBUS"
-        - name: MODULE_TYPE # 组件类型
-          value: "APP"
-        - name: APP_TAG # 平台标记
-          value: "EBCPAAS"
-        - name: M_IP # 监控平台主机IP
-          value: "25.1.17.22"
-        - name: M_PORT # 监控平台主机端口
-          value: "514"
-        - name: M_NODEIP # 告警节点IP
-          value: "10.108.110.208"
-        - name: CR_TIME # mysql定时心跳检查间隔
-          value: "300"
-        - name: C_HBEAT # cpaas集群心跳告警名称
-          value: "cluster_hbeat"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 10901
-            httpHeaders:
-          initialDelaySeconds: 3
-          periodSeconds: 3
-        resources: {}
-        ports:
-        - containerPort: 10901
-        workingDir: /root
+        - name: syslog-api
+          image: regdev.ebchina.com/library/syslogapi:3.0.8
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ALERT_RECOVER # 告警事件名
+              value: "RECOVER"
+            - name: ALERT_NODE_IP # 告警节点IP
+              value: "10.199.226.64"
+            - name: ALERT_NODE_NAME # 告警节点名
+              value: "alertsyslogapi"
+            - name: ALERT_DURATION # 重复告警间隔时间
+              value: "1800"
+            - name: LOG_LEVEL # 本地日志级别
+              value: "info"
+            - name: API_TOKEN # paas平台api访问token
+              value: "eyJhbGciOiJSUzI1NiIsImtpZCI6ImJjN2QzN2M5MTQxZWUzNzlhODVhMzczM2U1ZTg2ZDQ3MGFmNTJmMDAifQ.eyJpc3MiOiJodHRwczovL2NwYWFzZGV2LmViY2hpbmEuY29tL2RleCIsInN1YiI6IkNpUXdPR0U0TmpnMFlpMWtZamc0TFRSaU56TXRPVEJoT1MwelkyUXhOall4WmpVME5qWVNCV3h2WTJGcyIsImF1ZCI6ImFsYXVkYS1hdXRoIiwiZXhwIjozMTcyNzAxNjgwLCJpYXQiOjE1OTU5MDE2ODAsIm5vbmNlIjoiYWxhdWRhLWNvbnNvbGUiLCJhdF9oYXNoIjoiMlhfM2JPR1hoQlUzYU1SYmlFTWQtZyIsImVtYWlsIjoiY3BhYXNAZWJjaGluYXRlY2guY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiLnrqHnkIblkZgiLCJleHQiOnsiaXNfYWRtaW4iOnRydWUsImNvbm5faWQiOiJsb2NhbCJ9fQ.rXoWr-mH_1SQIoGeal2TDNV7-C1OKv1MKu5VxInkGvQH4cLtWWhKm0jj5bAYJeEbtASBVHXJYDeORhNe5xsTS6qRBldenbaqro3WMLF9b9whgciZOE89oWYKrPptAQr2RVviSYtQ1CQgJPS3ckdETMsn82esjC76YNeLTo1U_TNW_YokbGF8r6puVPzUKigq236mMOvt0_RC1XAIZwr4kv_90CPxEHptElS9JTQ9nIFnu3GJjI-wkigRu73FQJrOnZ1yfKzAI42Sm3wjXmVOGnwAqOhlYotHxXHQHXMtVtYDaiiCYkIZ0VGojHQ7nVfYSusxEyb6yClxOe-cvYECXA"
+            - name: API_URL # cpaas平台api访问url
+              value: "https://cpaasdev.ebchina.com"
+            - name: DBERR_COUNT # mysql断连告警间隔
+              value: "7"
+            - name: MYSQL_CONF # mysql数据库连接配置
+              value: "syslogapi:Syslog_1234@/syslogdb"
+            - name: YW_ALERT # 业务告警开关
+              value: "true"
+            - name: ORG_NAME # 组织名/根账号
+              value: "ebcpaasadmin"
+            - name: EI_NAME # 事件集成名
+              value: "CEGS"
+            - name: BE_NAME # 业务事件名
+              value: "CEGS"
+            - name: ALERT_TAG # 告警标记
+              value: "2OMNIBUS"
+            - name: MODULE_TYPE # 组件类型
+              value: "APP"
+            - name: APP_TAG # 平台标记
+              value: "EBCPAAS"
+            - name: M_IP # 监控平台主机IP
+              value: "25.1.17.22"
+            - name: M_PORT # 监控平台主机端口
+              value: "514"
+            - name: CR_TIME # mysql定时心跳检查间隔
+              value: "300"
+            - name: C_HBEAT # cpaas集群心跳告警名称
+              value: "cluster_hbeat"
+            - name: WC_URL # 微信api地址
+              value: http://qyapi.weixin.qq.com/cgi-bin/
+            - name: WC_ProxyURL # 微信api代理地址，可以通过ingress和endpoint去设置。
+              value: http://25.2.20.18:8080
+            - name: WC_CheckURL # 用来查看告警内容的地址，最好是和微信开了访问关系的
+              value: http://xiechuyu-webhook.ebcpaas.com
+            - name: WC_Crop # 微信api组织id
+              value: wl310ee8108c
+            - name: WC_AgentID # 微信api应用id
+              value: "1000097"
+            - name: WC_Secret # 微信api的密钥
+              value: AuEJQWLx7qKrMuqb2UnSb2d_8NQ_RZEm-FDXRilwy2k
+            #- name: WC_ToUser # 是否发送给user，优先级比toTag高，填写180的工号
+            #  value: "18000490"
+            - name: WC_ToTag # 是否发送给tag，29是容器云团队的tag
+              value: "29"
+            - name: SQLITE_CONFIG # sqlite存储的位置，这个sqlite包不能创建文件夹，要写就写已有的地址
+              value: file:/data/data.db
+            - name: IS_WEBHOOK # 是否为在网页上配置的webhook
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 10901
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          ports:
+            - containerPort: 10901
+          workingDir: /root
       #imagePullSecrets:
       #- name: ebpaas-registry-20.20
       restartPolicy: Always
-      volumes:
-      - name: mysql
-        hostPath:
-          path: /var/mysql

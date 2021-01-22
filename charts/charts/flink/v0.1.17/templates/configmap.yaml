@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "flink.fullname" . }}-config
+  labels:
+{{ include "flink.labels" . | indent 4 }}
+data:
+  flink-conf.yaml: |+
+    {{- if .Values.jobmanager.highAvailability.enabled }}
+    jobmanager.rpc.address: REPLACE_HOSTNAME
+    {{- end }}
+{{ include "flink.configuration" . | indent 4 }}
+  flink-conf-taskmanager.yaml: |+
+{{ include "flink.configuration" . | indent 4 }}
+  log4j.properties: |+
+{{ .Values.flink.logging.log4j_properties | indent 4 }}
+  security.properties:
+    # The java-level namelookup cache policy for successful lookups
+    networkaddress.cache.ttl=30
+{{- if .Values.jobmanager.highAvailability.enabled }}
+  masters: |
+   {{ include "flink.fullname" . }}-jobmanager
+{{- end }}

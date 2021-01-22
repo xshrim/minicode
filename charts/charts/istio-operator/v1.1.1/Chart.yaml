@@ -1,0 +1,18 @@
+apiVersion: v1
+appVersion: 1.7.0
+description: Helm chart for the Istio Operator.
+home: https://istio.io/
+icon: file://../logo.png
+keywords:
+- kubernetes
+- istio
+- operator
+- service
+- mesh
+maintainers:
+- email: steve.hipwell@gmail.com
+  name: stevehipwell
+name: istio-operator
+sources:
+- https://github.com/istio/istio/tree/master/operator
+version: 1.1.1

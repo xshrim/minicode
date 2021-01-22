@@ -1,0 +1,122 @@
+{
+    "root": {
+        "data": {
+            "id": "c471l1zp2540",
+            "created": 1594800470656,
+            "text": "服务发现"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "c471l5xxsm00",
+                    "created": 1594800479257,
+                    "text": "静态配置"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c471m21slbs0",
+                            "created": 1594800549147,
+                            "text": "static_configs"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c471l81urps0",
+                    "created": 1594800483847,
+                    "text": "基于文件"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c471miqy87k0",
+                            "created": 1594800585497,
+                            "text": "file_sd_configs"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c471lefvxwg0",
+                    "created": 1594800497757,
+                    "text": "基于API"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c471n8iewhc0",
+                            "created": 1594800641577,
+                            "text": "ec2_sd_configs"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c471nhbsjog0",
+                            "created": 1594800660768,
+                            "text": "azure_sd_configs"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c471pwf4etk0",
+                            "created": 1594800850349,
+                            "text": "gce_sd_configs"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c471pshjd8o0",
+                            "created": 1594800841788,
+                            "text": "openstack_sd_configs"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c471nmehxh40",
+                            "created": 1594800671815,
+                            "text": "consul_sd_configs"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c471qaecbds0",
+                            "created": 1594800880777,
+                            "text": "kubernetes_sd_configs"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c471lgeg6m80",
+                    "created": 1594800502023,
+                    "text": "基于DNS"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c471raivpi80",
+                            "created": 1594800959415,
+                            "text": "dns_sd_configs"
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "right",
+    "theme": "fresh-soil",
+    "version": "1.4.43"
+}

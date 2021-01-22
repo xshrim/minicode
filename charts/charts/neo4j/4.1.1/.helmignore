@@ -1,0 +1,6 @@
+.git 
+tools
+k8s-poc
+*.log
+test
+node_modules

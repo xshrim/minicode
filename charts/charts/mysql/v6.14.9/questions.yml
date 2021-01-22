@@ -1,0 +1,379 @@
+labels:
+  io.cattle.role: project # options are cluster/project
+categories:
+- Database
+questions:
+- variable: defaultImage
+  default: true
+  description: "使用默认镜像"
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: image.registry
+    default: "hub.ebcpaas.com"
+    description: "镜项仓库"
+    type: string
+    label: 镜项仓库  
+  - variable: image.repository
+    default: "bitnami/mysql"
+    description: "MySQL镜项名称"
+    type: string
+    label: MySQL Docker镜像名称
+  - variable: image.tag
+    default: "8.0.21-debian-10-r33"
+    description: "MySQL镜像标签"
+    type: string
+    label: 镜像标签
+  - variable: pullPolicy
+    default: IfNotPresent
+    description: "指定镜像拉取策略"
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+# values from the securityContext section of the component
+- variable: volumePermissions.enabled
+  default: false
+  label: 启用将永久卷的所有者和组更改为的初始化容器runAsUser:fsGroup
+  type: boolean
+  show_subquestion_if: true
+  group: "Bitnami Minideb镜像"
+  subquestions:
+  - variable: volumePermissions.image.repository
+    default: "bitnami/minideb"
+    type: string
+    label: Minideb Docker镜像名称
+  - variable: volumePermissions.image.tag
+    default: "buster"
+    type: string
+    label: 镜像标签
+  - variable: volumePermissions.image.pullPolicy
+    default: Always
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略    
+  # - variable: volumePermissions.resources.limits.cpu
+  #   default: ""
+  #   type: string
+  #   label: Minideb CPU限制
+  #   group: "容器的资源请求和限制"
+  # - variable: resources.limits.memory
+  #   default: ""
+  #   type: string
+  #   label: Minideb 内存限制
+  #   group: "容器的资源请求和限制"
+  # - variable: resources.requests.cpu
+  #   default: ""  
+  #   type: string
+  #   label: Minideb初始化工具预留CPU
+  #   group: "容器的资源请求和限制"
+  # - variable: resources.requests.memory
+  #   default: ""
+  #   type: string
+  #   label: Minideb初始化工具预留内存
+  #   group: "容器的资源请求和限制"  
+
+## Admin (root) credentials
+- variable: root.password
+  default: ""
+  description: "设置Mysql Admin(root)用户的密码，如果未设置，默认为随机10字符的字母数字字符串"
+  type: password
+  required: true
+  label: MySQL Admin(root)用户的密码
+  group: "通用设置"
+## Custom user/db credentials
+- variable: db.user
+  default: ""
+  description: "创建用户名称"
+  type: string
+  label: MySQL用户名
+  group: "通用设置"
+- variable: db.password
+  default: ""
+  description: "设置新用户的MySQL密码，如果未设置，默认为随机10字符的字母数字字符串"
+  type: password
+  label: MySQL密码
+  group: "通用设置"
+- variable: db.name
+  default: "my_database"
+  description: "创建数据库名称"
+  type: string
+  label: MySQL数据库
+  group: "通用设置"
+- variable: db.forcePassword
+  default: false
+  type: boolean
+  label: 是否要求用户必须设置密码
+  group: "通用设置"
+- variable: db.injectSecretsAsVolume  
+  default: false
+  type: boolean
+  label: 是否将用户密码挂载为文件
+  group: "通用设置"
+## Replication configuration
+- variable: replication.enabled
+  default: true
+  type: boolean
+  label: 是否开启MySQL副本
+  show_subquestion_if: true
+  group: "副本配置"
+  subquestions:
+  - variable: replication.user
+    default: "replicator"
+    type: string
+    required: true
+    label: slave使用的username
+  - variable: replication.password
+    default: ""
+    type: password
+    label: slave使用的password
+  - variable: db.forcePassword
+    default: false
+    type: boolean
+    label: 是否要求必须设置密码
+  - variable: db.injectSecretsAsVolume  
+    default: false
+    type: boolean
+    label: 是否将密码挂载为文件
+
+# - variable: serviceAccount.create
+#   default: true
+#   type: boolean
+#   required: true
+#   label: 是否创建serviceAccount
+#   group: "serviceAccount"
+
+## Master nodes parameters
+- variable: master.updateStrategy.type
+  default: RollingUpdate
+  type: enum  
+  required: true
+  options:
+  - On Delete
+  - RollingUpdate
+  - Partitions
+  label: 升级策略
+  group: "主节点mysql配置"
+# - variable: master.resources.limits.cpu
+#   default: ""
+#   type: string
+#   label: 主节点mysql CPU限制
+#   group: "主节点mysql配置"
+# - variable: master.resources.limits.memory
+#   default: ""
+#   type: string
+#   label: 主节点mysql 内存限制
+#   group: "主节点mysql配置"
+# - variable: master.resources.requests.cpu
+#   default: ""   
+#   type: string
+#   label: 主节点mysql初始化工具预留CPU
+#   group: "主节点mysql配置"
+# - variable: master.resources.requests.memory
+#   default: ""
+#   type: string
+#   label: 主节点mysql初始化工具预留内存
+#   group: "主节点mysql配置"
+# Enable persistence using PVCs on master nodes
+- variable: master.persistence.enabled
+  default: true
+  type: boolean
+  required: true
+  label: 主节点mysql是否开启持久化
+  show_subquestion_if: true
+  group: "主节点mysql持久化"
+  subquestions:
+  - variable: master.persistence.mountPath
+    default: "/bitnami/mysql"
+    type: string
+    label: 存储路径
+  - variable: master.persistence.storageClass
+    default: ""
+    type: storageclass
+    label: 存储类        
+  - variable: master.persistence.accessMode
+    default: "ReadWriteOnce"
+    description: "ReadWriteOnce单主机读写, ReadOnlyMany多主机只读, ReadWriteMany多主机读写"
+    type: enum
+    label: 访问模型
+    show_if: "master.persistence.enabled=true"
+    options:
+    - "ReadWriteOnce"
+    - "ReadOnlyMany"
+    - "ReadWriteMany"
+  - variable: master.persistence.size
+    default: "8Gi"
+    type: string
+    label: 存储容量
+  - variable: master.persistence.existingClaim
+    default: ""
+    type: pvc
+    label: 使用Mysql已有的PVC
+## Slave nodes parameters
+- variable: slave.replicas
+  default: 1
+  type: int
+  label: Slave节点副本数
+  group: "slave节点mysql配置"
+  show_if: "replication.enabled=true"
+- variable: slave.updateStrategy.type
+  default: RollingUpdate
+  type: enum  
+  required: true
+  options:
+  - On Delete
+  - RollingUpdate
+  - Partitions
+  label: 升级策略
+  group: "slave节点mysql配置"
+# - variable: slave.resources.limits.cpu
+#   default: ""
+#   type: string
+#   label: slave节点mysql CPU限制
+#   group: "slave节点mysql配置"
+#   show_if: "replication.enabled=true"
+# - variable: slave.resources.limits.memory
+#   default: ""
+#   type: string
+#   label: slave节点mysql 内存限制
+#   group: "slave节点mysql配置"
+#   show_if: "replication.enabled=true"  
+# - variable: slave.resources.requests.cpu
+#   default: ""   
+#   type: string
+#   label: slave节点mysql初始化工具预留CPU
+#   group: "slave节点mysql配置"
+#   show_if: "replication.enabled=true"  
+# - variable: slave.resources.requests.memory
+#   default: ""
+#   type: string
+#   label: slave节点mysql初始化工具预留内存
+#   group: "slave节点mysql配置"
+#   show_if: "replication.enabled=true"
+## Enable persistence using PVCs on slave nodes
+- variable: slave.persistence.enabled
+  default: true
+  type: boolean
+  required: true
+  label: slave节点mysql是否开启持久化
+  show_subquestion_if: true
+  group: "slave节点mysql持久化"
+  show_if: "replication.enabled=true"
+  subquestions:
+  - variable: slave.persistence.mountPath
+    default: "/bitnami/mysql"
+    type: string
+    label: 存储路径
+  - variable: slave.persistence.storageClass
+    default: ""
+    type: storageclass
+    label: 存储类        
+  - variable: slave.persistence.accessMode
+    default: "ReadWriteOnce"
+    description: "ReadWriteOnce单主机读写, ReadOnlyMany多主机只读, ReadWriteMany多主机读写"
+    type: enum
+    label: 访问模型
+    show_if: "slave.persistence.enabled=true"
+    options:
+    - "ReadWriteOnce"
+    - "ReadOnlyMany"
+    - "ReadWriteMany"
+  - variable: slave.persistence.size
+    default: "8Gi"
+    type: string
+    label: 存储容量
+  - variable: slave.persistence.existingClaim
+    default: ""
+    type: pvc
+    label: 使用Mysql已有的PVC
+## MySQL Service properties
+- variable: service.type
+  default: "ClusterIP"
+  type: enum
+  group: "Services和负载均衡"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+  required: true
+  label: MySQL Service类型
+  show_subquestion_if: "NodePort"
+  subquestions:
+  - variable: service.nodePort
+    default: ""
+    type: int
+    min: 30000
+    max: 32767
+    label: Service NodePort端口
+- variable: service.port
+  default: "3306"
+  type: string
+  label: MySQL Service端口
+  required: true
+  group: "Services和负载均衡"
+## MySQL prometheus metrics parameters
+- variable: metrics.enabled
+  default: false
+  label: 是否启用MySQL指标
+  type: boolean
+  show_subquestion_if: true
+  group: "指标"
+  subquestions:
+  - variable: metrics.image.repository
+    default: "bitnami/mysqld-exporter"
+    type: string
+    label: mysqld-exporter Docker镜像名称
+  - variable: metrics.image.tag
+    default: "0.12.1-debian-10-r198"
+    type: string
+    label: mysqld-exporter Docker镜像标签
+  - variable: metrics.image.pullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: mysqld-exporter镜像拉取策略  
+  # - variable: metrics.resources.limits.cpu
+  #   default: ""
+  #   type: string
+  #   label: mysqld-exporter CPU限制
+  #   group: "mysqld-exporter的资源请求和限制"
+  # - variable: metrics.resources.limits.memory
+  #   default: ""
+  #   type: string
+  #   label: mysqld-exporter memory限制
+  #   group: "mysqld-exporter的资源请求和限制"
+  # - variable: metrics.resources.requsets.cpu
+  #   default: ""
+  #   type: string
+  #   label: mysqld-exporter初始化工具预留CPU
+  #   group: "mysqld-exporter的资源请求和限制"
+  # - variable: metrics.resources.requsets.memory
+  #   default: ""
+  #   type: string
+  #   label: mysqld-exporter初始化工具预留memory
+  #   group: "mysqld-exporter的资源请求和限制"
+  - variable: metrics.service.type
+    default: "ClusterIP"
+    type: enum
+    options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"  
+    label: Metric Service类型
+  - variable: metrics.service.port
+    default: "9104"
+    type: string
+    label: Metric Service端口
+  - variable: metrics.serviceMonitor.enabled
+    default: false
+    type: boolean
+    label: 为Prometheus Operator创建MySQL ServiceMonitor

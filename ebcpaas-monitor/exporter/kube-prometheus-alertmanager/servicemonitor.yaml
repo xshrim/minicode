@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: alertmanager
+    chart: alertmanager-0.1.5
+    component: alertmanager
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-alertmanager
+  namespace: cpaas-system
+  resourceVersion: "4622"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-alertmanager
+  uid: 11ba5c4b-9ef9-4c89-b226-a270d7117141
+spec:
+  endpoints:
+  - interval: 30s
+    port: http
+  jobLabel: app
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      alertmanager: kube-prometheus
+      app: alertmanager

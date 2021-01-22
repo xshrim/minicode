@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:38:55Z"
+  labels:
+    chart: elasticsearch
+    service_name: cpaas-elasticsearch
+  name: cpaas-elasticsearch
+  namespace: cpaas-system
+  resourceVersion: "6455"
+  selfLink: /api/v1/namespaces/cpaas-system/services/cpaas-elasticsearch
+  uid: da437d73-c76a-46d4-8c9a-a74001ed28ae
+spec:
+  clusterIP: 10.199.152.252
+  ports:
+  - name: cpaas-elasticsearch
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  selector:
+    service_name: cpaas-elasticsearch
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

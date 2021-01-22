@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit
+  namespace: cattle-system
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: auditlog
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: auditlog
+  name: auditlog
+  namespace: cattle-system
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: auditlog
+  template:
+    metadata:
+      labels:
+        app: auditlog
+    spec:
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          value: ""
+          effect: "NoSchedule"
+      volumes:
+        - name: storage
+          emptyDir: {}
+      containers:
+        - image: auditlog:v1
+          name: auditlog
+          args:
+            [
+              "/root/auditlog",
+              "--expire",
+              "7d",
+              "--gc",
+              "3h",
+              "--dbtype",
+              "sqlite3",
+              "--dburl",
+              "/data/data.db",
+            ]
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"

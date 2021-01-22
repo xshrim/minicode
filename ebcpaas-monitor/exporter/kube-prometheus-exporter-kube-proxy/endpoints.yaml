@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:37:42Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-proxy
+    chart: exporter-kube-proxy-0.1.0
+    component: kube-proxy
+    heritage: Helm
+    release: kube-prometheus
+    service.kubernetes.io/headless: ""
+  name: kube-prometheus-exporter-kube-proxy
+  namespace: kube-system
+  resourceVersion: "121571600"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-prometheus-exporter-kube-proxy
+  uid: ef703c57-64c0-4161-8aa3-1eb57bde5b74
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+    nodeName: 25.2.20.37
+    targetRef:
+      kind: Pod
+      name: kube-proxy-hc4qb
+      namespace: kube-system
+      resourceVersion: "121571293"
+      uid: d7f9638b-ff47-4f6b-bb65-5cb2cb638d3a
+  - ip: 25.2.20.38
+    nodeName: 25.2.20.38
+    targetRef:
+      kind: Pod
+      name: kube-proxy-z896l
+      namespace: kube-system
+      resourceVersion: "121551327"
+      uid: 466246e0-5b48-4659-9dd2-8491cee594c4
+  - ip: 25.2.20.39
+    nodeName: 25.2.20.39
+    targetRef:
+      kind: Pod
+      name: kube-proxy-2lcnf
+      namespace: kube-system
+      resourceVersion: "121551113"
+      uid: c45e981f-e3fd-4802-b074-a520a46cc137
+  - ip: 25.2.20.40
+    nodeName: 25.2.20.40
+    targetRef:
+      kind: Pod
+      name: kube-proxy-pthc8
+      namespace: kube-system
+      resourceVersion: "121551261"
+      uid: 1528b772-f9a2-483f-9491-f8c7ba1a438b
+  - ip: 25.2.20.44
+    nodeName: 25.2.20.44
+    targetRef:
+      kind: Pod
+      name: kube-proxy-qktsn
+      namespace: kube-system
+      resourceVersion: "121551300"
+      uid: e7920c09-1b41-4ea5-9cb6-2249f03be67c
+  - ip: 25.2.20.45
+    nodeName: 25.2.20.45
+    targetRef:
+      kind: Pod
+      name: kube-proxy-6k48j
+      namespace: kube-system
+      resourceVersion: "121551361"
+      uid: fe2cdef9-6686-4404-b748-ea09b933f1ff
+  - ip: 25.2.20.46
+    nodeName: 25.2.20.46
+    targetRef:
+      kind: Pod
+      name: kube-proxy-fw2nb
+      namespace: kube-system
+      resourceVersion: "121551211"
+      uid: f2f95d4b-1da1-4721-81a7-806cf856a73d
+  - ip: 25.2.20.47
+    nodeName: 25.2.20.47
+    targetRef:
+      kind: Pod
+      name: kube-proxy-ttrjg
+      namespace: kube-system
+      resourceVersion: "121551130"
+      uid: 720391ad-96e3-44c7-81dd-41c0539731ff
+  - ip: 25.2.20.48
+    nodeName: 25.2.20.48
+    targetRef:
+      kind: Pod
+      name: kube-proxy-5dp5z
+      namespace: kube-system
+      resourceVersion: "121551033"
+      uid: 2a0a3cb2-024b-4972-bffa-e9355f7e401e
+  - ip: 25.2.20.52
+    nodeName: 25.2.20.52
+    targetRef:
+      kind: Pod
+      name: kube-proxy-25fxt
+      namespace: kube-system
+      resourceVersion: "121551091"
+      uid: 5c03e632-2e56-4f17-b14b-419ac97c4a9d
+  - ip: 25.2.20.53
+    nodeName: 25.2.20.53
+    targetRef:
+      kind: Pod
+      name: kube-proxy-8pn9t
+      namespace: kube-system
+      resourceVersion: "121551195"
+      uid: 0b1a9c17-0185-46e7-bb11-fd6867068fe7
+  - ip: 25.2.20.54
+    nodeName: 25.2.20.54
+    targetRef:
+      kind: Pod
+      name: kube-proxy-dscgw
+      namespace: kube-system
+      resourceVersion: "121551331"
+      uid: 81534b25-7940-4327-877d-185be01f3456
+  - ip: 25.2.20.55
+    nodeName: 25.2.20.55
+    targetRef:
+      kind: Pod
+      name: kube-proxy-wffsn
+      namespace: kube-system
+      resourceVersion: "121551320"
+      uid: 27bc7599-c3e1-46a3-a022-a8c8ab88981e
+  ports:
+  - name: http-metrics
+    port: 10249
+    protocol: TCP

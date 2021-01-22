@@ -1,0 +1,499 @@
+categories:
+- DevOps
+- Repository
+labels:
+  io.rancher.certified: experimental
+questions:
+- variable: expose.tls.enabled
+  default: true
+  type: boolean
+  label: "是否使用tls"
+  group: "通用设置"
+- variable: expose.tls.secretName
+  default: "harbor-tls"
+  description: "如果想要使用自己的Tls证书，需要填写包含了tls.crt和tls.key的密文的名称。如果提供了ca.crt,那么在Harbor中可以下载CA证书"
+  type: string
+  label: Harbor TLS密文名称
+  show_if: "expose.tls.enabled=true"
+  group: "通用设置"
+- variable: harborAdminPassword
+  required: true
+  type: password
+  label: Harbor Admin Password
+  group: "通用设置"
+- variable: expose.ingress.hosts.core
+  required: true
+  type: string
+  label: Harbor域名
+  group: "通用设置"
+- variable: externalURL
+  required: true
+  type: string
+  label: Harbor external URL
+  description: "格式为protocol://domain[:port]"
+  group: "通用设置"
+- variable: logLevel
+  default: "info"
+  type: enum
+  label: 日志级别
+  group: "通用设置"
+  options:
+  - "info"
+  - "debug"
+  - "warn"
+  - "fatal"
+  - "error"
+- variable: notary.enabled
+  default: true
+  type: boolean
+  label: 是否启用notary
+  group: "扩展功能"
+- variable: expose.ingress.hosts.notary
+  required: true
+  type: string
+  label: notary域名
+  show_if: "notary.enabled=true"
+  group: "扩展功能"
+- variable: clair.enabled
+  default: true
+  type: boolean
+  label: 是否启用clair
+  group: "扩展功能"
+- variable: chartmuseum.enabled
+  default: true
+  type: boolean
+  label: 是否启用chartmuseum
+  group: "扩展功能"
+- variable: database.type
+  default: "internal"
+  description: "是否使用外部的postgresql数据库"
+  type: enum
+  label: 是否使用外部数据库
+  group: "共享数据库"
+  options:
+  - "internal"
+  - "external"
+  show_subquestion_if: "external"
+  subquestions:
+  - variable: database.external.host
+    type: hostname
+    required: true
+    label: 外部数据库地址
+  - variable: database.external.port
+    default: "5432"
+    required: true
+    type: string
+    label: 外部数据库端口
+  - variable: database.external.username
+    required: true
+    type: string
+    label: 外部数据库用户名
+  - variable: database.external.password
+    required: true
+    type: password
+    label: 外部数据库密码
+  - variable: database.external.coreDatabase
+    default: "registry"
+    required: true
+    type: string
+    description: "外部数据库中harbor core的数据库名称"
+    label: harbor库的名称
+  - variable: database.external.sslmode
+    default: "disable"
+    type: enum
+    description: "外部数据库的ssl模式， disable为不需要ssl，require为需要但不验证，verify-ca为通过可信的ca去验证证书，verify-full为根据主机名和ca去验证证书"
+    label: ssl模式
+    options:
+    - "disable"
+    - "require"
+    - "verify-ca"
+    - "verify-full"
+  - variable: database.external.clairDatabase
+    default: "clair"
+    required: true
+    type: string
+    description: "外部数据库中clair的数据库名称"
+    label: clair库的名称
+    show_if: "clair.enabled=true"
+  - variable: database.external.notaryServerDatabase
+    default: "notary_server"
+    required: true
+    type: string
+    description: "外部数据库中notary server的数据库名称"
+    label: notary server库的名称
+    show_if: "notary.enabled=true"
+  - variable: database.external.notarySignerDatabase
+    default: "notary_signer"
+    required: true
+    type: string
+    description: "外部数据库中notary signer的数据库名称"
+    label: notary signer库的名称
+    show_if: "notary.enabled=true"
+- variable: redis.type
+  default: "internal"
+  type: enum
+  label: 是否使用外部的redis数据库
+  group: "共享数据库"
+  options:
+  - "internal"
+  - "external"
+  show_subquestion_if: "external"
+  subquestions:
+  - variable: redis.external.host
+    required: true
+    type: hostname
+    label: 外部redis的地址
+  - variable: redis.external.port
+    default: "6379"
+    required: true
+    type: string
+    label: 外部redis的端口
+  - variable: redis.external.password
+    type: string
+    label: 外部redis的密码
+  - variable: redis.external.coreDatabaseIndex
+    default: "0"
+    type: string
+    valid_chars: "0"
+    description: "不可修改，只能是0"
+    label: harbor core的redis索引
+  - variable: redis.external.jobserviceDatabaseIndex
+    default: "1"
+    type: string
+    label: jobservice的redis索引
+  - variable: redis.external.registryDatabaseIndex
+    default: "2"
+    type: string
+    label: registry的redis索引
+  - variable: redis.external.chartmuseumDatabaseIndex
+    default: "3"
+    type: string
+    show_if: "chartmuseum.enabled=true"
+    label: chartmuseum的redis索引
+- variable: persistence.resourcePolicy
+  default: "keep"
+  type: string
+  description: "设置为keep可以确保pvc不会在删除helm后一同被删除。留空的话会删除PVC卷"
+  label: 是否保存数据
+  group: "持久化"
+
+- variable: persistence.persistentVolumeClaim.registry.existingClaim
+  description: "使用现有的PVC，必须在绑定前创建，如果PVC与其他组件共享，请指定其subPath"
+  type: pvc
+  label: 为registry使用已存在的PVC
+  group: "registry持久化"
+- variable: persistence.persistentVolumeClaim.registry.storageClass
+  default: ""
+  description: "使用指定为配置卷的存储类。或者将使用默认的存储类。将其设置为-以禁止动态设置"
+  type: storageclass
+  label: registry使用的存储类
+  group: "registry持久化"
+- variable: persistence.persistentVolumeClaim.registry.subPath
+  default: "harbor/registry"
+  description: "卷中使用的子路径"
+  type: string
+  label: registry的子路径
+  group: "registry持久化"
+- variable: persistence.persistentVolumeClaim.registry.accessMode
+  default: "ReadWriteMany"
+  description: "ReadWriteOnce一人读写, ReadOnlyMany 多人只读, ReadWriteMany多人读写"
+  type: enum
+  label: registry的访问模型
+  options:
+  - "ReadWriteOnce"
+  - "ReadOnlyMany"
+  - "ReadWriteMany"
+  group: "registry持久化"
+- variable: persistence.size
+  default: "10Gi"
+  type: string
+  label: registry的卷容量
+  group: "registry持久化"
+
+- variable: persistence.persistentVolumeClaim.chartmuseum.existingClaim
+  description: "使用现有的PVC，必须在绑定前创建，如果PVC与其他组件共享，请指定其subPath"
+  type: pvc
+  label: 为chartmuseum使用已存在的PVC
+  show_if: "chartmuseum.enabled=true"
+  group: "chartmuseum持久化"
+- variable: persistence.persistentVolumeClaim.chartmuseum.storageClass
+  default: ""
+  description: "使用指定为配置卷的存储类。或者将使用默认的存储类。将其设置为-以禁止动态设置"
+  type: storageclass
+  label: chartmuseum使用的存储类
+  show_if: "chartmuseum.enabled=true"
+  group: "chartmuseum持久化"
+- variable: persistence.persistentVolumeClaim.chartmuseum.subPath
+  default: "harbor/chartmuseum"
+  description: "卷中使用的子路径"
+  type: string
+  label: chartmuseum的子路径
+  show_if: "chartmuseum.enabled=true"
+  group: "chartmuseum持久化"
+- variable: persistence.persistentVolumeClaim.chartmuseum.accessMode
+  default: "ReadWriteMany"
+  description: "ReadWriteOnce一人读写, ReadOnlyMany 多人只读, ReadWriteMany多人读写"
+  type: enum
+  label: chartmuseum的访问模型
+  show_if: "chartmuseum.enabled=true"
+  options:
+  - "ReadWriteOnce"
+  - "ReadOnlyMany"
+  - "ReadWriteMany"
+  group: "chartmuseum持久化"
+- variable: persistence.size
+  default: "10Gi"
+  type: string
+  label: chartmuseum的卷容量
+  show_if: "chartmuseum.enabled=true"
+  group: "chartmuseum持久化"
+
+- variable: persistence.persistentVolumeClaim.jobservice.existingClaim
+  description: "使用现有的PVC，必须在绑定前创建，如果PVC与其他组件共享，请指定其subPath"
+  type: pvc
+  label: 为jobservice使用已存在的PVC
+  group: "jobservice持久化"
+- variable: persistence.persistentVolumeClaim.jobservice.storageClass
+  default: ""
+  description: "使用指定为配置卷的存储类。或者将使用默认的存储类。将其设置为-以禁止动态设置"
+  type: storageclass
+  label: jobservice使用的存储类
+  group: "jobservice持久化"
+- variable: persistence.persistentVolumeClaim.jobservice.subPath
+  default: "harbor/jobservice"
+  description: "卷中使用的子路径"
+  type: string
+  label: jobservice的子路径
+  group: "jobservice持久化"
+- variable: persistence.persistentVolumeClaim.jobservice.accessMode
+  default: "ReadWriteMany"
+  description: "ReadWriteOnce一人读写, ReadOnlyMany 多人只读, ReadWriteMany多人读写"
+  type: enum
+  label: jobservice的访问模型
+  options:
+  - "ReadWriteOnce"
+  - "ReadOnlyMany"
+  - "ReadWriteMany"
+  group: "jobservice持久化"
+- variable: persistence.size
+  default: "10Gi"
+  type: string
+  label: jobservice的卷容量
+  group: "jobservice持久化"
+
+- variable: persistence.persistentVolumeClaim.database.existingClaim
+  description: "使用现有的PVC，必须在绑定前创建，如果PVC与其他组件共享，请指定其subPath"
+  type: pvc
+  label: 为database使用已存在的PVC
+  show_if: "database.type=internal"
+  group: "database持久化"
+- variable: persistence.persistentVolumeClaim.database.storageClass
+  default: ""
+  description: "使用指定为配置卷的存储类。或者将使用默认的存储类。将其设置为-以禁止动态设置"
+  type: storageclass
+  label: database使用的存储类
+  show_if: "database.type=internal"
+  group: "database持久化"
+- variable: persistence.persistentVolumeClaim.database.subPath
+  default: "harbor/database"
+  description: "卷中使用的子路径"
+  type: string
+  label: database的子路径
+  show_if: "database.type=internal"
+  group: "database持久化"
+- variable: persistence.persistentVolumeClaim.database.accessMode
+  default: "ReadWriteMany"
+  description: "ReadWriteOnce一人读写, ReadOnlyMany 多人只读, ReadWriteMany多人读写"
+  type: enum
+  label: database的访问模型
+  options:
+  - "ReadWriteOnce"
+  - "ReadOnlyMany"
+  - "ReadWriteMany"
+  show_if: "database.type=internal"
+  group: "database持久化"
+- variable: persistence.size
+  default: "10Gi"
+  type: string
+  label: database的卷容量
+  show_if: "database.type=internal"
+  group: "database持久化"
+
+- variable: persistence.persistentVolumeClaim.redis.existingClaim
+  description: "使用现有的PVC，必须在绑定前创建，如果PVC与其他组件共享，请指定其subPath"
+  type: pvc
+  label: 为redis使用已存在的PVC
+  show_if: "redis.type=internal"
+  group: "redis持久化"
+- variable: persistence.persistentVolumeClaim.redis.storageClass
+  default: ""
+  description: "使用指定为配置卷的存储类。或者将使用默认的存储类。将其设置为-以禁止动态设置"
+  type: storageclass
+  label: redis使用的存储类
+  show_if: "redis.type=internal"
+  group: "redis持久化"
+- variable: persistence.persistentVolumeClaim.redis.subPath
+  default: "harbor/redis"
+  description: "卷中使用的子路径"
+  type: string
+  label: redis的子路径
+  show_if: "redis.type=internal"
+  group: "redis持久化"
+- variable: persistence.persistentVolumeClaim.redis.accessMode
+  default: "ReadWriteMany"
+  description: "ReadWriteOnce一人读写, ReadOnlyMany 多人只读, ReadWriteMany多人读写"
+  type: enum
+  label: redis的访问模型
+  options:
+  - "ReadWriteOnce"
+  - "ReadOnlyMany"
+  - "ReadWriteMany"
+  show_if: "redis.type=internal"
+  group: "redis持久化"
+- variable: persistence.size
+  default: "10Gi"
+  type: string
+  label: redis的卷容量
+  show_if: "redis.type=internal"
+  group: "redis持久化"
+
+
+- variable: persistence.imageChartStorage.type
+  default: "filesystem"
+  type: enum
+  label: 镜像与chart的存储类型
+  group: "持久化"
+  options: 
+  - "filesystem"
+  - "azure"
+  - "gcs"
+  - "s3"
+  - "swift"
+  - "oss"
+
+- variable: persistence.imageChartStorage.filesystem.rootdirectory
+  default: "/storage"
+  type: string
+  show_if: "persistence.imageChartStorage.type=filesystem"
+  label: 根路径
+  group: "持久化"
+- variable: persistence.imageChartStorage.azure.accountname
+  default: "accountname"
+  type: string
+  show_if: "persistence.imageChartStorage.type=azure"
+  label: accountname
+  group: "持久化"
+- variable: persistence.imageChartStorage.azure.accountkey
+  default: "base64-encoded-accountkey"
+  type: string
+  show_if: "persistence.imageChartStorage.type=azure"
+  label: accountkey
+  group: "持久化"
+- variable: persistence.imageChartStorage.azure.container
+  default: "containername"
+  type: string
+  show_if: "persistence.imageChartStorage.type=azure"
+  label: containername
+  group: "持久化"
+- variable: persistence.imageChartStorage.gcs.bucket
+  default: "bucketname"
+  type: string
+  show_if: "persistence.imageChartStorage.type=gcs"
+  label: bucket
+  group: "持久化"
+- variable: persistence.imageChartStorage.gcs.encodedkey
+  default: "base64-encoded-json-key-file"
+  type: string
+  show_if: "persistence.imageChartStorage.type=gcs"
+  label: encodedkey
+  group: "持久化"
+- variable: persistence.imageChartStorage.s3.region
+  default: "us-west-1"
+  type: string
+  show_if: "persistence.imageChartStorage.type=s3"
+  label: region
+  group: "持久化"
+- variable: persistence.imageChartStorage.s3.bucket
+  default: "bucketname"
+  type: string
+  show_if: "persistence.imageChartStorage.type=s3"
+  label: bucket
+  group: "持久化"
+- variable: persistence.imageChartStorage.swift.authurl
+  default: "https://storage.myprovider.com/v3/auth"
+  type: string
+  show_if: "persistence.imageChartStorage.type=swift"
+  label: authurl
+  group: "持久化"
+- variable: persistence.imageChartStorage.swift.username
+  default: "username"
+  type: string
+  show_if: "persistence.imageChartStorage.type=swift"
+  label: username
+  group: "持久化"
+- variable: persistence.imageChartStorage.swift.password
+  default: "password"
+  type: string
+  show_if: "persistence.imageChartStorage.type=swift"
+  label: password
+  group: "持久化"
+- variable: persistence.imageChartStorage.swift.container
+  default: "containername"
+  type: string
+  show_if: "persistence.imageChartStorage.type=swift"
+  label: container
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.accesskeyid
+  default: "accesskeyid"
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: accesskeyid
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.accesskeysecret
+  default: "accesskeysecret"
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: accesskeysecret
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.region
+  default: "regionname"
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: region
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.bucket
+  default: "bucketname"
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: bucket
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.endpoint
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: endpoint
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.internal
+  type: boolean
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: internal
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.encrypt
+  type: boolean
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: encrypt
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.secure
+  type: boolean
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: secure
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.chunksize
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: chunksize
+  group: "持久化"
+- variable: persistence.imageChartStorage.oss.rootdirectory
+  type: string
+  show_if: "persistence.imageChartStorage.type=oss"
+  label: rootdirectory
+  group: "持久化"

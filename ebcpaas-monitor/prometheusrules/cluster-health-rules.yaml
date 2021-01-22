@@ -1,0 +1,142 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts，it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Cluster
+    alert.cpaas.io/name: global
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: ""
+    prometheus: kube-prometheus
+  name: cpaas-cluster-health-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-cluster-health-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: cluster.kube.apiserver.health-txdme-4bf64426b9be5a962b542f91c7927408
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+      expr: sum(up{job="apiserver"} == 1) / count(up{job="apiserver"})<1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: cluster.kube.apiserver.health
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Cluster
+        alert_involved_object_name: global
+        alert_involved_object_namespace: ""
+        alert_name: cluster.kube.apiserver.health-txdme
+        alert_project: ""
+        alert_resource: cpaas-cluster-health-rules
+        severity: Medium
+    - alert: cluster.kube.controller.manager.health-7xtpx-e70e2e0f44713bb96f477a84d94adbf5
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+      expr: sum(up{job="kube-controller-manager"} == 1) / count(up{job="kube-controller-manager"})<1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: cluster.kube.controller.manager.health
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Cluster
+        alert_involved_object_name: global
+        alert_involved_object_namespace: ""
+        alert_name: cluster.kube.controller.manager.health-7xtpx
+        alert_project: ""
+        alert_resource: cpaas-cluster-health-rules
+        severity: Medium
+    - alert: cluster.kube.scheduler.health-ffyji-9c6d002cea8e32d2a709e94a1a6c9cb4
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+      expr: sum(up{job="kube-scheduler"} == 1) / count(up{job="kube-scheduler"})<1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: cluster.kube.scheduler.health
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Cluster
+        alert_involved_object_name: global
+        alert_involved_object_namespace: ""
+        alert_name: cluster.kube.scheduler.health-ffyji
+        alert_project: ""
+        alert_resource: cpaas-cluster-health-rules
+        severity: Medium
+    - alert: cluster.kube.proxy.health-ai9q4-32e0b90f71dc6ea2a36c15ab36a671cc
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+      expr: sum(up{job="kube-proxy"} == 1) / count(up{job="kube-proxy"})<1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: cluster.kube.proxy.health
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Cluster
+        alert_involved_object_name: global
+        alert_involved_object_namespace: ""
+        alert_name: cluster.kube.proxy.health-ai9q4
+        alert_project: ""
+        alert_resource: cpaas-cluster-health-rules
+        severity: Medium
+    - alert: cluster.kube.kubelet.health-p52xn-0748f910ab6586a76b92fcf707a66cbc
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+      expr: sum(up{job="kubelet"} == 1) / count(up{job="kubelet"})<1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: cluster.kube.kubelet.health
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Cluster
+        alert_involved_object_name: global
+        alert_involved_object_namespace: ""
+        alert_name: cluster.kube.kubelet.health-p52xn
+        alert_project: ""
+        alert_resource: cpaas-cluster-health-rules
+        severity: Medium
+    - alert: cluster.kube.dns.health-xhq8f-60bc54a7b008acd46e598618f3301b3b
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+      expr: sum(up{job="kube-dns"} == 1) / count(up{job="kube-dns"})<1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: cluster.kube.dns.health
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Cluster
+        alert_involved_object_name: global
+        alert_involved_object_namespace: ""
+        alert_name: cluster.kube.dns.health-xhq8f
+        alert_project: ""
+        alert_resource: cpaas-cluster-health-rules
+        severity: Medium

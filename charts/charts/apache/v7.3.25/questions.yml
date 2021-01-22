@@ -1,0 +1,89 @@
+﻿categories:
+- WebServer
+questions:
+- variable: defaultImage
+  default: true
+  description: "使用默认Docker镜像"
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: image.repository
+    default: "bitnami/apache"
+    description: "Apache Docker镜像名称"
+    type: string
+    label: Apache Docker镜像名称
+  - variable: image.tag
+    default: "2.4.46-debian-10-r18"
+    description: "Apache镜像标签"
+    type: string
+    label: 镜像标签
+  - variable: pullPolicy
+    default: IfNotPresent
+    description: "指定镜像拉取策略"
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+# Service and L7 LoadBalancer
+- variable: ingress.enabled
+  default: false
+  description: "使用七层负载均衡公开访问应用 - ingress"
+  type: boolean
+  label: 使用七层负载均衡公开访问应用
+  show_subquestion_if: true
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: ingress.hostname
+    default: "xip.io"
+    description: "安装apache的主机名"
+    type: hostname
+    required: true
+    label: 主机名
+
+## Prometheus Exporter / Metrics
+- variable: metrics.enabled
+  default: false
+  description: "是否开启prometheus exporter"
+  type: boolean
+  required: true
+  label: 启用指标
+  group: "指标设置"
+
+## Service paramaters
+- variable: service.type
+  default: "ClusterIP" #LoadBalancer
+  description: "Apache Service类型"
+  type: enum
+  show_if: "ingress.enabled=false"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+  required: true
+  label: Apache Service类型
+  show_subquestion_if: "NodePort"
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: service.nodePorts.http
+    default: ""
+    description: "NodePort http端口(请明确设置，选择30000-32767之间的端口)"
+    type: int
+    min: 30000
+    max: 32767
+    show_if: "ingress.enabled=false&&serviceType=NodePort"
+    label: NodePort http端口
+  - variable: service.nodePorts.https
+    default: ""
+    description: "NodePort https端口(to set explicitly, choose port between 30000-32767)"
+    type: int
+    min: 30000
+    max: 32767
+    show_if: "ingress.enabled=false&&serviceType=NodePort"
+    label: NodePort Https端口
+
+
+

@@ -1,0 +1,99 @@
+# The base hadoop image to use for all components.
+# See this repo for image build details: https://github.com/Comcast/kube-yarn/tree/master/image
+image:
+  repository: gradiant/hdfs
+  tag: 2.7.7
+  pullPolicy: IfNotPresent
+
+# Select antiAffinity as either hard or soft, default is 'soft'
+# 'hard' is sugested for production setup
+antiAffinity: "soft"
+
+conf:
+  coreSite:
+    # fs.trash.interval: "10080"  # trash auto purge in minutes
+  hdfsSite:
+    dfs.replication: 3  # when changing this value ensure that dataNode.replicas is equal or higher than this value
+    # dfs.datanode.du.reserved: "4294967296"  # number of bytes to reserve on disk to block hitting disk full, must be quoted for large numbers, because of gotemplate converting large numbers to float with scientific notation
+
+# httpsfs service
+httpfs:
+  port: 14000
+  adminPort: 14001
+
+nameNode:
+  pdbMinAvailable: 1
+  port: 8020
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "10m"
+    limits:
+      memory: "2048Mi"
+      cpu: "1000m"
+
+dataNode:
+  replicas: 3  # ensure this value is higher or equal to 'conf.hdfsSite.dfs.replication'
+  pdbMinAvailable: 3  # ensure to set this value before deploying
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "10m"
+    limits:
+      memory: "2048Mi"
+      cpu: "1000m"
+
+ingress:
+  nameNode:
+    enabled: false
+    annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    labels: {}
+    path: /
+    hosts:
+    - "hdfs-namenode.local"
+  dataNode:
+    enabled: false
+    annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    labels: {}
+    path: /
+    hosts:
+    - "hdfs-datanode.local"
+  httpfs:
+    enabled: false
+    annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    labels: {}
+    path: /
+    hosts:
+    - "httpfs.local"
+
+persistence:
+  nameNode:
+    enabled: false
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 50Gi
+  dataNode:
+    enabled: false
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 200Gi
+
+## ------------------------------------------------------
+## Monitoring HDFS-NameNode
+## ------------------------------------------------------
+
+## Prometheus Exporter Configuration
+## ref: https://prometheus.io/docs/instrumenting/exporters/
+prometheus:
+  ## Exporter Configuration
+  ## ref: https://github.com/marcelmay/hadoop-hdfs-fsimage-exporter
+  exporter:
+    enabled: true
+    image: marcelmay/hadoop-hdfs-fsimage-exporter:1.2
+    port: 5556

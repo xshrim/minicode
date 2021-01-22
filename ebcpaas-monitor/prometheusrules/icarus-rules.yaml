@@ -1,0 +1,163 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: icarus
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-icarus-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-icarus-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: pod.cpu.utilization-ns5en-4b4a0d1086b13b0c0aea49a32a6b385d
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum by (pod_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (pod_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 > 0.9
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.cpu.utilization-ns5en
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium
+    - alert: pod.memory.utilization-dmjem-02867c704c33fa922c4f7450bff11fad
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by(pod_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (pod_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.memory.utilization-dmjem
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium
+    - alert: workload.cpu.utilization-0h9wv-efdbeb3775534239e42ed97c8e01f2ef
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (deployment_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.cpu.utilization-0h9wv
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium
+    - alert: workload.memory.utilization-9gwaz-2318f02c9e0761cf5d24405813c343ea
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (deployment_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.memory.utilization-9gwaz
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium
+    - alert: workload.pod.restarted.count-wry0t-ae66db584aa4eefb3318edbaccaff8cf
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="cpaas-system",pod=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}"}[5m]))>5
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.restarted.count-wry0t
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium
+    - alert: workload.pod.status.phase.not.running-43b6y-da954598359008aad9aac0df8e972105
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(kube_pod_status_phase{namespace="cpaas-system",pod=~"icarus-[a-z0-9]{7,10}-[a-z0-9]{5}",phase!="Running"})>2
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.status.phase.not.running
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "2"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.status.phase.not.running-43b6y
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium
+    - alert: workload.replicas.available-42c6y-fdaf0b9796094acb977f9a3d61adb2c6
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: min(kube_deployment_status_replicas_available{deployment="icarus",namespace="cpaas-system"})<1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.replicas.available
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: icarus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.replicas.available-42c6y
+        alert_project: system
+        alert_resource: cpaas-icarus-rules
+        severity: Medium

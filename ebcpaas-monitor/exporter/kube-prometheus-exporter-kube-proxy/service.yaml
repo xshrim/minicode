@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-proxy
+    chart: exporter-kube-proxy-0.1.0
+    component: kube-proxy
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-proxy
+  namespace: kube-system
+  resourceVersion: "4555"
+  selfLink: /api/v1/namespaces/kube-system/services/kube-prometheus-exporter-kube-proxy
+  uid: 6324e35a-f7c2-4bca-b82b-f763518b6079
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 10249
+    protocol: TCP
+    targetPort: 10249
+  selector:
+    k8s-app: kube-proxy
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

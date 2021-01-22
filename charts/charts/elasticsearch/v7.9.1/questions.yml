@@ -1,0 +1,134 @@
+﻿categories:
+- Database
+labels:
+  io.rancher.certified: experimental
+questions:
+- variable: replicas
+  default: 3
+  type: int
+  min: 1
+  label: 副本数量
+  group: 通用设置
+- variable: minimumMasterNodes
+  default: 2
+  type: int
+  min: 1
+  label: 最小主节点数量
+  group: 通用设置
+- variable: customImage
+  default: true #false
+  type: boolean
+  label: 是否使用自定义镜像
+  group: 通用设置
+  show_subquestion_if: true
+  subquestions:
+  - variable: image
+    default: hub.ebcpaas.com/elastic/elasticsearch
+    type: string
+    label: 镜像名称
+  - variable: imageTag
+    default: 7.9.1
+    type: string
+    label: 镜像版本
+  - variable: imagePullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+- variable: networkHost
+  default: "0.0.0.0"
+  type: string
+  label: Network Host
+  group: 通用设置
+- variable: resources.requests.cpu
+  default: 1000m
+  type: string
+  label: 预留CPU
+  group: 配额
+- variable: resources.limits.cpu
+  default: 1000m
+  type: string
+  label: CPU限制
+  group: 配额
+- variable: resources.requests.memory
+  default: 2Gi
+  type: string
+  label: 预留内存
+  group: 配额
+- variable: resources.limits.memory
+  default: 2Gi
+  type: string
+  label: 内存限制
+  group: 配额
+
+- variable: initResources.requests.cpu
+  default: 25m
+  type: string
+  label: 初始化工具预留CPU
+  group: 配额
+- variable: initResources.limits.cpu
+  default: 25m
+  type: string
+  label: 初始化工具CPU限制
+  group: 配额
+- variable: initResources.requests.memory
+  default: 128Mi
+  type: string
+  label: 初始化工具预留内存
+  group: 配额
+- variable: initResources.limits.memory
+  default: 128Mi
+  type: string
+  label: 初始化工具内存限制
+  group: 配额
+
+- variable: sidecarResources.requests.cpu
+  default: 25m
+  type: string
+  label: sidecar预留CPU
+  group: 配额
+- variable: sidecarResources.limits.cpu
+  default: 25m
+  type: string
+  label: sidecarCPU限制
+  group: 配额
+- variable: sidecarResources.requests.memory
+  default: 128Mi
+  type: string
+  label: sidecar预留内存
+  group: 配额
+- variable: sidecarResources.limits.memory
+  default: 128Mi
+  type: string
+  label: sidecar内存限制
+  group: 配额
+
+- variable: persistence.enabled
+  default: true
+  type: boolean
+  label: 是否开启持久化
+  group: 持久化
+  show_subquestion_if: true
+  subquestions:
+  - variable: volumeClaimTemplate.resources.request.storage
+    default: 30Gi
+    type: string
+    label: 存储容量
+  - variable: volumeClaimTemplate.storageClassName
+    type: storageclass
+    label: 存储类
+
+- variable: ingress.enabled
+  default: false
+  type: boolean
+  label: 是否开启Ingress
+  group: Ingress
+  show_subquestion_if: true
+  subquestions:
+  - variable: ingress.path
+    default: /
+    type: string
+    label: 根路径

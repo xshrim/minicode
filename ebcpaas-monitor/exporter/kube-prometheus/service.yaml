@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: prometheus
+    chart: prometheus-0.0.50
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus
+  namespace: cpaas-system
+  resourceVersion: "4571"
+  selfLink: /api/v1/namespaces/cpaas-system/services/kube-prometheus
+  uid: 9d481475-e08e-4de2-90a1-d4a9ff43c238
+spec:
+  clusterIP: 10.199.204.41
+  externalTrafficPolicy: Cluster
+  ports:
+  - name: http
+    nodePort: 30900
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    app: prometheus
+    prometheus: kube-prometheus
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

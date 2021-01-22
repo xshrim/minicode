@@ -1,0 +1,87 @@
+admin:
+  username: admin
+  password: admin
+mysql:
+  # 使用内置数据库，或外部数据库，同时启用只使用内部数据库
+  enable: true
+  image: "mysql"
+  imageTag: "5.7.30"
+  busybox:
+    image: "busybox"
+    tag: "latest"
+  mysqlUser: admin
+  mysqlPassword: admin
+  mysqlRootPassword: admin
+  persistence:
+    enabled: false
+externalMysql:
+  enable: false
+  host: mariadb
+  name: paas
+  port: 3306
+  user: root
+  password: admin
+
+paas:
+  image:
+    repository: regdev.ebchina.com/bk/paas-paas
+    tag: 5.1
+    pullPolicy: IfNotPresent
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+login:
+  image:
+    repository: regdev.ebchina.com/bk/paas-login
+    tag: 5.1
+    pullPolicy: IfNotPresent
+  resources: {}
+
+appengine:
+  image:
+    repository: regdev.ebchina.com/bk/paas-appengine
+    tag: 5.1
+    pullPolicy: IfNotPresent
+  resources: {}
+
+esb:
+  image:
+    repository: regdev.ebchina.com/bk/paas-esb
+    tag: 5.1
+    pullPolicy: IfNotPresent
+  resources: {}
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+ingress:
+  # 内外访问Paas服务时使用的域名
+  domains:
+    appengine: appengine.bk.d.ebcpaas.com
+    paas: paas.bk.d.ebcpaas.com
+    login: login.bk.d.ebcpaas.com
+    esb: esb.bk.d.ebcpaas.com
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

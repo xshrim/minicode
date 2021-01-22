@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:37:42Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-controller-manager
+    chart: exporter-kube-controller-manager-0.1.10
+    component: kube-controller-manager
+    heritage: Helm
+    release: kube-prometheus
+    service.kubernetes.io/headless: ""
+  name: kube-prometheus-exporter-kube-controller-manager
+  namespace: kube-system
+  resourceVersion: "121571596"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-prometheus-exporter-kube-controller-manager
+  uid: a33fb8a8-e2e8-4a74-8c2c-87dfcb290094
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+    nodeName: 25.2.20.37
+    targetRef:
+      kind: Pod
+      name: kube-controller-manager-25.2.20.37
+      namespace: kube-system
+      resourceVersion: "121571388"
+      uid: 70bf37e4-340a-410f-a523-a36544bdb971
+  - ip: 25.2.20.38
+    nodeName: 25.2.20.38
+    targetRef:
+      kind: Pod
+      name: kube-controller-manager-25.2.20.38
+      namespace: kube-system
+      resourceVersion: "121524235"
+      uid: 09f0ed35-02ec-46d7-b002-bdb5567b7477
+  - ip: 25.2.20.39
+    nodeName: 25.2.20.39
+    targetRef:
+      kind: Pod
+      name: kube-controller-manager-25.2.20.39
+      namespace: kube-system
+      resourceVersion: "121524757"
+      uid: fe223f26-b12c-421c-8f49-1ee9dee48461
+  ports:
+  - name: http-metrics
+    port: 10252
+    protocol: TCP

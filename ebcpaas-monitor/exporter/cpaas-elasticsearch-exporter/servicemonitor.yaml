@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:41Z"
+  generation: 1
+  labels:
+    app: cpaas-monitor
+    chart: cpaas-monitor
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: cpaas-monitor
+  name: cpaas-elasticsearch-exporter
+  namespace: cpaas-system
+  resourceVersion: "4481"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/cpaas-elasticsearch-exporter
+  uid: 28ad8d8a-2c4a-45c1-b84a-12940215f910
+spec:
+  endpoints:
+  - basicAuth:
+      password:
+        key: password
+        name: cpaas-es
+      username:
+        key: username
+        name: cpaas-es
+    honorLabels: true
+    interval: 15s
+    path: /_prometheus/metrics
+    port: cpaas-elasticsearch
+  jobLabel: service_name
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchExpressions:
+    - key: service_name
+      operator: Exists

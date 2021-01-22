@@ -1,0 +1,26 @@
+apiVersion: v1
+deprecated: true
+description: GitLab Omnibus all-in-one bundle
+home: https://about.gitlab.com
+icon: file://../logo.png
+keywords:
+- git
+- ci
+- cd
+- deploy
+- issue tracker
+- code review
+- wiki
+maintainers:
+- email: support@gitlab.com
+  name: GitLab Inc.
+- name: Mark Pundsack
+- name: Jason Plum
+- name: DJ Mountney
+- name: Joshua Lambert
+name: gitlab-omnibus
+sources:
+- http://docs.gitlab.com/ce/install/kubernetes/
+- https://gitlab.com/charts/charts.gitlab.io
+tillerVersion: '>=2.5.0'
+version: 0.1.37

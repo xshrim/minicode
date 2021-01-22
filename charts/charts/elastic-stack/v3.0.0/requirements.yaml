@@ -1,0 +1,17 @@
+dependencies:
+  - name: elasticsearch
+    version: ^7.6.2
+    repository: https://helm.elastic.co
+    condition: elasticsearch.enabled
+  - name: kibana
+    version: ^7.6.2
+    repository: https://helm.elastic.co
+    condition: kibana.enabled
+  - name: filebeat
+    version: ^7.6.2
+    repository: https://helm.elastic.co
+    condition: filebeat.enabled
+  - name: elasticsearch-curator
+    version: ^2.1.5
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    condition: elasticsearch-curator.enabled

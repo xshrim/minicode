@@ -1,0 +1,6 @@
+categories:
+- Observability
+- Database
+labels:
+  io.rancher.certified: operator
+questions:

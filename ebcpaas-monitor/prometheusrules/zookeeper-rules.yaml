@@ -1,0 +1,251 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: cpaas-zookeeper
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-zookeeper-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-zookeeper-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: pod.cpu.utilization-ns5en-4bfb992f8162b3523d84b67efa39daf7
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum by (pod_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (pod_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 > 0.9
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.cpu.utilization-ns5en
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: pod.memory.utilization-dmjem-4790ac0662a02261cd9b6f8ff9d98b9a
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by(pod_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (pod_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.memory.utilization-dmjem
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: workload.cpu.utilization-0h9wv-c4708b6f99cbdaafcc41a4bcf633051b
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (deployment_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.cpu.utilization-0h9wv
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: workload.memory.utilization-9gwaz-afa69cfaa4474516db9ed18138cbd838
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (deployment_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.memory.utilization-9gwaz
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: workload.pod.restarted.count-wry0t-82c801abb01ba4fbc999c367b15566dd
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="cpaas-system",pod=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}"}[5m]))>5
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.restarted.count-wry0t
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: workload.pod.status.phase.not.running-43b6y-49c058b847eb80f8d91c1fee6c6043fe
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(kube_pod_status_phase{namespace="cpaas-system",pod=~"cpaas-zookeeper-[a-z0-9]{7,10}-[a-z0-9]{5}",phase!="Running"})>2
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.status.phase.not.running
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "2"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.status.phase.not.running-43b6y
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: workload.replicas.available-42c6y-e16b8311ce5fa590df583f17d9a17f59
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: min(kube_deployment_status_replicas_available{deployment="cpaas-zookeeper",namespace="cpaas-system"})<1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.replicas.available
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.replicas.available-42c6y
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: custom-oe475-a88f0dbd906b7d4e75215ec1d32b8b4e
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: count(zk_server_state{state="leader"})<1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.cpaas-zookeeper.leader.state.count
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-oe475
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: custom-8k54m-6dd82bfa6604f8642d00b9eb10db3098
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: zk_up!=1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.cpaas-zookeeper.up.state
+        alert_indicator_comparison: '!='
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-8k54m
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: custom-9ny1u-7e90f1606ae47e938db678cf6a989300
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: avg(zk_outstanding_requests)>100
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.cpaas-zookeeper.outstanding.requests
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "100"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-9ny1u
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium
+    - alert: custom-f7e45-db49d851c89eda8951a275728f60847a
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: avg(zk_pending_syncs)>10
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.cpaas-zookeeper.pending.syncs.count
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "10"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-zookeeper
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-f7e45
+        alert_project: system
+        alert_resource: cpaas-zookeeper-rules
+        severity: Medium

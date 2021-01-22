@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: adminserver
+    release: {{ .Release.Name }}
+  name: adminserver
+spec:
+  replicas: {{ .Values.cmdb.adminserver.replicas }}
+  selector:
+    matchLabels:
+      app: adminserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: adminserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: CONFIG_SERVER_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  key: ZOO_URL
+                  name: {{ .Release.Name }}-configures
+            - name: CONFIG_SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: ZOO_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTER_SERVER_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  key: ZOO_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTER_SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: ZOO_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_URL
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_USERNAME
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_PASSWD
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_DATABASE
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_RSNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_REPLICA_SET_NAME
+                  name: {{ .Release.Name }}-configures
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: REDIS_PASSWD
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: ES_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_URL
+                  name: {{ .Release.Name }}-configures
+            - name: ES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: ES_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_USER
+                  name: {{ .Release.Name }}-configures
+            - name: ES_PASSWD
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: ES_FULLTS
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_ES_FULLTS
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_MECHANISM
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_MONGO_MECHANISM
+                  name: {{ .Release.Name }}-configures
+            - name: WEBSERVER_ACCOUNTS
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_WEBSERVER_ACCOUNTS
+                  name: {{ .Release.Name }}-configures
+            - name: WEBSERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_WEBSERVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: WEBSERVER_HTMLROOT
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_WEBSERVER_HTMLROOT
+                  name: {{ .Release.Name }}-configures
+            - name: PAAS_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_PAAS_URL
+                  name: {{ .Release.Name }}-configures
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: adminserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.adminserver.image }}:{{ .Values.cmdb.adminserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: adminserver
+          ports:
+            - containerPort: 60004
+          resources:
+{{ toYaml .Values.cmdb.adminserver.resources | indent 12 }}
+{{- with .Values.cmdb.adminserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

@@ -1,0 +1,297 @@
+repository: "regdev.ebchina.com/bk"
+imagePullPolicy: Always
+
+es:
+  name: "es"
+  image: "elasticsearch"
+  imageTag: "7.2.1"
+  nodeSelector: {}
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  url: 
+    addr: "elasticsearch"
+    port: 9200
+  auth:
+    user: "elastic"
+    password: "password"
+  tls:
+    enabled: false
+  xpackSecurityEnabled: true
+  javaOpts: "-Xms256m -Xmx256m"
+  
+mongo:
+  name: "mongo"
+  image: "mongo"
+  imageTag: "4.2.8"
+  nodeSelector: {}
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  url:
+    addr: "mongo"
+    port: 27017
+  initdb:
+    rootPassword: "password"
+    rootUsername: "admin"
+    username: "cc"
+    password: "cc"
+    database: "cmdb"
+  replicaset:
+    name: "mrs"
+
+monstache:
+  name: "monstache"
+  connectDirect: true
+  image: "monstache"
+  imageTag: "rel6"
+  nodeSelector: {}
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+redis:
+  name: "redis"
+  password: "password"
+  image: "redis"
+  imageTag: "3.2-alpine"
+  nodeSelector: {}
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  url:
+    addr: "redis"
+    port: 6379
+
+zookeeper:
+  name: "zookeeper"
+  image: "zookeeper"
+  imageTag: "3.4.14"
+  nodeSelector: {}
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  url:
+    addr: "zookeeper"
+    port: 2181
+
+cmdb:
+  fullTextSearch: "on"  # 开启全文检索支持
+  mongoMechanism: "SCRAM-SHA-1\\&connect=direct" # mongodb加密方式(不用提供)
+  webserverAccount: "admin:admin"  # web服务内置账号
+  webserverURL: "cmdb.bk.d.ebcpaas.com" # web服务访问地址
+  webserverRoot: "./web"  # web服务根目录(不用提供)
+  paasURL: "login.bk.d.ebcpaas.com" # paas账号登录服务地址
+  discoverURL: "zookeeper:2181"  # zookeeper服务发现地址
+  authEnabled: false  # 是否开启认证模式(不用提供)
+  initdb:
+    image: "cmdb_initdb"
+    imageTag: "3.9.12"
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "256m"
+        memory: "256Mi"
+  adminserver:
+    image: "cmdb_adminserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  apiserver:
+    image: "cmdb_apiserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  authserver:
+    image: "cmdb_authserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  cacheservice:
+    image: "cmdb_cacheservice"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  cloudserver:
+    image: "cmdb_cloudserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  coreservice:
+    image: "cmdb_coreservice"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  datacollection:
+    image: "cmdb_datacollection"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  eventserver:
+    image: "cmdb_eventserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  hostserver:
+    image: "cmdb_hostserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  operationserver:
+    image: "cmdb_operationserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  procserver:
+    image: "cmdb_procserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  synchronizeserver:
+    image: "cmdb_synchronizeserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  taskserver:
+    image: "cmdb_taskserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  toposerver:
+    image: "cmdb_toposerver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  webserver:
+    image: "cmdb_webserver"
+    imageTag: "3.9.12"
+    replicas: 1
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"

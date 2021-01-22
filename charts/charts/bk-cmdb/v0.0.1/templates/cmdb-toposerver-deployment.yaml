@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: toposerver
+    release: {{ .Release.Name }}
+  name: toposerver
+spec:
+  replicas: {{ .Values.cmdb.toposerver.replicas }}
+  selector:
+    matchLabels:
+      app: toposerver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: toposerver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: toposerver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.toposerver.image }}:{{ .Values.cmdb.toposerver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: toposerver
+          ports:
+            - containerPort: 60002
+          resources:
+{{ toYaml .Values.cmdb.toposerver.resources | indent 12 }}
+{{- with .Values.cmdb.toposerver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

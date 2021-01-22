@@ -1,0 +1,9 @@
+dependencies:
+- name: hive-metastore
+  repository: file://../hive-metastore
+  version: 0.1.2
+- name: hdfs
+  repository: file://../hdfs
+  version: 0.1.9
+digest: sha256:577322c41a25aafa7a97ab49e6971cd9a839d0e5c2b79b567384c73418afd3a5
+generated: "2020-08-31T06:42:47.293325025Z"

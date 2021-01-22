@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: event-exporter
+    prometheus: kube-prometheus
+    release: event-exporter
+  name: kube-event-exporter
+  namespace: cpaas-system
+spec:
+  endpoints:
+  - interval: 30s
+    port: http
+  jobLabel: kube-event-exporter
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      app: kube-event-exporter 

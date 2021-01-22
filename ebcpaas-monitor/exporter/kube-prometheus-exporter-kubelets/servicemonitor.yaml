@@ -1,0 +1,51 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: exporter-kubelets
+    chart: exporter-kubelets-0.2.11
+    component: kubelets
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kubelets
+  namespace: cpaas-system
+  resourceVersion: "4637"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-exporter-kubelets
+  uid: 971f2ac6-51c7-49b5-b0a7-b753361c3d9b
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 15s
+    port: https-metrics
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    interval: 30s
+    metricRelabelings:
+    - action: replace
+      sourceLabels:
+      - pod
+      targetLabel: pod_name
+    - action: replace
+      sourceLabels:
+      - container
+      targetLabel: container_name
+    path: /metrics/cadvisor
+    port: https-metrics
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      k8s-app: kubelet

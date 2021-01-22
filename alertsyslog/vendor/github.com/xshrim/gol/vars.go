@@ -1,0 +1,133 @@
+package gol
+
+const (
+	OFF = iota
+	PANIC
+	FATAL
+	ERROR
+	WARN
+	NOTIC
+	INFO
+	DEBUG
+	TRACE
+	ALL
+)
+
+const (
+	Ldate    = 1 << iota     // the date in the local time zone: 2009/01/23
+	Ltime                    // the time in the local time zone: 01:23:23
+	Lmsec                    // microsecond resolution: 01:23:23.123123.  assumes Ltime.
+	Lstack                   // print stack information<package.function>
+	Lnolvl                   // not print level information
+	Lfile                    // final file name element and line number: d.go:23. overrides Llongfilec/d.go:23
+	Llfile                   // full file name and line number: /a/b/
+	Ljson                    // output json, this flag will override Lcolor and Lfullcolor flag
+	Lcolor                   // if output colorful log level or not
+	Lfcolor                  // if output colorful log or not
+	LUTC                     // if Ldate or Ltime is set, use UTC rather than the local time zone
+	Ldefault = Ldate | Ltime // initial values for the standard logger
+)
+
+const (
+	OVERRIDE = iota
+	APPEND
+	DELETE
+)
+
+const hex = "0123456789abcdef"
+
+const (
+	// Reset
+	ColorOff = "\033[0m" // Text Reset
+
+	// Regular Colors
+	Black  = "\033[0;30m" // Black
+	Red    = "\033[0;31m" // Red
+	Green  = "\033[0;32m" // Green
+	Yellow = "\033[0;33m" // Yellow
+	Blue   = "\033[0;34m" // Blue
+	Purple = "\033[0;35m" // Purple
+	Cyan   = "\033[0;36m" // Cyan
+	White  = "\033[0;37m" // White
+
+	// Bold
+	BBlack  = "\033[1;30m" // Black
+	BRed    = "\033[1;31m" // Red
+	BGreen  = "\033[1;32m" // Green
+	BYellow = "\033[1;33m" // Yellow
+	BBlue   = "\033[1;34m" // Blue
+	BPurple = "\033[1;35m" // Purple
+	BCyan   = "\033[1;36m" // Cyan
+	BWhite  = "\033[1;37m" // White
+
+	// Underline
+	// UBlack  = "\033[4;30m" // Black
+	// URed    = "\033[4;31m" // Red
+	// UGreen  = "\033[4;32m" // Green
+	// UYellow = "\033[4;33m" // Yellow
+	// UBlue   = "\033[4;34m" // Blue
+	// UPurple = "\033[4;35m" // Purple
+	// UCyan   = "\033[4;36m" // Cyan
+	// UWhite  = "\033[4;37m" // White
+
+	// Background
+	// OBlack  = "\033[40m" // Black
+	// ORed    = "\033[41m" // Red
+	// OGreen  = "\033[42m" // Green
+	// OYellow = "\033[43m" // Yellow
+	// OBlue   = "\033[44m" // Blue
+	// OPurple = "\033[45m" // Purple
+	// OCyan   = "\033[46m" // Cyan
+	// OWhite  = "\033[47m" // White
+
+	// Background
+	WBlack  = "\033[40;37m" // Black
+	WRed    = "\033[41;37m" // Red
+	WGreen  = "\033[42;37m" // Green
+	WYellow = "\033[43;37m" // Yellow
+	WBlue   = "\033[44;37m" // Blue
+	WPurple = "\033[45;37m" // Purple
+	WCyan   = "\033[46;37m" // Cyan
+	WWhite  = "\033[47;37m" // White
+
+	// High Intensity
+	// IBlack  = "\033[0;90m" // Black
+	// IRed    = "\033[0;91m" // Red
+	// IGreen  = "\033[0;92m" // Green
+	// IYellow = "\033[0;93m" // Yellow
+	// IBlue   = "\033[0;94m" // Blue
+	// IPurple = "\033[0;95m" // Purple
+	// ICyan   = "\033[0;96m" // Cyan
+	// IWhite  = "\033[0;97m" // White
+
+	// Bold High Intensity
+	// BIBlack  = "\033[1;90m" // Black
+	// BIRed    = "\033[1;91m" // Red
+	// BIGreen  = "\033[1;92m" // Green
+	// BIYellow = "\033[1;93m" // Yellow
+	// BIBlue   = "\033[1;94m" // Blue
+	// BIPurple = "\033[1;95m" // Purple
+	// BICyan   = "\033[1;96m" // Cyan
+	// BIWhite  = "\033[1;97m" // White
+
+	// High Intensity backgrounds
+	// OIBlack  = "\033[0;100m" // Black
+	// OIRed    = "\033[0;101m" // Red
+	// OIGreen  = "\033[0;102m" // Green
+	// OIYellow = "\033[0;103m" // Yellow
+	// OIBlue   = "\033[0;104m" // Blue
+	// OIPurple = "\033[0;105m" // Purple
+	// OICyan   = "\033[0;106m" // Cyan
+	// OIWhite  = "\033[0;107m" // White
+)
+
+var noEscapeTable = [256]bool{}
+
+// default logger
+var std = New()
+
+func init() {
+	for i := 0; i <= 0x7e; i++ {
+		noEscapeTable[i] = i >= 0x20 && i != '\\' && i != '"'
+	}
+}

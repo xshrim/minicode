@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paas.fullname" . }}
+  labels:
+{{ include "paas.labels" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "paas.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "paas.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: paas
+          envFrom:
+          - secretRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          - configMapRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          image: "{{ .Values.paas.image.repository }}:{{ .Values.paas.image.tag }}"
+          imagePullPolicy: {{ .Values.paas.image.pullPolicy }}
+          # TODO-EBCPAAS 需要补全健康检查
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.paas.resources | nindent 12 }}
+        - name: login
+          envFrom:
+          - secretRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          - configMapRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          image: "{{ .Values.login.image.repository }}:{{ .Values.login.image.tag }}"
+          imagePullPolicy: {{ .Values.login.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.login.resources | nindent 12 }}
+        - name: esb
+          envFrom:
+          - secretRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          - configMapRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          image: "{{ .Values.esb.image.repository }}:{{ .Values.esb.image.tag }}"
+          imagePullPolicy: {{ .Values.esb.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.esb.resources | nindent 12 }}
+        - name: appengine
+          envFrom:
+          - secretRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          - configMapRef:
+              name: {{ include "paas.fullname" . }}
+              optional: false
+          image: "{{ .Values.appengine.image.repository }}:{{ .Values.appengine.image.tag }}"
+          imagePullPolicy: {{ .Values.appengine.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.appengine.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- if .Values.mysql.enable }}
+      initContainers:
+      - image: "mysql:5.7.30"
+        name: init
+        args:
+        - mysql
+        - "-h{{ .Release.Name }}-mysql"
+        - "-uroot"
+        - "-p{{ .Values.mysql.mysqlRootPassword }}"
+        - "-e"
+        - "CREATE DATABASE IF NOT EXISTS open_paas DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;"
+    {{- else}}
+      initContainers:
+      - image: "mysql:5.7.30"
+        name: init
+        args:
+        - mysql
+        - "-h {{ .Values.externalMysql.host }}"
+        - "-u {{ .Values.externalMysql.user }}"
+        - "-p {{ .Values.mysql.mysqlPassword }}"
+        - "-P {{ .Values.externalMysql.port }}"
+        - "-e"
+        - "CREATE DATABASE IF NOT EXISTS open_paas DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;"
+    {{- end}}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

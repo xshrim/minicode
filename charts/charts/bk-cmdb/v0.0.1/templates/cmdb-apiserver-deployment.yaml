@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: apiserver
+    release: {{ .Release.Name }}
+  name: apiserver
+spec:
+  replicas: {{ .Values.cmdb.apiserver.replicas }}
+  selector:
+    matchLabels:
+      app: apiserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: apiserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: apiserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.apiserver.image }}:{{ .Values.cmdb.apiserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: apiserver
+          ports:
+            - containerPort: 8080
+          resources:
+{{ toYaml .Values.cmdb.apiserver.resources | indent 12 }}
+{{- with .Values.cmdb.apiserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

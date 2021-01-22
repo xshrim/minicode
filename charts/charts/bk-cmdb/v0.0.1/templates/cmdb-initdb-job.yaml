@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: initdb
+    release: {{ .Release.Name }}
+  name: initdb
+spec:
+  template:
+    spec:
+      containers:
+        - name: initdb
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.initdb.image }}:{{ .Values.cmdb.initdb.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: SKIPLIST
+              value: "authserver,datacollection,cloudserver,toposerver"
+          resources:
+{{ toYaml .Values.cmdb.initdb.resources | indent 12 }}
+{{- with .Values.cmdb.initdb.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Never
+  backoffLimit: 4

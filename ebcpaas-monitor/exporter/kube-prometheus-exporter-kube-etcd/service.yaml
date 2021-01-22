@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-etcd
+    chart: exporter-kube-etcd-0.1.15
+    component: kube-etcd
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-etcd
+  namespace: kube-system
+  resourceVersion: "4552"
+  selfLink: /api/v1/namespaces/kube-system/services/kube-prometheus-exporter-kube-etcd
+  uid: b796071c-b221-4831-99c5-6ac01c14b3ee
+spec:
+  clusterIP: None
+  ports:
+  - name: https-metrics
+    port: 2379
+    protocol: TCP
+    targetPort: 2379
+  selector:
+    component: etcd
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

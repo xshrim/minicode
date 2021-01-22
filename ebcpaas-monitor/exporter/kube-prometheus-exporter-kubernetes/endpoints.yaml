@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  creationTimestamp: "2020-05-08T09:27:34Z"
+  name: kubernetes
+  namespace: default
+  resourceVersion: "121580826"
+  selfLink: /api/v1/namespaces/default/endpoints/kubernetes
+  uid: dd0b8369-7987-40e2-8027-4eb67da72122
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+  - ip: 25.2.20.38
+  - ip: 25.2.20.39
+  ports:
+  - name: https
+    port: 6443
+    protocol: TCP

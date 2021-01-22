@@ -1,0 +1,205 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: cpaas-kafka
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-kafka-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-kafka-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: pod.cpu.utilization-ns5en-65c1d81a0986e93ef20bb2cd9f876273
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum by (pod_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (pod_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 > 0.9
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.cpu.utilization-ns5en
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: pod.memory.utilization-dmjem-9825fe64083a586a14ece3bcbf1ada7c
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by(pod_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (pod_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.memory.utilization-dmjem
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: workload.cpu.utilization-0h9wv-b3bece45ad3013997fe71cb1122efcd7
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        / sum by (deployment_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        * 100000 >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.cpu.utilization-0h9wv
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: workload.memory.utilization-9gwaz-470e2309973edcdc5ec06525fb6038e4
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}"})
+        / sum by (deployment_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",image!="",container_name!="POD"})
+        >0.9'
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.memory.utilization-9gwaz
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: workload.pod.restarted.count-wry0t-78827f1eacf5c1ce6d8284c05eb00fa1
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="cpaas-system",pod=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}"}[5m]))>5
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.restarted.count-wry0t
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: workload.pod.status.phase.not.running-43b6y-c9ec989f2a85ed2fb47846d55fd4efca
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(kube_pod_status_phase{namespace="cpaas-system",pod=~"cpaas-kafka-[a-z0-9]{7,10}-[a-z0-9]{5}",phase!="Running"})>2
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.status.phase.not.running
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "2"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.status.phase.not.running-43b6y
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: workload.replicas.available-42c6y-3f98efc478c41923c4a7ac5a7fae90b9
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: min(kube_deployment_status_replicas_available{deployment="cpaas-kafka",namespace="cpaas-system"})<1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.replicas.available
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.replicas.available-42c6y
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: custom-2xy7k-7c818fa6574f66d3d88c6d35bcded603
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum by(consumergroup) (idelta(kafka_consumergroup_lag[5m]))>0
+      for: 1800s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.cpaas-kafka.consumerGroup.lag.increase
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-2xy7k
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium
+    - alert: custom-80ety-c2c3f8f1edd36d277bf7628a1edeed07
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: avg(kafka_brokers)<=0
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.cpaas-kafka.brokers.count
+        alert_indicator_comparison: <=
+        alert_indicator_threshold: "0"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cpaas-kafka
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-80ety
+        alert_project: system
+        alert_resource: cpaas-kafka-rules
+        severity: Medium

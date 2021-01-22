@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: kube-prometheus-grafana
+    chart: grafana-0.0.37
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-grafana
+  namespace: cpaas-system
+  resourceVersion: "4567"
+  selfLink: /api/v1/namespaces/cpaas-system/services/kube-prometheus-grafana
+  uid: 36a5eb28-5343-4a79-8c34-5820f005f67d
+spec:
+  clusterIP: 10.199.210.171
+  externalTrafficPolicy: Cluster
+  ports:
+  - name: http
+    nodePort: 30902
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: kube-prometheus-grafana
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

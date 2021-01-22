@@ -1,0 +1,33 @@
+apiVersion: v1
+data:
+  {{- if .Values.mysql.enable }}
+    DB_HOST: {{ .Release.Name }}-mysql
+    DB_NAME: open_paas
+    DB_PORT: '3306'
+    DB_USER: root
+  {{- else if .Values.externalMysql.enable }}
+    DB_HOST: {{ .Values.externalMysql.host | quote }}
+    DB_NAME: {{ .Values.externalMysql.name }}
+    DB_PORT: {{ .Values.externalMysql.port | quote }}
+    DB_USER: {{ .Values.externalMysql.user }}
+  {{- else }}
+    DB_HOST: {{ required "至少填写一种数据库信息" .Values.externalMysql.host }}
+    DB_NAME: {{ required "至少填写一种数据库信息" .Values.externalMysql.name }}
+    DB_PORT: {{ required "至少填写一种数据库信息" .Values.externalMysql.port }}
+    DB_USER: {{ required "至少填写一种数据库信息" .Values.externalMysql.user }}
+  {{- end }}
+    PYTHONUNBUFFERED: "0"
+  {{- if .Values.ingress.tls }}
+    TLS_ENABLE: "1"
+  {{- else }}
+    TLS_ENABLE: "0"
+  {{- end}}
+    ADMIN_USERNAME: {{ .Values.admin.username | quote }}
+    ADMIN_PASSWORD: {{ .Values.admin.password | quote }}
+    DOMAIN_APPENGINE: {{ .Values.ingress.domains.appengine | quote }}
+    DOMAIN_ESB: {{ .Values.ingress.domains.esb | quote }}
+    DOMAIN_PAAS: {{ .Values.ingress.domains.paas | quote }}
+    DOMAIN_LOGIN: {{ .Values.ingress.domains.login | quote }}
+kind: ConfigMap
+metadata:
+  name: {{ include "paas.fullname" . }}

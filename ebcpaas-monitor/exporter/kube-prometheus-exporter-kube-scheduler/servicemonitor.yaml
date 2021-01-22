@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 2
+  labels:
+    app: exporter-kube-scheduler
+    chart: exporter-kube-scheduler-0.1.9
+    component: kube-scheduler
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-scheduler
+  namespace: cpaas-system
+  resourceVersion: "5580301"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-exporter-kube-scheduler
+  uid: 37e475fa-bd78-409a-8c0a-388aa647d3d0
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    interval: 15s
+    port: http-metrics
+    scheme: http
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      app: exporter-kube-scheduler
+      component: kube-scheduler

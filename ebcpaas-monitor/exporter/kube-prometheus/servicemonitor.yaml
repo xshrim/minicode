@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: prometheus
+    chart: prometheus-0.0.50
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus
+  namespace: cpaas-system
+  resourceVersion: "4642"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus
+  uid: 4ecd0eef-6cc5-41ef-860f-2a717d2c2d10
+spec:
+  endpoints:
+  - interval: 30s
+    port: http
+  jobLabel: app
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      app: prometheus
+      chart: prometheus-0.0.50
+      prometheus: kube-prometheus

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: taskserver
+    release: {{ .Release.Name }}
+  name: taskserver
+spec:
+  replicas: {{ .Values.cmdb.taskserver.replicas }}
+  selector:
+    matchLabels:
+      app: taskserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: taskserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: taskserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.taskserver.image }}:{{ .Values.cmdb.taskserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: taskserver
+          ports:
+            - containerPort: 60012
+          resources:
+{{ toYaml .Values.cmdb.taskserver.resources | indent 12 }}
+{{- with .Values.cmdb.taskserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

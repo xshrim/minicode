@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: zookeeper
+    release: {{ .Release.Name }}
+  name: zookeeper
+spec:
+  ports:
+    - name: "http"
+      port: 2181
+      targetPort: 2181
+  selector:
+    app: zookeeper
+    release: {{ .Release.Name }}

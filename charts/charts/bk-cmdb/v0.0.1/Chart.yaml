@@ -1,0 +1,12 @@
+name: bk-cmdb
+description: An open source trusted cloud native registry that stores, signs, and scans content
+version: 0.0.1
+apiVersion: v1
+keywords:
+  - cmdb
+  - blueking
+sources:
+- https://github.com/Tencent/bk-cmdb
+- https://github.com/Tencent/bk-cmdb-helm
+home: https://bk.tencent.com/
+icon: file://../logo.jpg

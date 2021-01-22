@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:39:29Z"
+  creationTimestamp: "2020-05-08T09:39:29Z"
+  labels:
+    chart: alauda-container-platform
+    service_name: mars
+  name: mars
+  namespace: cpaas-system
+  resourceVersion: "121571612"
+  selfLink: /api/v1/namespaces/cpaas-system/endpoints/mars
+  uid: 3e81da4c-649e-4e2f-b42a-f13ef131b964
+subsets:
+- addresses:
+  - ip: 10.199.3.105
+    nodeName: 25.2.20.44
+    targetRef:
+      kind: Pod
+      name: mars-5964bd77d7-trw68
+      namespace: cpaas-system
+      resourceVersion: "121539410"
+      uid: 784c35b9-467a-4aa2-a643-d1777b9e47a5
+  - ip: 10.199.5.45
+    nodeName: 25.2.20.45
+    targetRef:
+      kind: Pod
+      name: mars-5964bd77d7-8d4gz
+      namespace: cpaas-system
+      resourceVersion: "121539602"
+      uid: 7d930ce6-8023-400e-ae17-181ba18c12ad
+  ports:
+  - name: metrics
+    port: 8080
+    protocol: TCP
+  - name: http-mars
+    port: 8080
+    protocol: TCP

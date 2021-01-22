@@ -1,0 +1,15 @@
+# Default values for elastic-stack.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+elasticsearch:
+  enabled: true
+
+filebeat:
+  enabled: true
+
+kibana:
+  enabled: true
+
+elasticsearch-curator:
+  enabled: false

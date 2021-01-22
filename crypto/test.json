@@ -1,0 +1,77 @@
+{
+  "chainName": "test",
+  "account": "admin",
+  "consensus": "etcdraft",
+  "channelName": "mychan",
+  "tlsEnabled": "true",
+  "peerOrgs": [
+    {
+      "orgName": "org1",
+      "orgCountry": "CN",
+      "orgProvince": "Beijing",
+      "orgLocality": "Beijing",
+      "nodes": [
+        {
+          "nodeName": "peer0"
+        },
+        {
+          "nodeName": "peer1"
+        }
+      ],
+      "users": [
+        {
+          "userName": "user1"
+        }
+      ]
+    },
+    {
+      "orgName": "org2",
+      "orgCountry": "CN",
+      "orgProvince": "Hubei",
+      "orgLocality": "Wuhan",
+      "nodes": [
+        {
+          "nodeName": "peer0"
+        }
+      ],
+      "users": [
+        {
+          "userName": "user1"
+        }
+      ]
+    }
+  ],
+  "ordererOrgs": [
+    {
+      "orgName": "org1",
+      "orgCountry": "CN",
+      "orgProvince": "Beijing",
+      "orgLocality": "Beijing",
+      "nodes": [
+        {
+          "nodeName": "orderer0"
+        },
+        {
+          "nodeName": "orderer1"
+        }
+      ],
+      "users": [
+        {
+          "userName": "user1"
+        }
+      ]
+    },
+    {
+      "orgName": "org2",
+      "orgCountry": "CN",
+      "orgProvince": "Hubei",
+      "orgLocality": "Wuhan",
+      "nodes": [
+        {
+          "nodeName": "orderer0"
+        }
+      ],
+      "users": []
+    }
+  ]
+}

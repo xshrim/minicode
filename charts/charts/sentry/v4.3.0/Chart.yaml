@@ -1,0 +1,17 @@
+apiVersion: v1
+appVersion: 9.1.2
+description: Sentry is a cross-platform crash reporting and aggregation platform.
+home: https://sentry.io/
+icon: file://../logo.png
+keywords:
+- debugging
+- logging
+maintainers:
+- email: justin@linux.com
+  name: rothgar
+- email: okgolove@markeloff.net
+  name: okgolove
+name: sentry
+sources:
+- https://github.com/getsentry/sentry
+version: 4.3.0

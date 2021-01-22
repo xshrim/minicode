@@ -1,0 +1,164 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated.
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: coredns
+    alert.cpaas.io/namespace: kube-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: ""
+    prometheus: kube-prometheus
+  name: cpaas-coredns-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/kube-system/prometheusrules/cpaas-coredns-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: workload.pod.restarted.count-im5p7-91b305146cb9135647d7b0eb4ce8a4fe
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="kube-system",pod=~"coredns-[a-z0-9]{7,10}-[a-z0-9]{5}"}[5m]))>5
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: workload.pod.restarted.count-im5p7
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium
+    - alert: workload.pod.status.phase.not.running-zp41f-cf1e8c0c7d6e2c338420764d119a41f2
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(kube_pod_status_phase{namespace="kube-system",pod=~"coredns-[a-z0-9]{7,10}-[a-z0-9]{5}",phase!="Running"})>2
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.status.phase.not.running
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "2"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: workload.pod.status.phase.not.running-zp41f
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium
+    - alert: workload.replicas.available-3ey91-d6c73d5598eeb1d49c96b31f880bccc9
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' min(kube_deployment_status_replicas_available{deployment="coredns",namespace="kube-system"})
+        <1'
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.replicas.available
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: workload.replicas.available-3ey91
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium
+    - alert: custom-ffne5-044a4d216437bd89dc525fb1f149338a
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: delta(coredns_panic_count_total[5m])>0
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.coredns.panic.count.total
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "0"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: custom-ffne5
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium
+    - alert: custom-h8k3k-71b5b3237d8f3a713a8bed98a05e0ac1
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg by (le)(rate(coredns_health_request_duration_seconds_bucket{namespace="kube-system",pod=~"coredns-.*"}[5m])))>1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.coredns.health.request.duration.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: custom-h8k3k
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium
+    - alert: custom-z98dw-ad7fe81d0a82a5bbcec5d07323320fa5
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg by (le)(rate(coredns_dns_request_duration_seconds_bucket{namespace="kube-system",pod=~"coredns-.*"}[5m])))>1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.coredns.dns.request.duration.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: custom-z98dw
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium
+    - alert: custom-zu1h1-263afe2b5ac466ac3d656a1fcf6eed91
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg by (le)(rate(coredns_proxy_request_duration_seconds_bucket{namespace="kube-system",pod=~"coredns-.*"}[5m])))>1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.coredns.proxy.request.duration.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: coredns
+        alert_involved_object_namespace: kube-system
+        alert_name: custom-zu1h1
+        alert_project: ""
+        alert_resource: cpaas-coredns-rules
+        severity: Medium

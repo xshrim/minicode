@@ -1,0 +1,33 @@
+# The base hadoop image to use for all components.
+# See this repo for image build details: https://github.com/Comcast/kube-yarn/tree/master/image
+
+
+image:
+  repository: gradiant/hive
+  tag: 2.3.2-postgresql-metastore
+  pullPolicy: IfNotPresent
+
+resources: {}
+
+# Also deploy hive-metastore requirement
+metastore:
+  enabled: true
+
+# Also deploy hdfs requirement
+hdfs:
+  enabled: true
+
+conf:
+  hiveSite:
+    # if not set, default hive.metastore.uris is default uri 
+    # from metastore requirement: "thrift://{{.Release.Name}}-metastore:9083"
+    hive.metastore.uris:  
+  hdfsAdminUser: hdfs
+  # if not set, default is configMap from hdfs requirement {{.Release.Name}}-hdfs-hadoop
+  hadoopConfigMap:
+  # to manually provide hadoop config attributes instead of hadoopConfigMap.
+  # hadoopSite:
+  #   coreSite:
+  #     fs.defaultFS: hdfs://hdfs-cluster:8020
+  #   hdfsSite:
+  #   ...

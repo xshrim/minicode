@@ -1,0 +1,6 @@
+categories:
+- Database
+- Observability
+labels:
+  io.rancher.certified: experimental   #partner
+questions:

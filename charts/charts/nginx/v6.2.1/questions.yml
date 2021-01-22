@@ -1,0 +1,246 @@
+﻿categories:
+- WebServer
+- Loadbalancer
+labels:
+  io.rancher.certified: experimental  
+questions:
+- variable: defaultImage
+  default: true
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: image.repository
+    default: "bitnami/nginx"
+    type: string
+    label: Nginx Docker镜像名称
+  - variable: image.tag
+    default: "1.19.2-debian-10-r14"
+    type: string
+    label: 镜像标签
+  - variable: pullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+
+# Get the server static content from a git repository
+- variable: cloneStaticSiteFromGit.enabled
+  default: false
+  type: boolean
+  label: 从git存储库中获取服务器静态内容
+  show_subquestion_if: true
+  group: "克隆服务器静态内容"
+  subquestions:
+  - variable: cloneStaticSiteFromGit.image.repository
+    default: " bitnami/git"
+    type: string
+    label: Git Docker镜像名称
+  - variable: cloneStaticSiteFromGit.image.tag
+    default: "2.28.0-debian-10-r24"
+    type: string
+    label: 镜像标签
+  - variable: cloneStaticSiteFromGit.image.pullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+
+# Number of replicas to deploy
+- variable: replicaCount
+  default: 1
+  type: int
+  label: 部署的副本数量
+  group: "副本设置"
+
+# NGINX containers' resource requests and limits
+- variable: resources.limits.cpu
+  default: ""
+  type: string
+  label: NGINX CPU限制
+  group: "容器的资源请求和限制"
+- variable: resources.limits.memory
+  default: ""
+  type: string
+  label: NGINX 内存限制
+  group: "容器的资源请求和限制"
+- variable: resources.requests.cpu
+  default: ""  
+  type: string
+  label: NGINX初始化工具预留CPU
+  group: "容器的资源请求和限制"
+- variable: resources.requests.memory
+  default: ""
+  type: string
+  label: NGINX初始化工具预留内存
+  group: "容器的资源请求和限制"
+
+  
+
+# LDAP Auth Daemon Properties
+- variable: ldapDaemon.enabled
+  default: false
+  type: boolean
+  label: 开启LDAP身份验证守护程序属性
+  show_subquestion_if: true
+  group: "LDAP身份验证守护程序属性"
+  subquestions:
+  - variable: ldapDaemon.image.repository
+    default: "bitnami/nginx-ldap-auth-daemon"
+    type: string
+    label: Git Docker镜像名称
+  - variable: ldapDaemon.image.tag
+    default: "0.20200116.0-debian-10-r101"
+    type: string
+    label: 镜像标签
+  - variable: ldapDaemon.image.pullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+  - variable: ldapDaemon.port
+    default: 8888
+    type: int
+    label: ldap守护程序端口 
+  - variable: ldapDaemon.ldapConfig.uri
+    default: ""
+    type: string
+    label: ldap守护程序配置文件url
+  - variable: ldapDaemon.ldapConfig.baseDN
+    default: ""
+    type: string
+    label: ldap守护程序配置文件baseDN  
+  - variable: ldapDaemon.ldapConfig.bindDN
+    default: ""
+    type: string
+    label: ldap守护程序配置文件bindDN 
+  - variable: ldapDaemon.ldapConfig.bindPassword
+    default: ""
+    type: string
+    label: ldap守护程序配置文件bindPassword
+  - variable: ldapDaemon.ldapConfig.filter
+    default: ""
+    type: string
+    label: ldap守护程序配置文件filter    
+  - variable: ldapDaemon.ldapConfig.httpRealm
+    default: ""
+    type: string
+    label: ldap守护程序配置文件httpRealm 
+  - variable: ldapDaemon.ldapConfig.httpCookieName
+    default: ""
+    type: string
+    label: ldap守护程序配置文件httpCookieName   
+    
+
+# Service and L7 LoadBalancer
+- variable: ingress.enabled
+  default: false
+  type: boolean
+  label: 使用七层负载均衡公开访问应用
+  show_subquestion_if: true
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: ingress.hostname
+    default: "xip.io"
+    type: hostname
+    required: true
+    label: 主机名
+
+## Prometheus Exporter / Metrics
+- variable: metrics.enabled
+  default: false
+  type: boolean
+  label: 启用指标
+  group: "prometheus exporter设置"
+  show_subquestion_if: true
+  subquestions:
+  - variable: metrics.image.repository
+    default: "bitnami/nginx-exporter"
+    type: string
+    label: Git Docker镜像名称
+  - variable: metrics.image.tag
+    default: "0.8.0-debian-10-r58"
+    type: string
+    label: 镜像标签
+  - variable: metrics.image.pullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+
+## Service paramaters
+- variable: service.type
+  default: "LoadBalancer"
+  type: enum
+  show_if: "ingress.enabled=false"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+  required: true
+  label: Nginx Service类型
+  show_subquestion_if: "NodePort"
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: service.nodePorts.http
+    default: ""
+    type: int
+    min: 30000
+    max: 32767
+    show_if: "ingress.enabled=false&&serviceType=NodePort"
+    label: NodePort http端口(请明确设置，选择30000-32767之间的端口)
+  - variable: service.nodePorts.https
+    default: ""
+    type: int
+    min: 30000
+    max: 32767
+    show_if: "ingress.enabled=false&&serviceType=NodePort"
+    label: NodePort Https端口(to set explicitly, choose port between 30000-32767)
+  - variable: service.targetPort.http
+    default: http
+    description: "Loadbalancer的侦听器可以自定义映射到http服务"
+    show_if: "ingress.enabled=false&&serviceType=NodePort"
+    label: NodePort http端口 
+  - variable: service.targetPort.https
+    default: https
+    description: "Loadbalancer的侦听器可以自定义映射到https服务"
+    show_if: "ingress.enabled=false&&serviceType=NodePort"
+    label: NodePort Https端口
+
+# Autoscaling parameters
+- variable: autoscaling.enabled
+  default: false
+  type: boolean
+  label: 开启Autoscaling
+  show_subquestion_if: true
+  group: "Autoscaling参数设置"
+  subquestions:
+  - variable: autoscaling.minReplicas
+    default: nil
+    type: int
+    label: autoscaling最小副本数
+  - variable: autoscaling.maxReplicas
+    default: nil
+    type: int
+    label: autoscaling最大副本数
+  - variable: autoscaling.targetCPU
+    default: nil
+    type: int
+    label: autoscaling的目标CPU数
+  - variable: autoscaling.targetMemory
+    default: nil
+    type: int
+    label: autoscaling的目标内存大小

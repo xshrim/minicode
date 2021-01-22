@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: operationserver
+    release: {{ .Release.Name }}
+  name: operationserver
+spec:
+  ports:
+    - name: "http"
+      port: 60011
+      targetPort: 60011
+  selector:
+    app: operationserver
+    release: {{ .Release.Name }}

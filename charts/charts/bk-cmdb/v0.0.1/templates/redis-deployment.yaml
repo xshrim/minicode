@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+    release: {{ .Release.Name }}
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: redis
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - command:
+            - redis-server
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: REDIS_REPLICATION_MODE
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_REPLICATION_MODE
+                  name: {{ .Release.Name }}-configures
+          image: "{{ .Values.repository }}/{{ .Values.redis.image }}:{{ .Values.redis.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: redis
+          ports:
+            - containerPort: 6379
+          resources:
+{{ toYaml .Values.redis.resources | indent 12 }}
+{{- with .Values.redis.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

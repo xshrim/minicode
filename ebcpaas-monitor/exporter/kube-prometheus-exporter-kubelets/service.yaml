@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:35Z"
+  labels:
+    k8s-app: kubelet
+  name: kubelet
+  namespace: kube-system
+  resourceVersion: "4230"
+  selfLink: /api/v1/namespaces/kube-system/services/kubelet
+  uid: 1ab07fc7-64a8-49af-a25a-28027833fa5e
+spec:
+  clusterIP: None
+  ports:
+  - name: https-metrics
+    port: 10250
+    protocol: TCP
+    targetPort: 10250
+  - name: http-metrics
+    port: 10255
+    protocol: TCP
+    targetPort: 10255
+  - name: cadvisor
+    port: 4194
+    protocol: TCP
+    targetPort: 4194
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,15 @@
+dependencies:
+- name: elasticsearch
+  repository: https://helm.elastic.co
+  version: 7.6.2
+- name: kibana
+  repository: https://helm.elastic.co
+  version: 7.6.2
+- name: filebeat
+  repository: https://helm.elastic.co
+  version: 7.6.2
+- name: elasticsearch-curator
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  version: 2.1.5
+digest: sha256:3cfed2d3464fe7ec8255a2a2b43c9c46dd7600920cdc9cb7e4df878533c91dc0
+generated: "2020-04-27T18:38:10.133102+02:00"

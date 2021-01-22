@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gitlab-exporter
+    release: kube-prometheus
+  name: gitlab-exporter
+  namespace: cpaas-system
+spec:
+  ports:
+  - name: http-gitlab
+    port: 80
+    protocol: TCP
+    targetPort: 9168
+  - name: http-node
+    port: 8070
+    protocol: TCP
+    targetPort: 9100
+  - name: http-redis
+    port: 8080
+    protocol: TCP
+    targetPort: 9121
+  - name: http-pg
+    port: 8090
+    protocol: TCP
+    targetPort: 9187
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

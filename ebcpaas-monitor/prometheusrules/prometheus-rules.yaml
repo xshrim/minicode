@@ -1,0 +1,241 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.alauda.io/kind: Statefulset
+    alert.alauda.io/name: prometheus-kube-prometheus
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-prometheus-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-prometheus-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: pod.cpu.utilization-iz54h-c600647e59aaaaa5e6c431e207459b67
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (pod_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}",image!="",container_name!="POD"})
+        / sum by (pod_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}",image!="",container_name!="POD"})
+        * 100000 > 0.9'
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.cpu.utilization-iz54h
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: pod.memory.utilization-ltvdj-dd6049c7f8a00a9e164293947a42744b
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by(pod_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}"})
+        / sum by (pod_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}",image!="",container_name!="POD"})
+        > 0.9'
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: pod.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: pod.memory.utilization-ltvdj
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: workload.cpu.utilization-b0qt1-12b6e8d32e8a2b97747921995afef25c
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_cpu_usage_seconds_total_irate5m{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}",image!="",container_name!="POD"})
+        / sum by (deployment_name) (container_spec_cpu_quota{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}",image!="",container_name!="POD"})
+        * 100000 > 0.9'
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.cpu.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.cpu.utilization-b0qt1
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: workload.memory.utilization-ug1tl-16eb03e59370f0f4acf5d7c583936f84
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' sum by (deployment_name) (container_memory_usage_bytes_without_cache{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}"})
+        / sum by (deployment_name) (container_spec_memory_limit_bytes{namespace="cpaas-system",pod_name=~"prometheus-kube-prometheus-[0-9]{1,3}",image!="",container_name!="POD"})
+        > 0.9'
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.memory.utilization
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.9"
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.memory.utilization-ug1tl
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: workload.pod.restarted.count-dvmuq-4056dd427e38b3dac6893109c5a9d88c
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="cpaas-system",pod=~"prometheus-kube-prometheus-[0-9]{1,3}"}[5m]))
+        > 5
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.pod.restarted.count-dvmuq
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: workload.replicas.available-tkak6-4eb3f543b0dc15b887ddbf1b42d20d76
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: ' min(kube_statefulset_status_replicas_ready{statefulset="prometheus-kube-prometheus",namespace="cpaas-system"})<1'
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.replicas.available
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: <
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: workload.replicas.available-tkak6
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: custom-5ya4i-49ee758c2362c437c945e7d05233ca48
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: avg(scrape_duration_seconds{job!="cpaas-monitor-prometheus-blackbox-exporter",
+        job!="exporter-federation"}) by (job, service) > 5
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.prometheus.scrape.duration.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "5"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-5ya4i
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: custom-93eri-b683342f775ca2162b9f05b6657e6fda
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg(rate(prometheus_http_request_duration_seconds_bucket{namespace="cpaas-system",pod=~"prometheus-kube-prometheus-[0-9]{1,3}",
+        handler=~"/api/v1.*"}[5m])) by (handler, le)) > 5
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.prometheus.http.requests.latency.seconds.per.handler
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "5"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-93eri
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: custom-s1uxp-8246a8b710391e713bc3168cdbafe3c3
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: avg by (namespace, service) (up{service!="kube-prometheus-exporter-dockerd"})!=1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.prometheus.targets.up
+        alert_indicator_comparison: '!='
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-s1uxp
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium
+    - alert: custom-fvl73-b39cdec96f4630c3570b88acf5800928
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: avg(prometheus_config_last_reload_successful{namespace="cpaas-system",pod=~"prometheus-kube-prometheus-[0-9]{1,3}"})!=1
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.prometheus.config.last.reload.successful
+        alert_indicator_comparison: '!='
+        alert_indicator_query: ""
+        alert_indicator_threshold: "1"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Statefulset
+        alert_involved_object_name: prometheus-kube-prometheus
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-fvl73
+        alert_project: system
+        alert_resource: cpaas-prometheus-rules
+        severity: Medium

@@ -1,0 +1,121 @@
+{{- if .Values.controllerManager.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ $fullName }}-controller-manager"
+  labels:
+    app: "{{ $fullName }}-controller-manager"
+    {{- with .Values.controllerManager.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.controllerManager.annotations }}
+    annotations:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.controllerManager.replicaCount }}
+  selector:
+    matchLabels:
+      app: "{{ $fullName }}-controller-manager"
+  template:
+    metadata:
+      labels:
+        app: "{{ $fullName }}-controller-manager"
+        {{- with .Values.controllerManager.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.controllerManager.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.controllerManager.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controllerManager.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.controllerManager.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controllerManager.image.PullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - kube-controller-manager
+        - --authentication-kubeconfig=/etc/kubernetes/controller-manager.conf
+        - --authorization-kubeconfig=/etc/kubernetes/controller-manager.conf
+        - --bind-address=0.0.0.0
+        - --client-ca-file=/pki/ca/tls.crt
+        - --cluster-name=kubernetes
+        - --cluster-signing-cert-file=/pki/ca/tls.crt
+        - --cluster-signing-key-file=/pki/ca/tls.key
+        - --controllers=*,bootstrapsigner,tokencleaner
+        - --kubeconfig=/etc/kubernetes/controller-manager.conf
+        - --leader-elect=true
+        - --requestheader-client-ca-file=/pki/front-proxy-client/tls.crt
+        - --root-ca-file=/pki/ca/tls.crt
+        - --secure-port={{ .Values.controllerManager.port }}
+        - --service-account-private-key-file=/pki/kubernetes-sa/sa.key
+        - --use-service-account-credentials=true
+        {{- range $key, $value := .Values.controllerManager.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
+        image: {{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}
+        imagePullPolicy: {{ .Values.controllerManager.image.PullPolicy }}
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: {{ .Values.controllerManager.port }}
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        name: kube-controller-manager
+        resources:
+          {{- toYaml .Values.controllerManager.resources | nindent 10 }}
+        {{- with .Values.controllerManager.extraEnv }}
+        env:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - mountPath: /etc/kubernetes/
+          name: kubeconfig
+          readOnly: true
+        - mountPath: /pki/ca
+          name: pki-ca
+        - mountPath: /pki/front-proxy-client
+          name: pki-front-proxy-client
+        - mountPath: /pki/kubernetes-sa
+          name: pki-sa
+        {{- with .Values.controllerManager.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.controllerManager.sidecars }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      volumes:
+      - secret:
+          secretName: "{{ $fullName }}-controller-manager-conf"
+        name: kubeconfig
+      - secret:
+          secretName: "{{ $fullName }}-pki-ca"
+        name: pki-ca
+      - secret:
+          secretName: "{{ $fullName }}-pki-front-proxy-client"
+        name: pki-front-proxy-client
+      - secret:
+          secretName: "{{ $fullName }}-pki-sa"
+        name: pki-sa
+      {{- with .Values.controllerManager.extraVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}

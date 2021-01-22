@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-coredns
+    chart: exporter-coredns-0.0.3
+    component: kube-dns
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-coredns
+  namespace: kube-system
+  resourceVersion: "4548"
+  selfLink: /api/v1/namespaces/kube-system/services/kube-prometheus-exporter-coredns
+  uid: 1e00e93b-65e4-483f-b4f1-157f612c0ead
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics-coredns
+    port: 9153
+    protocol: TCP
+    targetPort: 9153
+  selector:
+    k8s-app: kube-dns
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

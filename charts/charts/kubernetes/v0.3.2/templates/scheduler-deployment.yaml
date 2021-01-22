@@ -1,0 +1,97 @@
+{{- if .Values.scheduler.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ $fullName }}-scheduler"
+  labels:
+    app: "{{ $fullName }}-scheduler"
+    {{- with .Values.scheduler.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.scheduler.annotations }}
+    annotations:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+  selector:
+    matchLabels:
+      app: "{{ $fullName }}-scheduler"
+  template:
+    metadata:
+      labels:
+        app: "{{ $fullName }}-scheduler"
+        {{- with .Values.scheduler.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.scheduler.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.scheduler.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.scheduler.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.scheduler.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.scheduler.image.PullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - kube-scheduler
+        - --authentication-kubeconfig=/etc/kubernetes/scheduler.conf
+        - --authorization-kubeconfig=/etc/kubernetes/scheduler.conf
+        - --bind-address=0.0.0.0
+        - --kubeconfig=/etc/kubernetes/scheduler.conf
+        - --leader-elect=true
+        - --secure-port={{ .Values.scheduler.port }}
+        {{- range $key, $value := .Values.scheduler.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
+        image: {{ .Values.scheduler.image.repository }}:{{ .Values.scheduler.image.tag }}
+        imagePullPolicy: {{ .Values.scheduler.image.PullPolicy }}
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /healthz
+            port: {{ .Values.scheduler.port }}
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        name: kube-scheduler
+        resources:
+          {{- toYaml .Values.scheduler.resources | nindent 10 }}
+        {{- with .Values.scheduler.extraEnv }}
+        env:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - mountPath: /etc/kubernetes/
+          name: kubeconfig
+          readOnly: true
+        {{- with .Values.scheduler.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.scheduler.sidecars }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      volumes:
+      - secret:
+          secretName: "{{ $fullName }}-scheduler-conf"
+        name: kubeconfig
+      {{- with .Values.scheduler.extraVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}

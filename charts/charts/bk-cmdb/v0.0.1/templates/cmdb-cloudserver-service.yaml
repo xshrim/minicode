@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cloudserver
+    release: {{ .Release.Name }}
+  name: cloudserver
+spec:
+  ports:
+    - name: "http"
+      port: 60013
+      targetPort: 60013
+  selector:
+    app: cloudserver
+    release: {{ .Release.Name }}

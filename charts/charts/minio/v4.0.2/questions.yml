@@ -1,0 +1,196 @@
+﻿categories:
+- Storage
+questions:
+- variable: defaultImage
+  default: true
+  description: "使用默认Docker镜像"
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: image.repository
+    default: "bitnami/minio"
+    description: "Minio Docker镜像名称"
+    type: string
+    label: Minio Docker镜像名称
+  - variable: image.tag
+    default: "2020.9.21-debian-10-r0"
+    description: "Minio镜像标签"
+    type: string
+    label: 镜像标签
+  - variable: pullPolicy
+    default: IfNotPresent
+    description: "指定镜像拉取策略"
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+#Bitnami MinIO Client image version
+- variable: clientImage.repository  
+  default: "bitnami/minio-client"
+  description: "Minio Client Docker镜像名称"
+  type: string
+  label: Minio-Client Docker镜像名称
+- variable: clientImage.tag 
+  default: "2020.9.18-debian-10-r3"
+  description: "Minio Client镜像标签"
+  type: string
+  label: 镜像标签
+## volumePermissions
+- variable: volumePermissions.enabled
+  default: false
+  label: 启用将永久卷的所有者和组更改为的初始化容器runAsUser:fsGroup
+  type: boolean
+  show_subquestion_if: true
+  group: "Bitnami Minideb镜像"
+  subquestions:
+  - variable: volumePermissions.image.repository
+    default: "bitnami/minideb"
+    type: string
+    label: Minideb Docker镜像名称
+  - variable: volumePermissions.image.tag
+    default: "buster"
+    type: string
+    label: 镜像标签
+  - variable: volumePermissions.image.pullPolicy
+    default: Always
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略    
+## MinIO server mode. Allowed values: standalone or distributed.
+- variable: mode
+  default: "standalone" 
+  type: enum
+  options:
+  - "standalone"
+  - "distributed"
+  label: MinIO server模式 
+## MinIO credentials
+- variable: accessKey.password
+  default: ""   
+  type: password
+  required: true
+  label: Access Key
+- variable: secretKey.password
+  default: ""   
+  type: password
+  required: true
+  label: Secret Key
+## MinIO containers' resource requests and limits
+- variable: resources.limits.cpu
+  default: ""
+  description: "Minio CPU限制"
+  type: string
+  label: Minio CPU限制
+  group: 资源配额
+- variable: resources.limits.memory
+  default: ""
+  description: "Minio内存限制"
+  type: string
+  label: Minio 内存限制
+  group: 资源配额
+- variable: resources.requests.cpu
+  default: "250m"   
+  description: "Minio初始化工具预留CPU"
+  type: string
+  label: Minio初始化工具预留CPU
+  group: 资源配额
+- variable: resources.requests.memory
+  default: "256Mi"
+  description: "Minio初始化工具CPU限制"
+  type: string
+  label: Minio初始化工具CPU限制
+  group: 资源配额
+## Enable persistence using Persistent Volume Claims
+## persistence setting
+- variable: persistence.enabled
+  default: true
+  type: boolean
+  label: 是否开启持久化
+  group: "存储选项"
+  show_subquestion_if: true
+  subquestions:
+  - variable: persistence.storageClass
+    default: ""
+    type: storageclass
+    label: 存储类 
+  - variable: persistence.mountPath
+    default: /data
+    type: string
+    label: 挂载路径        
+  - variable: persistence.accessMode
+    default: "ReadWriteOnce"
+    description: "ReadWriteOnce单主机读写, ReadOnlyMany多主机只读, ReadWriteMany多主机读写"
+    type: enum
+    label: 访问模型
+    show_if: "persistence.enabled=true"
+    group: "持久化"
+    options:
+    - "ReadWriteOnce"
+    - "ReadOnlyMany"
+    - "ReadWriteMany"
+  - variable: persistence.size
+    default: "8Gi"
+    type: string
+    label: tomcat的卷容量
+    group: "存储选项"
+  
+# Service and L7 LoadBalancer
+- variable: ingress.enabled
+  default: false
+  description: "使用七层负载均衡公开访问应用 - ingress"
+  type: boolean
+  label: 使用七层负载均衡公开访问应用
+  show_subquestion_if: true
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: ingress.hosts[0].name
+    default: "minio.local"
+    type: hostname
+    required: true
+    label: 主机名
+  - variable: ingress.hosts[0].path
+    default: /
+    type: string
+    required: true
+    label: 根路径
+  - variable: ingress.hosts[0].tls
+    default: false
+    type: boolean
+    label: 是否开启TLS
+  - variable: ingress.hosts[0].tlsSecret
+    default: "minio.local-tls"
+    type: string
+    show_if: "ingress.hosts[0].tls=true"
+   
+
+## Service paramaters
+- variable: service.type
+  default: "ClusterIP" #LoadBalancer
+  description: "Minio Service类型"
+  type: enum
+  show_if: "ingress.enabled=false"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+  required: true
+  label: Minio Service类型
+  show_subquestion_if: "ClusterIP"
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: service.port
+    default: "9000"
+    type: int
+    show_if: "ingress.enabled=false&&serviceType=ClusterIP"
+    label: Service port端口
+
+
+
+

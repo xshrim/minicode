@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cloudserver
+    release: {{ .Release.Name }}
+  name: cloudserver
+spec:
+  replicas: {{ .Values.cmdb.cloudserver.replicas }}
+  selector:
+    matchLabels:
+      app: cloudserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: cloudserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: cloudserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.cloudserver.image }}:{{ .Values.cmdb.cloudserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: cloudserver
+          ports:
+            - containerPort: 60013
+          resources:
+{{ toYaml .Values.cmdb.cloudserver.resources | indent 12 }}
+{{- with .Values.cmdb.cloudserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

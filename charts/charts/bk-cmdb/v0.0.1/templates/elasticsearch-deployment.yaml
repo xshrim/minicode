@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: elasticsearch
+    release: {{ .Release.Name }}
+  name: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: ES_JAVA_OPTS
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_JAVA_OPTS
+                  name: {{ .Release.Name }}-configures
+            - name: bootstrap.memory_lock
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_BOOTSTRAP_MEMORY_LOCK
+                  name: {{ .Release.Name }}-configures
+            - name: discovery.type
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_DISCOVERY_TYPE
+                  name: {{ .Release.Name }}-configures
+            - name: node.name
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_NODE_NAME
+                  name: {{ .Release.Name }}-configures
+            - name: xpack.security.enabled
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_XPACK_SECURITY_ENABLED
+                  name: {{ .Release.Name }}-configures
+          image: "{{ .Values.repository }}/{{ .Values.es.image }}:{{ .Values.es.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: es
+          ports:
+            - containerPort: 9200
+          resources:
+{{ toYaml .Values.es.resources | indent 12 }}
+{{- with .Values.es.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

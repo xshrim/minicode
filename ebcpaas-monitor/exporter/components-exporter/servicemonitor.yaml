@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:44:48Z"
+  generation: 1
+  labels:
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: components-exporter
+  namespace: cpaas-system
+  resourceVersion: "121615181"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/components-exporter
+  uid: e566fb96-d056-4d25-bc47-e84749749dcf
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 15s
+    port: metrics
+  jobLabel: service_name
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      service_name: mars

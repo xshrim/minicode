@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  labels:
+    app: gitlab-exporter
+    release: kube-prometheus
+  name: gitlab-exporter
+  namespace: cpaas-system
+subsets:
+- addresses:
+  - ip: 25.2.20.4
+    nodeName: 25.2.20.4
+  ports:
+  - name: http-node
+    port: 9100
+    protocol: TCP
+  - name: http-redis
+    port: 9121
+    protocol: TCP
+  - name: http-gitlab
+    port: 9168
+    protocol: TCP
+  - name: http-pg
+    port: 9187
+    protocol: TCP

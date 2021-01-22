@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: prometheus
+    chart: prometheus-0.0.50
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-internal-components-exporter
+  namespace: cpaas-system
+  resourceVersion: "4641"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-internal-components-exporter
+  uid: ae7d6d9b-a71a-42c5-b9fa-c91788ad73cd
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 15s
+    port: metrics
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    interval: 15s
+    port: https-metrics
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  jobLabel: service_name
+  namespaceSelector:
+    any: true
+  selector:
+    matchExpressions:
+    - key: service_name
+      operator: Exists

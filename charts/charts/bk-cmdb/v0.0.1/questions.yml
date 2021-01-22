@@ -1,0 +1,151 @@
+﻿categories:
+- Database
+questions:
+- variable: defaultImage
+  default: true
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: repository
+    default: "regdev.ebchina.com/bk"
+    type: string
+    label: blueking镜像名称
+  - variable: imagePullPolicy
+    default: Always
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+    
+# es
+- variable: es.url.addr
+  default: "elasticsearch"
+  type: string
+  label: es url地址
+  group: "elasticsearch的设置"
+- variable: es.url.port
+  default: "9200"
+  type: int
+  label: es url端口
+  group: "elasticsearch的设置"
+- variable: es.auth.user
+  default: "elastic"
+  type: string
+  label: es用户名
+  group: "elasticsearch的设置"
+- variable: es.auth.password
+  default: "password"
+  type: password
+  label: es密码
+  group: "elasticsearch的设置"  
+- variable: es.xpackSecurityEnabled
+  default: "true"
+  type: boolean
+  label: 是否开启x-pack安全认证
+  group: "elasticsearch的设置" 
+# mongo
+- variable: mongo.url.addr
+  default: "mongo"
+  type: string
+  label: mongo url地址
+  group: "mongo的设置"
+- variable: mongo.url.port
+  default: "27017"
+  type: int
+  label: mongo url端口
+  group: "mongo的设置"
+- variable: mongo.initdb.rootUsername
+  default: "admin"
+  type: string
+  label: mongo管理员用户名
+  group: "mongo的设置"
+- variable: mongo.initdb.rootPassword
+  default: "password"
+  type: password
+  label: mongo管理员密码
+  group: "mongo的设置"  
+- variable: mongo.initdb.username
+  default: "cc"
+  type: string
+  label: mongo用户名称
+  group: "mongo的设置"
+- variable: mongo.initdb.password
+  default: "cc"
+  type: password
+  label: mongo用户密码
+  group: "mongo的设置" 
+- variable: mongo.initdb.database
+  default: "cmdb"
+  type: string
+  label: mongo数据库名称
+  group: "mongo的设置"
+- variable: mongo.replicaset.name
+  default: "mrs"
+  type: string
+  label: mongo副本集名称
+  group: "mongo的设置"  
+# redis
+- variable: redis.name
+  default: "redis"
+  type: string
+  label: redis用户名
+  group: "redis的设置"
+- variable: redis.password
+  default: "password"
+  type: password
+  label: redis密码
+  group: "redis的设置"  
+- variable: redis.url.addr
+  default: "redis"
+  type: string
+  label: redis url地址
+  group: "redis的设置"
+- variable: redis.url.port
+  default: "6379"
+  type: int
+  label: redis url端口
+  group: "redis的设置"
+# zookeeper
+- variable: zookeeper.url.addr
+  default: "zookeeper"
+  type: string
+  label: zookeeper url地址
+  group: "zookeeper的设置"
+- variable: zookeeper.url.port
+  default: "2181"
+  type: int
+  label: zookeeper url端口
+  group: "zookeeper的设置"
+# cmdb
+- variable: cmdb.fullTextSearch
+  default: "on"
+  type: string
+  label: 开启全文检索支持
+  group: "cmdb设置"
+- variable: cmdb.webserverAccount
+  default: "admin:admin"
+  type: string
+  label: web服务内置账号
+  group: "cmdb设置"
+- variable: cmdb.webserverURL
+  default: "cmdb.bk.d.ebcpaas.com"
+  type: string
+  label: web服务访问地址
+  group: "cmdb设置"
+- variable: cmdb.paasURL
+  default: "login.bk.d.ebcpaas.com"
+  type: string
+  label: paas账号登录服务地址
+  group: "cmdb设置"
+- variable: cmdb.discoverURL
+  default: "zookeeper:2181"
+  type: string
+  label: zookeeper服务发现地址
+  group: "cmdb设置"
+
+
+

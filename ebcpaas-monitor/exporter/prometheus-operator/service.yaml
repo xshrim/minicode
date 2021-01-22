@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    operated-prometheus: "true"
+  name: prometheus-operated
+  namespace: cpaas-system
+  ownerReferences:
+  - apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    name: kube-prometheus
+    uid: 2a4620cb-ff3d-4a8e-b8ef-20c2c018e1de
+  resourceVersion: "4655"
+  selfLink: /api/v1/namespaces/cpaas-system/services/prometheus-operated
+  uid: 49fd8152-9ae8-4712-b6b9-d5d5bc8de827
+spec:
+  clusterIP: None
+  ports:
+  - name: web
+    port: 9090
+    protocol: TCP
+    targetPort: web
+  selector:
+    app: prometheus
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

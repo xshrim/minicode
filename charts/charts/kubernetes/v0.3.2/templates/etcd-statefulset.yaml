@@ -1,0 +1,179 @@
+{{- if .Values.etcd.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullName }}-etcd
+  labels:
+    app: {{ $fullName }}-etcd
+    {{- with .Values.etcd.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.etcd.annotations }}
+    annotations:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.etcd.replicaCount }}
+  serviceName: {{ $fullName }}-etcd
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ $fullName }}-etcd
+  template:
+    metadata:
+      name: {{ $fullName }}-etcd
+      labels:
+        app: {{ $fullName }}-etcd
+        {{- with .Values.etcd.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.etcd.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.etcd.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.etcd.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.etcd.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.etcd.image.PullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - etcd
+        - --advertise-client-urls=https://$(POD_NAME).{{ $fullName }}-etcd:{{ .Values.etcd.ports.client }}
+        - --cert-file=/pki/etcd/server/tls.crt
+        - --client-cert-auth=true
+        - --data-dir=/var/lib/etcd
+        - --initial-advertise-peer-urls=https://$(POD_NAME).{{ $fullName }}-etcd:{{ .Values.etcd.ports.peer }}
+        - --initial-cluster={{ template "kubernetes.etcdInitialCluster" . }}
+        - --initial-cluster-state=new
+        - --initial-cluster-token={{ $fullName }}-etcd
+        - --key-file=/pki/etcd/server/tls.key
+        - --listen-client-urls=https://0.0.0.0:{{ .Values.etcd.ports.client }}
+        - --listen-peer-urls=https://0.0.0.0:{{ .Values.etcd.ports.peer }}
+        - --listen-metrics-urls=http://0.0.0.0:{{ .Values.etcd.ports.metrics }}
+        - --name=$(POD_NAME)
+        - --peer-cert-file=/pki/etcd/peer/tls.crt
+        - --peer-client-cert-auth=true
+        - --peer-key-file=/pki/etcd/peer/tls.key
+        - --peer-trusted-ca-file=/pki/etcd/ca/tls.crt
+        - --snapshot-count=10000
+        - --trusted-ca-file=/pki/etcd/ca/tls.crt
+        {{- range $key, $value := .Values.etcd.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ETCDCTL_API
+          value: "3"
+        - name: ETCDCTL_CACERT
+          value: /pki/etcd/peer/ca.crt
+        - name: ETCDCTL_CERT
+          value: /pki/etcd/peer/tls.crt
+        - name: ETCDCTL_KEY
+          value: /pki/etcd/peer/tls.key 
+        - name: ETCDCTL_ENDPOINTS
+          value: {{ template "kubernetes.etcdEndpoints" . }}
+        {{- with .Values.etcd.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        image: {{ .Values.etcd.image.repository }}:{{ .Values.etcd.image.tag }}
+        ports:
+        - containerPort: {{ .Values.etcd.ports.client }}
+          name: client
+        - containerPort: {{ .Values.etcd.ports.peer }}
+          name: peer
+        - containerPort: {{ .Values.etcd.ports.metrics }}
+          name: metrics
+        imagePullPolicy: {{ .Values.etcd.image.PullPolicy }}
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /health
+            port: {{ .Values.etcd.ports.metrics }}
+            scheme: HTTP
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        name: etcd
+        resources:
+          {{- toYaml .Values.etcd.resources | nindent 10 }}
+        volumeMounts:
+        - mountPath: /pki/etcd/ca
+          name: pki-etcd-certs-ca
+        - mountPath: /pki/etcd/peer
+          name: pki-etcd-certs-peer
+        - mountPath: /pki/etcd/server
+          name: pki-etcd-certs-server
+        - mountPath: /var/lib/etcd
+          name: etcd-data
+        {{- with .Values.etcd.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.etcd.sidecars }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      volumes:
+      - secret:
+          secretName: {{ $fullName }}-pki-etcd-ca
+        name: pki-etcd-certs-ca
+      - secret:
+          secretName: {{ $fullName }}-pki-etcd-peer
+        name: pki-etcd-certs-peer
+      - secret:
+          secretName: {{ $fullName }}-pki-etcd-server
+        name: pki-etcd-certs-server
+      {{- if not .Values.persistence.enabled }}
+      - emptyDir: {}
+        name: etcd-data
+      {{- end }}
+      {{- with .Values.etcd.extraVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: etcd-data
+      labels:
+        app: {{ $fullName }}-etcd
+        {{- if .Values.persistence.labels }}
+        {{- toYaml .Values.persistence.labels | nindent 4 }}
+        {{- end }}
+      {{- with .Values.persistence.annotations  }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.persistence.finalizers  }}
+      finalizers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      accessModes:
+        {{- range .Values.persistence.accessModes }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- if .Values.persistence.storageClassName }}
+      storageClassName: {{ .Values.persistence.storageClassName }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size | quote }}
+  {{- end }}
+{{- end }}

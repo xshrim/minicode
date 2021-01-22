@@ -1,0 +1,30 @@
+{{- if and .Values.scheduler.enabled .Values.scheduler.service.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullName }}-scheduler
+  labels:
+    app: {{ $fullName }}-scheduler
+    {{- with .Values.scheduler.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.scheduler.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.scheduler.service.type }}
+  {{- with .Values.scheduler.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  ports:
+  - port: {{ .Values.scheduler.service.port }}
+    name: client
+    {{- with .Values.scheduler.service.nodePort }}
+    nodePort: {{ . }}
+    {{- end }}
+  selector:
+    app: {{ $fullName }}-scheduler
+{{- end }}

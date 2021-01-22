@@ -1,0 +1,232 @@
+controlPlaneEndpoint:
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  # storageClassName: default
+  annotations: {}
+  finalizers:
+    - kubernetes.io/pvc-protection
+
+etcd:
+  enabled: true
+  image:
+    repository: k8s.gcr.io/etcd
+    tag: 3.4.9-1
+    PullPolicy: IfNotPresent
+    PullSecrets: []
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  certSANs:
+    dnsNames: []
+    ipAddresses: []
+
+  extraArgs: {}
+    # advertise-address is required for kube-proxy
+    #advertise-address: 10.9.8.10
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  extraEnv: []
+  sidecars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  ports:
+    client: 2379
+    peer: 2380
+    metrics: 2381
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      client: 2379
+      peer: 2380
+      metrics: 2381
+    labels: {}
+    annotations: {}
+    loadBalancerIP:
+
+apiServer:
+  enabled: true
+  image:
+    repository: k8s.gcr.io/kube-apiserver
+    tag: v1.19.0
+    PullPolicy: IfNotPresent
+    PullSecrets: []
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  certSANs:
+    dnsNames: []
+    ipAddresses: []
+
+  serviceClusterIPRange: 10.96.0.0/12
+
+  extraArgs: {}
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  extraEnv: []
+  sidecars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+
+  port: 6443
+  service:
+    enabled: true
+    type: NodePort
+    port: 6443
+    # Specify nodePort for apiserver service (30000-32767)
+    nodePort:
+    labels: {}
+    annotations: {}
+    loadBalancerIP:
+
+controllerManager:
+  enabled: true
+  image:
+    repository: k8s.gcr.io/kube-controller-manager
+    tag: v1.19.0
+    PullPolicy: IfNotPresent
+    PullSecrets: []
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  extraArgs: {}
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  extraEnv: []
+  sidecars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  port: 10257
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 10257
+    labels: {}
+    annotations: {}
+    loadBalancerIP:
+
+scheduler:
+  enabled: true
+  image:
+    repository: k8s.gcr.io/kube-scheduler
+    tag: v1.19.0
+    PullPolicy: IfNotPresent
+    PullSecrets: []
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  extraArgs: {}
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  extraEnv: []
+  sidecars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  port: 10259
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 10259
+    labels: {}
+    annotations: {}
+    loadBalancerIP:
+
+admin:
+  enabled: true
+  image:
+    repository: docker.io/kvaps/kubernetes-tools
+    tag: v1.19.0
+    PullPolicy: IfNotPresent
+    PullSecrets: []
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  extraEnv: []
+  sidecars: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  job:
+    enabled: true
+    schedule: "0 0 1 */6 *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    labels: {}
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    extraEnv: []
+
+kubeProxy:
+  enabled: true
+
+coredns:
+  enabled: true

@@ -1,0 +1,18 @@
+apiVersion: v1
+appVersion: 1.19.0
+description: Production-Grade Container Scheduling and Management
+home: https://github.com/kvaps/kubernetes-in-kubernetes
+icon: file://../logo.png
+keywords:
+- kubernetes
+- go
+- cncf
+- containers
+maintainers:
+- email: kvapss@gmail.com
+  name: kvaps
+name: kubernetes
+sources:
+- https://github.com/kvaps/kubernetes-in-kubernetes
+- https://github.com/kubernetes/kubernetes
+version: 0.3.2

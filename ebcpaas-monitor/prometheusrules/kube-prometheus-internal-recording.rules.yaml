@@ -1,0 +1,154 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  generation: 1
+  labels:
+    app: prometheus
+    chart: prometheus-0.0.50
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-internal-recording.rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/kube-prometheus-internal-recording.rules
+spec:
+  groups:
+  - name: internal-recording.rules
+    rules:
+    - expr: rate(container_cpu_usage_seconds_total[5m])
+      record: container_cpu_usage_seconds_total_irate5m
+    - expr: rate(container_network_receive_bytes_total[5m])
+      record: container_network_receive_bytes_total_irate5m
+    - expr: rate(container_network_transmit_bytes_total[5m])
+      record: container_network_transmit_bytes_total_irate5m
+    - expr: rate(node_network_receive_bytes[5m])
+      record: node_network_receive_bytes_irate5m
+    - expr: node_network_receive_bytes_total
+      record: node_network_receive_bytes
+    - expr: node_network_transmit_bytes_total
+      record: node_network_transmit_bytes
+    - expr: rate(node_network_transmit_bytes[5m])
+      record: node_network_transmit_bytes_irate5m
+    - expr: node_disk_read_bytes_total
+      record: node_disk_bytes_read
+    - expr: rate(node_disk_bytes_read[5m])
+      record: node_disk_bytes_read_irate5m
+    - expr: node_disk_written_bytes_total
+      record: node_disk_bytes_written
+    - expr: rate(node_disk_bytes_written[5m])
+      record: node_disk_bytes_written_irate5m
+    - expr: node_disk_io_time_seconds_total * 1000
+      record: node_disk_io_time_ms
+    - expr: rate(node_disk_io_time_ms[5m])
+      record: node_disk_io_time_ms_irate5m
+    - expr: node_cpu_seconds_total
+      record: node_cpu
+    - expr: rate(node_cpu[5m])
+      record: node_cpu_irate5m
+    - expr: node_memory_Cached_bytes
+      record: node_memory_Cached
+    - expr: node_memory_MemTotal_bytes
+      record: node_memory_MemTotal
+    - expr: node_memory_MemFree_bytes
+      record: node_memory_MemFree
+    - expr: node_memory_Buffers_bytes
+      record: node_memory_Buffers
+    - expr: node_memory_MemTotal - node_memory_MemFree - node_memory_Buffers - node_memory_Cached
+      record: node_memory_MemUsed
+    - expr: node_filesystem_avail_bytes
+      record: node_filesystem_avail
+    - expr: node_filesystem_size_bytes
+      record: node_filesystem_size
+    - expr: avg by(instance, device) (node_filesystem_size{device=~"/dev/.*"} - node_filesystem_avail{device=~"/dev/.*"})
+      record: node_filesystem_used
+    - expr: sum by(container_name,pod_name,namespace) (container_memory_usage_bytes{pod_name!="",image!="",container_name!="POD"}
+        - container_memory_cache{pod_name!="",image!="",container_name!="POD"})
+      record: container_memory_usage_bytes_without_cache
+    - expr: (1 - (avg by (instance) (node_cpu_irate5m{mode="idle"})) >= 0) OR ON()
+        vector(0)
+      record: node_cpu_utilization
+    - expr: sum by(instance) (node_disk_bytes_read_irate5m)
+      record: node_disk_bytes_read_per_second
+    - expr: sum by(instance) (node_disk_bytes_written_irate5m)
+      record: node_disk_bytes_written_per_second
+    - expr: sum by(node) (kube_pod_container_resource_requests_cpu_cores{node!=""}
+        * on(pod, namespace) group_left(phase) (kube_pod_status_phase{phase!="Succeeded",phase!="Failed"}
+        == 1))
+      record: node_resource_requests_cpu_cores
+    - expr: sum by(node) (kube_pod_container_resource_requests_memory_bytes{node!=""}
+        * on(pod, namespace) group_left(phase) (kube_pod_status_phase{phase!="Succeeded",phase!="Failed"}
+        == 1))
+      record: node_resource_requests_memory_bytes
+    - expr: (sum(1 - (avg by (instance) (node_cpu_irate5m{job="node-exporter",mode="idle"})))
+        >= 0) OR ON() vector(0)
+      record: cluster_cpu_utilization
+    - expr: sum(node_memory_MemUsed)
+      record: cluster_memory_MemUsed
+    - expr: sum (kube_pod_container_resource_requests_cpu_cores{node!=""} * on(pod,
+        namespace) group_left(phase) (kube_pod_status_phase{phase!="Succeeded",phase!="Failed"}
+        == 1))
+      record: cluster_resource_requests_cpu_cores
+    - expr: sum (kube_pod_container_resource_requests_memory_bytes{node!=""} * on(pod,
+        namespace) group_left(phase) (kube_pod_status_phase{phase!="Succeeded",phase!="Failed"}
+        == 1))
+      record: cluster_resource_requests_memory_bytes
+    - expr: kube_pod_info * on(pod, namespace) group_left(label_service_name) kube_pod_labels
+        * on(pod,namespace) group_left(phase) (kube_pod_status_phase ==1)
+      record: kube_pod_info_with_label
+    - expr: sum by(handler,method,code,endpoint,pod,job) ({__name__=~".*http_requests_total",endpoint!~".*[pP]ing.*",handler!~".*[pP]ing.*"})
+      record: requests_total_by_pod_method_code_handler_endpoint
+    - expr: container_cpu_usage_seconds_total_irate5m{namespace=~".*",pod_name=~".*",container_name!="POD",image!=""}
+        * on(namespace,pod_name) group_left(label_service_name) (label_replace(kube_pod_info_with_label{namespace=~".*",pod=~".*"},
+        "pod_name", "$1", "pod", "(.*)"))
+      record: container_cpu_usage_seconds_total_irate5m_with_label
+    - expr: container_spec_cpu_quota{container_name!="POD",image!="",namespace=~".*",pod_name=~".*"}
+        * on(namespace, pod_name) group_left(label_service_name) (label_replace(kube_pod_info_with_label{namespace=~".*",pod=~".*"},
+        "pod_name", "$1", "pod", "(.*)"))
+      record: container_spec_cpu_quota_with_label
+    - expr: container_memory_usage_bytes_without_cache{container_name!="POD",namespace=~".*",pod_name=~".*"}  *
+        on(namespace, pod_name) group_left(label_service_name) (label_replace(kube_pod_info_with_label{namespace=~".*",pod=~".*"},
+        "pod_name", "$1", "pod", "(.*)"))
+      record: container_memory_usage_bytes_without_cache_with_label
+    - expr: container_spec_memory_limit_bytes{container_name!="POD",image!="",namespace=~".*",pod_name=~".*"}
+        * on(namespace, pod_name) group_left(label_service_name) (label_replace(kube_pod_info_with_label{namespace=~".*",pod=~".*"},
+        "pod_name", "$1", "pod", "(.*)"))
+      record: container_spec_memory_limit_bytes_with_label
+    - expr: container_network_transmit_bytes_total_irate5m{image!="",namespace=~".*",pod_name=~".*"}
+        * on(namespace, pod_name) group_left(label_service_name) (label_replace(kube_pod_info_with_label{namespace=~".*",pod=~".*"},
+        "pod_name", "$1", "pod", "(.*)"))
+      record: container_network_transmit_bytes_total_irate5m_with_label
+    - expr: container_network_receive_bytes_total_irate5m{image!="",namespace=~".*",pod_name=~".*"}
+        * on(namespace, pod_name) group_left(label_service_name) (label_replace(kube_pod_info_with_label{namespace=~".*",pod=~".*"},
+        "pod_name", "$1", "pod", "(.*)"))
+      record: container_network_receive_bytes_total_irate5m_with_label
+    - expr: sum (kube_pod_container_resource_requests_tencent_gpu_cores{node!=""}
+        * on(pod, namespace) group_left(phase)(kube_pod_status_phase{phase!="Failed",phase!="Succeeded"}
+        == 1)) or vector(0) / sum(kube_node_status_capacity_tencent_gpu_cores)
+      record: cluster_resource_tencent_gpu_cores_requests_utilization
+    - expr: sum (kube_pod_container_resource_requests_tencent_gpu_memory{node!=""}
+        * on(pod, namespace) group_left(phase)(kube_pod_status_phase{phase!="Failed",phase!="Succeeded"}
+        == 1)) or vector(0) / sum(kube_node_status_capacity_tencent_gpu_memory)
+      record: cluster_resource_tencent_gpu_memory_requests_utilization
+    - expr: sum by(node) (kube_pod_container_resource_requests_tencent_gpu_cores *
+        on(pod, namespace) group_left(phase)(kube_pod_status_phase{phase!="Failed",phase!="Succeeded"}
+        == 1)) / sum by(node) (kube_node_status_capacity_tencent_gpu_cores)
+      record: node_resource_tencent_gpu_cores_requests_utilization
+    - expr: sum by(node) (kube_pod_container_resource_requests_tencent_gpu_memory
+        * on(pod, namespace) group_left(phase)(kube_pod_status_phase{phase!="Failed",phase!="Succeeded"}
+        == 1)) / sum by(node) (kube_node_status_capacity_tencent_gpu_memory)
+      record: node_resource_tencent_gpu_memory_requests_utilization
+    - expr: sum (kube_pod_container_resource_requests_nvidia_gpu_devices{node!=""}
+        * on(pod, namespace) group_left(phase)(kube_pod_status_phase{phase!="Failed",phase!="Succeeded"}
+        == 1)) or vector(0) / sum(kube_node_status_capacity_nvidia_gpu_cards)
+      record: cluster_resource_nvidia_gpu_requests_utilization
+    - expr: sum by(node) (kube_pod_container_resource_requests_nvidia_gpu_devices
+        * on(pod, namespace) group_left(phase)(kube_pod_status_phase{phase!="Failed",phase!="Succeeded"}
+        == 1)) / sum by(node) (kube_node_status_capacity_nvidia_gpu_cards)
+      record: node_resource_nvidia_gpu_requests_utilization
+    - expr: sum(dcgm_gpu_utilization) / count(dcgm_gpu_utilization)
+      record: cluster_gpu_utilization
+    - expr: sum (dcgm_fb_used) / sum (dcgm_fb_free + dcgm_fb_used)
+      record: cluster_gpu_memory_utilization
+    - expr: sum by(node_name) (dcgm_gpu_utilization) / count by(node_name) (dcgm_gpu_utilization)
+      record: node_gpu_utilization
+    - expr: sum by(node_name) (dcgm_fb_used) / sum by(node_name) (dcgm_fb_used + dcgm_fb_free)
+      record: node_gpu_memory_utilization

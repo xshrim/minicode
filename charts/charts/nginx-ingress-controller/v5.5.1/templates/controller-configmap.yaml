@@ -1,0 +1,25 @@
+{{- if or .Values.config (or (or .Values.proxySetHeaders .Values.headers) .Values.addHeaders) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "nginx-ingress.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "nginx-ingress.labels" . | nindent 4 }}
+    component: {{ .Values.name }}
+    {{- if .Values.commonLabels }}
+    {{- include "nginx-ingress.tplValue" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "nginx-ingress.tplValue" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+data:
+  {{- if .Values.addHeaders }}
+  add-headers: {{ .Release.Namespace }}/{{ template "nginx-ingress.fullname" . }}-custom-add-headers
+  {{- end }}
+  {{- if or .Values.proxySetHeaders .Values.headers }}
+  proxy-set-headers: {{ .Release.Namespace }}/{{ template "nginx-ingress.fullname" . }}-custom-proxy-headers
+  {{- end }}
+  {{- if .Values.config }}
+  {{- toYaml .Values.config | nindent 2 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: monstache
+    release: {{ .Release.Name }}
+  name: monstache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monstache
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: monstache
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: ES_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_URL
+                  name: {{ .Release.Name }}-configures
+            - name: ES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: ES_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_USER
+                  name: {{ .Release.Name }}-configures
+            - name: ES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: ES_ENABLE_TLS
+              valueFrom:
+                configMapKeyRef:
+                  key: ES_ENABLE_TLS
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_URL
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_PORT
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_USER
+              valueFrom:
+                configMapKeyRef:
+                  key:  MONGO_INITDB_ROOT_USERNAME
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_INITDB_ROOT_PASSWORD
+                  name: {{ .Release.Name }}-configures
+            - name: MONGO_CONNECT_DIRECT
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGO_CONNECT_DIRECT
+                  name: {{ .Release.Name }}-configures
+          image: "{{ .Values.repository }}/{{ .Values.monstache.image }}:{{ .Values.monstache.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: monstache
+          resources:
+{{ toYaml .Values.monstache.resources | indent 12 }}
+{{- with .Values.monstache.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

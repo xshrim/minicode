@@ -1,0 +1,30 @@
+{{- if and .Values.apiServer.enabled .Values.apiServer.service.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullName }}-apiserver
+  labels:
+    app: {{ $fullName }}-apiserver
+    {{- with .Values.apiServer.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.apiServer.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.apiServer.service.type }}
+  {{- with .Values.apiServer.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  ports:
+  - port: {{ .Values.apiServer.service.port }}
+    name: client
+    {{- with .Values.apiServer.service.nodePort }}
+    nodePort: {{ . }}
+    {{- end }}
+  selector:
+    app: {{ $fullName }}-apiserver
+{{- end }}

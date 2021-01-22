@@ -1,0 +1,19 @@
+#!/bin/sh
+
+echo "[nginx] booting container."
+
+echo "[nginx] generating resolvers.conf"
+echo resolver $(awk 'BEGIN{ORS=" "} $1=="nameserver" {print $2}' /etc/resolv.conf) ";" > /etc/nginx/resolvers.conf
+
+# Run confd
+confd -onetime -backend file -file /opt/mapping/mappings.yaml
+
+# Poll for changes every 10 seconds
+confd -interval 10 -backend file -file /opt/mapping/mappings.yaml &
+echo "[nginx] confd is now watching file for changes..."
+
+# Start nginx
+echo "[nginx] starting nginx service..."
+nginx -g 'daemon off;'
+
+

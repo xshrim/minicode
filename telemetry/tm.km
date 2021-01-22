@@ -1,0 +1,168 @@
+{
+    "root": {
+        "data": {
+            "id": "c46tyq5sgug0",
+            "created": 1594778973122,
+            "text": "Metrics"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "c46tyx5czio0",
+                    "created": 1594778988334,
+                    "text": "数据模型"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46tzb1r8vc0",
+                            "created": 1594779018591,
+                            "text": "指标名称"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u09ygmwo0",
+                                    "created": 1594779094579,
+                                    "text": "有描述意义的名称"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46tzf7v6v40",
+                            "created": 1594779027667,
+                            "text": "指标标签"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u0pncoio0",
+                                    "created": 1594779128736,
+                                    "text": "指标下特定样本特征描述"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46tzmj48fk0",
+                            "created": 1594779043585,
+                            "text": "样本值"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u1yvyftc0",
+                                    "created": 1594779227211,
+                                    "text": "float64类型的样本数据值"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46tzoid8aw0",
+                            "created": 1594779047893,
+                            "text": "样本时间戳"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u2eh1d7s0",
+                                    "created": 1594779261138,
+                                    "text": "样本收集时毫秒级时间戳"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c46tz0rece80",
+                    "created": 1594778996197,
+                    "text": "指标类型"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46u3f84sww0",
+                            "created": 1594779341140,
+                            "text": "Counter"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u3h9dw340",
+                                    "created": 1594779345570,
+                                    "text": "只增不减计数器"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46u402amwg0",
+                            "created": 1594779386500,
+                            "text": "Gauge"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u45prwuw0",
+                                    "created": 1594779398803,
+                                    "text": "可增可减仪表盘"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46u5o3umr40",
+                            "created": 1594779517201,
+                            "text": "Histogram"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u5q1vwp40",
+                                    "created": 1594779521435,
+                                    "text": "范围分布直方图"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46u6v8etnc0",
+                            "created": 1594779611078,
+                            "text": "Summary"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46u6xd4jvs0",
+                                    "created": 1594779615717,
+                                    "text": "分位统计摘要"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-red",
+    "version": "1.4.43"
+}

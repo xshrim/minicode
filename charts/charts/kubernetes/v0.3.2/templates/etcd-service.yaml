@@ -1,0 +1,33 @@
+{{- if and .Values.etcd.enabled .Values.etcd.service.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullName }}-etcd
+  labels:
+    app: {{ $fullName }}-etcd
+    {{- with .Values.etcd.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.etcd.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.etcd.service.type }}
+  {{- with .Values.etcd.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  publishNotReadyAddresses: true
+  clusterIP: None
+  ports:
+  - port: {{ .Values.etcd.service.ports.client }}
+    name: client
+  - port: {{ .Values.etcd.service.ports.peer }}
+    name: peer
+  - port: {{ .Values.etcd.service.ports.metrics }}
+    name: metrics
+  selector:
+    app: {{ $fullName }}-etcd
+{{- end }}

@@ -1,0 +1,45 @@
+{{- if and (.Values.core.standalone) (gt (.Values.readReplica.numberOfServers | int) 0)}}
+You have specified standalone mode and also read replicas.  The read replicas argument has
+been ignored - only Neo4j clusters may have read replicas.
+{{- end }}
+
+{{- if and (ne "yes" .Values.acceptLicenseAgreement) (contains "enterprise" .Values.imageTag)}}
+####   ERROR: You did not accept the Neo4j Enterprise License. ####
+####   ERROR: Please set acceptLicenseAgreement to yes.        ####
+###################################################################
+{{- else }}
+
+Your cluster is now being deployed, and may take up to 5 minutes to become available.
+If you'd like to track status and wait on your rollout to complete, run:
+
+$ kubectl rollout status \
+    --namespace {{ .Release.Namespace }} \
+    StatefulSet/{{ template "neo4j.core.fullname" . }} \
+    --watch
+
+You can inspect your logs containers like so:
+
+We can see the content of the logs by running the following command:
+
+$ kubectl logs --namespace {{ .Release.Namespace }} -l \
+    "app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/name={{ template "neo4j.name" . }},app.kubernetes.io/component=core"
+
+We can now run a query to find the topology of the cluster.
+
+export NEO4J_PASSWORD=$(kubectl get secrets 
+    {{- if .Values.existingPasswordSecret }}{{ .Values.existingPasswordSecret | indent 1 }}{{- else }}{{ include "neo4j.secrets.fullname" . | indent 1 }}{{- end }} --namespace {{ .Release.Namespace }} -o yaml | grep password | sed 's/.*: //' | base64 -d)
+kubectl run -it --rm cypher-shell \
+    --image={{ .Values.image }}:{{ .Values.imageTag }} \
+    --restart=Never \
+    --namespace {{ .Release.Namespace }} \
+    --command -- ./bin/cypher-shell -u neo4j -p "$NEO4J_PASSWORD" -a neo4j://{{ template "neo4j.fullname" . }}.{{ printf "%s" .Release.Namespace }}.svc.cluster.local "call dbms.routing.getRoutingTable({}, 'system');"
+
+This will print out the addresses of the members of the cluster.
+
+Note:
+You'll need to substitute <password> with the password you set when installing the Helm package.
+If you didn't set a password, one will be auto generated.
+You can find the base64 encoded version of the password by running the following command:
+
+kubectl get secrets {{ template "neo4j.secrets.fullname" . }} -o yaml --namespace {{ .Release.Namespace }}
+{{- end}}

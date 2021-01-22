@@ -1,0 +1,151 @@
+DeploymentUpdate:
+  maxSurge: 100%
+  maxUnavailable: 0
+  type: RollingUpdate
+StatefulSetUpdate:
+  updateStrategy: RollingUpdate
+accessKey: minioadmin
+affinity: {}
+azuregateway:
+  enabled: false
+  replicas: 4
+b2gateway:
+  enabled: false
+  replicas: 4
+bucketRoot: ""
+buckets: []
+certsPath: /etc/minio/certs/
+clusterDomain: cluster.local
+configPathmc: /etc/minio/mc/
+defaultBucket:
+  enabled: false
+  name: bucket
+  policy: none
+  purge: false
+drivesPerNode: 1
+environment:
+  MINIO_API_READY_DEADLINE: 5s
+  MINIO_PROMETHEUS_AUTH_TYPE: public
+etcd:
+  clientCert: ""
+  clientCertKey: ""
+  corednsPathPrefix: ""
+  endpoints: []
+  pathPrefix: ""
+existingSecret: ""
+extraArgs: []
+fullnameOverride: ""
+gcsgateway:
+  enabled: false
+  gcsKeyJson: ""
+  projectId: ""
+  replicas: 4
+helmKubectlJqImage:
+  pullPolicy: IfNotPresent
+  repository: bskim45/helm-kubectl-jq
+  tag: 3.1.0
+image:
+  pullPolicy: IfNotPresent
+  repository: minio/minio
+  tag: RELEASE.2020-09-17T04-49-20Z
+imagePullSecrets: []
+ingress:
+  annotations: {}
+  enabled: true 
+  hosts:
+  - minio.d.ebcpaas.com
+  labels: {}
+  path: /
+  tls: []
+livenessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 120
+  periodSeconds: 15
+  successThreshold: 1
+  timeoutSeconds: 10
+makeBucketJob:
+  annotations: null
+  podAnnotations: null
+  securityContext:
+    enabled: false
+    fsGroup: 1000
+    runAsGroup: 1000
+    runAsUser: 1000
+mcImage:
+  pullPolicy: IfNotPresent
+  repository: minio/mc
+  tag: RELEASE.2020-08-08T02-33-58Z
+metrics:
+  serviceMonitor:
+    additionalLabels: {}
+    enabled: false
+mode: standalone #distributed
+mountPath: /export
+nameOverride: ""
+nasgateway:
+  enabled: false #false true
+  pv: null
+  replicas: 2 #4
+networkPolicy:
+  allowExternal: true
+  enabled: false
+nodeSelector: {}
+ossgateway:
+  enabled: false
+  endpointURL: ""
+  replicas: 4
+persistence:
+  VolumeName: ""
+  accessMode: ReadWriteOnce
+  enabled: true
+  existingClaim: ""
+  size: 1Gi #10Gi
+  storageClass: "nas"
+  subPath: ""
+podAnnotations: {}
+podDisruptionBudget:
+  enabled: false
+  maxUnavailable: 1
+podLabels: {}
+priorityClassName: ""
+replicas: 4 #8
+resources:
+  requests:
+    memory: 256Mi #4Gi
+s3gateway:
+  accessKey: ""
+  enabled: false
+  replicas: 4
+  secretKey: ""
+  serviceEndpoint: ""
+secretKey: minioadmin
+securityContext:
+  enabled: true
+  fsGroup: 1000
+  runAsGroup: 1000
+  runAsUser: 1000
+service:
+  annotations: {}
+  clusterIP: null
+  externalIPs: []
+  nodePort: 32000
+  port: 9000
+  type: ClusterIP
+serviceAccount:
+  create: true
+  name: null
+tls:
+  certSecret: "minio-tls"
+  enabled: false 
+  privateKey: private.key
+  publicCrt: public.crt
+tolerations: []
+updatePrometheusJob:
+  annotations: null
+  podAnnotations: null
+  securityContext:
+    enabled: false
+    fsGroup: 1000
+    runAsGroup: 1000
+    runAsUser: 1000
+zones: 1

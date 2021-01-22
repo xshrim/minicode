@@ -1,0 +1,179 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "common.names.fullname" . }}-worker
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  serviceName: {{ template "common.names.fullname" . }}-headless
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+      {{- if .Values.worker.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.worker.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+{{- include "spark.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.worker.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.worker.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.worker.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.worker.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.worker.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.worker.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.worker.securityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.worker.securityContext.fsGroup }}
+        runAsUser: {{ .Values.worker.securityContext.runAsUser }}
+      {{- end }}
+      containers:
+        - name: spark-worker
+          image: {{ template "spark.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.worker.webPort }}
+              protocol: TCP
+            {{- if .Values.worker.clusterPort }}
+            - name: cluster
+              containerPort: {{ .Values.worker.clusterPort }}
+            {{- end }}
+          volumeMounts:
+            {{- if .Values.worker.configurationConfigMap }}
+            - name: config
+              mountPath: '/opt/bitnami/spark/conf/'
+            {{- end }}
+            {{- if .Values.security.certificatesSecretName }}
+            - name: certs
+              mountPath: '/opt/bitnami/spark/conf/certs'
+              readOnly: true
+            {{- end }}
+            {{- if .Values.worker.extraVolumeMounts }}
+            {{- tpl (toYaml .Values.worker.extraVolumeMounts) $ | nindent 12 }}
+            {{- end }}
+          env:
+            - name: SPARK_MODE
+              value: "worker"
+            - name: BASH_DEBUG
+              value: {{ ternary "1" "0" .Values.image.debug | quote }}
+            - name: SPARK_DAEMON_MEMORY
+              value: {{ .Values.worker.daemonMemoryLimit | quote }}
+            ## There are some environment variables whose existence needs
+            ## to be checked because Spark checks if they are null instead of an
+            ## empty string
+            {{- if .Values.worker.memoryLimit }}
+            - name: SPARK_WORKER_MEMORY
+              value: {{ .Values.worker.memoryLimit | quote }}
+            {{- end }}
+            {{- if .Values.worker.coreLimit }}
+            - name: SPARK_WORKER_CORES
+              value: {{ .Values.worker.coreLimit | quote }}
+            {{- end }}
+            {{- if .Values.worker.clusterPort }}
+            - name: SPARK_WORKER_PORT
+              value: {{ .Values.worker.clusterPort | quote }}
+            {{- end }}
+            {{- if .Values.worker.webPort  }}
+            - name: SPARK_WORKER_WEBUI_PORT
+              value: {{ .Values.worker.webPort | quote }}
+            {{- end }}
+            {{- if .Values.worker.dir }}
+            - name: SPARK_WORKER_DIR
+              value: {{ .Values.worker.dir | quote }}
+            {{- end }}
+            - name: SPARK_DAEMON_JAVA_OPTS
+              value: {{ .Values.worker.javaOptions | quote }}
+            - name: SPARK_MASTER_URL
+              value: spark://{{ include "spark.master.service.name" . }}:{{ .Values.service.clusterPort }}
+            # If you use a custom properties file, it must be loaded using a ConfigMap
+            - name: SPARK_WORKER_OPTS
+              value: {{ .Values.worker.configOptions }}
+            {{- if .Values.security.rpc.authenticationEnabled }}
+            - name: SPARK_RPC_AUTHENTICATION_ENABLED
+              value: {{ .Values.security.rpc.authenticationEnabled | quote }}
+            - name: SPARK_RPC_AUTHENTICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: rpc-authentication-secret
+            {{- end }}
+            {{- if .Values.security.rpc.encryptionEnabled }}
+            - name: SPARK_RPC_ENCRYPTION_ENABLED
+              value: {{ .Values.security.rpc.encryptionEnabled | quote }}
+            {{- end }}
+            {{- if .Values.security.storageEncryptionEnabled }}
+            - name: SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED
+              value: {{ .Values.security.storageEncryptionEnabled | quote }}
+            {{- end }}
+            {{- if .Values.security.ssl.enabled }}
+            - name: SPARK_SSL_ENABLED
+              value: {{ .Values.security.ssl.enabled | quote }}
+            - name: SPARK_SSL_KEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: ssl-key-password
+            - name: SPARK_SSL_KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: ssl-keystore-password
+            - name: SPARK_SSL_TRUSTSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: ssl-truststore-password
+            - name: SPARK_SSL_NEED_CLIENT_AUTH
+              value: {{ .Values.security.ssl.needClientAuth | quote }}
+            - name: SPARK_SSL_PROTOCOL
+              value: {{ .Values.security.ssl.protocol | quote }}
+            {{- end }}
+            {{- if .Values.worker.extraEnvVars }}
+            {{- toYaml .Values.worker.extraEnvVars | nindent 12 }}
+            {{- end }}
+          {{- if .Values.worker.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.worker.webPort }}
+            initialDelaySeconds: {{ .Values.worker.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.worker.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.worker.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.worker.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.worker.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.worker.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.worker.webPort }}
+            initialDelaySeconds: {{ .Values.worker.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.worker.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.worker.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.worker.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.worker.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.worker.resources }}
+          resources: {{- toYaml .Values.worker.resources | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- if .Values.worker.configurationConfigMap }}
+        - name: config
+          configMap:
+            name: {{ .Values.worker.configurationConfigMap }}
+        {{- end }}
+        {{- if .Values.security.certificatesSecretName }}
+        - name: certs
+          secret:
+            secretName: {{ .Values.security.certificatesSecretName }}
+        {{- end }}
+        {{- if .Values.worker.extraVolumes }}
+        {{- tpl (toYaml .Values.worker.extraVolumes) $ | nindent 8 }}
+        {{- end }}

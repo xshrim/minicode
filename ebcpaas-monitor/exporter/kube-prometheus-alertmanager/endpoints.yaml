@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-08-09T13:20:56Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    alertmanager: kube-prometheus
+    app: alertmanager
+    chart: alertmanager-0.1.5
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-alertmanager
+  namespace: cpaas-system
+  resourceVersion: "121540299"
+  selfLink: /api/v1/namespaces/cpaas-system/endpoints/kube-prometheus-alertmanager
+  uid: 4299820e-d156-4b44-ad00-ee113bbdb0a3
+subsets:
+- addresses:
+  - ip: 10.199.9.25
+    nodeName: 25.2.20.52
+    targetRef:
+      kind: Pod
+      name: alertmanager-kube-prometheus-0
+      namespace: cpaas-system
+      resourceVersion: "121540298"
+      uid: 393e9e45-0ed0-4fa4-9e4b-2fc7d3810c8d
+  ports:
+  - name: http
+    port: 9093
+    protocol: TCP

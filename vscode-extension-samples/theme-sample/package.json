@@ -1,0 +1,25 @@
+{
+	"name": "theme-sample",
+	"version": "0.1.0",
+	"publisher": "vscode-samples",
+	"engines": {
+		"vscode": "*"
+	},
+	"contributes": {
+		"themes": [
+			{
+				"label": "Sample Light",
+				"uiTheme": "vs",
+				"path": "./Sample_Light.tmTheme"
+			},
+			{
+				"label": "Sample Dark",
+				"uiTheme": "vs-dark",
+				"path": "./Sample_Dark.tmTheme"
+			}
+		]
+	},
+	"devDependencies": {
+		"tslint": "^5.16.0"
+	}
+}

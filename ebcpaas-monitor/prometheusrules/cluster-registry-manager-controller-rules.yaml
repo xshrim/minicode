@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: cluster-registry-manager
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-cluster-registry-manager-controller-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-cluster-registry-manager-controller-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: custom-mf340-9e134a0068367f538e0f8dbb693c4867
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg(rate(controller_runtime_reconcile_time_seconds_bucket{job="cluster-registry-manager"}[5m]))
+        by (job, controller, le))>30
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.reconcile.latency.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "30"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cluster-registry-manager
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-mf340
+        alert_project: system
+        alert_resource: cpaas-cluster-registry-manager-controller-rules
+        severity: Medium
+    - alert: custom-g09w2-01d8e89ca389172cafc0f9949558fd90
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(workqueue_depth{job="cluster-registry-manager"}) by (job, name)>20
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.workqueue.depth
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "20"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cluster-registry-manager
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-g09w2
+        alert_project: system
+        alert_resource: cpaas-cluster-registry-manager-controller-rules
+        severity: Medium
+    - alert: custom-wp6w3-eb2637f5eff4b3d31593a5232a4af84f
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg(rate(controller_runtime_webhook_latency_seconds_bucket{job="cluster-registry-manager"}[5m]))
+        by (job, le))>0.1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.webhook.latency.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.1"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cluster-registry-manager
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-wp6w3
+        alert_project: system
+        alert_resource: cpaas-cluster-registry-manager-controller-rules
+        severity: Medium
+    - alert: custom-30s1h-66324e38d662e8ccc670c01fe1446d9b
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(delta(controller_runtime_webhook_requests_total{job="cluster-registry-manager",
+        succeeded="false"}[5m]))/sum(delta(controller_runtime_webhook_requests_total{job="cluster-registry-manager"}[5m]))>0.2
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.webhook.rejected.percent
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.2"
+        alert_indicator_unit: '%'
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: cluster-registry-manager
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-30s1h
+        alert_project: system
+        alert_resource: cpaas-cluster-registry-manager-controller-rules
+        severity: Medium

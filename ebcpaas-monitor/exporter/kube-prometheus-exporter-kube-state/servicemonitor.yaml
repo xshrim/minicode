@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: exporter-kube-state
+    chart: exporter-kube-state-0.2.5
+    component: kube-state
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-state
+  namespace: cpaas-system
+  resourceVersion: "4636"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-exporter-kube-state
+  uid: 111b33f0-8a27-44a0-aa1e-c1619120ac5f
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 15s
+    port: kube-state-metrics
+  - honorLabels: true
+    interval: 15s
+    port: self-metrics
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      app: exporter-kube-state
+      component: kube-state

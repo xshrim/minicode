@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configures
+data:
+  ES_BOOTSTRAP_MEMORY_LOCK: "true"
+  ES_CONTAINER_NAME: {{ .Values.es.name }}
+  ES_URL: {{ .Values.es.url.addr }}
+  ES_PORT: "{{ .Values.es.url.port }}"
+  ES_USER: {{ .Values.es.auth.user }}
+  ES_PASSWORD: {{ .Values.es.auth.password }}
+  ES_ENABLE_TLS: "{{ .Values.es.tls.enabled }}"
+  ES_DISCOVERY_TYPE: single-node
+  ES_IMAGE: "{{ .Values.es.image }}:{{ .Values.es.imageTag }}"
+  ES_JAVA_OPTS: {{ .Values.es.javaOpts }}
+  ES_NODE_NAME: {{ .Values.es.name }}
+  ES_XPACK_SECURITY_ENABLED: "{{ .Values.es.xpackSecurityEnabled }}"
+  MONGO_CONTAINER_NAME: {{ .Values.mongo.name }}
+  MONGO_IMAGE: "{{ .Values.mongo.image }}:{{ .Values.mongo.imageTag }}"
+  MONGO_INITDB_DATABASE: {{ .Values.mongo.initdb.database }}
+  MONGO_INITDB_PASSWORD: {{ .Values.mongo.initdb.password }}
+  MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongo.initdb.rootPassword }}
+  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongo.initdb.rootUsername }}
+  MONGO_INITDB_USERNAME: {{ .Values.mongo.initdb.username }}
+  MONGO_URL: {{ .Values.mongo.url.addr }}
+  MONGO_PORT: "{{ .Values.mongo.url.port }}"
+  MONGO_REPLICA_SET_NAME: {{ .Values.mongo.replicaset.name }}
+  MONGO_CONNECT_DIRECT: "{{ .Values.monstache.connectDirect }}"
+  MONSTACHE_CONTAINER_NAME: {{ .Values.monstache.name }}
+  MONSTACHE_IMAGE: "{{ .Values.monstache.image }}:{{ .Values.monstache.imageTag }}"
+  REDIS_CONTAINER_NAME: {{ .Values.redis.name }}
+  REDIS_IMAGE: "{{ .Values.redis.image }}:{{ .Values.redis.imageTag }}"
+  REDIS_PASSWORD: {{ .Values.redis.password }}
+  REDIS_URL: {{ .Values.redis.url.addr }}
+  REDIS_PORT: "{{ .Values.redis.url.port }}"
+  REDIS_REPLICATION_MODE: master
+  ZOO_URL: {{ .Values.zookeeper.url.addr }}
+  ZOO_CONTAINER_NAME: {{ .Values.zookeeper.name }}
+  ZOO_IMAGE: "{{ .Values.zookeeper.image }}:{{ .Values.zookeeper.imageTag }}"
+  ZOO_PORT: "{{ .Values.zookeeper.url.port }}"
+  ZOO_MY_ID: "1"
+  ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+  ALLOW_ANONYMOUS_LOGIN: "yes"
+  CMDB_ES_FULLTS: "{{ .Values.cmdb.fullTextSearch }}"
+  CMDB_MONGO_MECHANISM: {{ .Values.cmdb.mongoMechanism }}
+  CMDB_WEBSERVER_ACCOUNTS: {{ .Values.cmdb.webserverAccount }}
+  CMDB_WEBSERVER_URL: {{ .Values.cmdb.webserverURL }}
+  CMDB_WEBSERVER_HTMLROOT: {{ .Values.cmdb.webserverRoot }}
+  CMDB_PAAS_URL: {{ .Values.cmdb.paasURL }}
+  CMDB_AUTH_ENABLED: "{{ .Values.cmdb.authEnabled }}"
+  CMDB_DISCOVER_URL: {{ .Values.cmdb.discoverURL }}
+  mongo-init.sh: |
+    mongo -- admin <<EOF
+      var rootUser = '$MONGO_INITDB_ROOT_USERNAME';
+      var rootPassword = '$MONGO_INITDB_ROOT_PASSWORD';
+      db.auth(rootUser, rootPassword);
+      rs.initiate();
+      var user = '$MONGO_INITDB_USERNAME';
+      var passwd = '$MONGO_INITDB_PASSWORD';
+      var dbname = '$MONGO_INITDB_DATABASE'
+      var db = db.getSiblingDB(dbname)
+      db.createUser({user: user, pwd: passwd, roles: [{role: 'readWrite', db: dbname}]});
+      db.createCollection('cc_ApplicationBase');
+      db.createCollection('cc_HostBase');
+      db.createCollection('cc_ObjectBase');
+      db.createCollection('cc_ObjDes');
+    EOF

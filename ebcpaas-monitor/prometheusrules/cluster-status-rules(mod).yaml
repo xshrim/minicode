@@ -1,0 +1,366 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system", "name":"cpaas-admin-notification"}]'
+    cpaas.io/description:
+      Deployed by charts，it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+    cpaas.io/updated-at: "2020-07-31T12:12:30Z"
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Cluster
+    alert.cpaas.io/name: global
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: ""
+    prometheus: kube-prometheus
+  name: cpaas-cluster-status-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-cluster-status-rules
+spec:
+  groups:
+    - name: general
+      rules:
+        # [mod] 修改告警阈值
+        - alert: cluster.kube.apiserver.request.error.rate-4ecg7-34f7ab10ab1e492e39a4b4542a94ed4e
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: 1-sum(rate(apiserver_request_count{code=~"2.."}[5m]))/sum (rate(apiserver_request_count[5m]))>0.05
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.kube.apiserver.request.error.rate
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.05"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.kube.apiserver.request.error.rate-4ecg7
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.kube.apiserver.request.latency-hjzmp-b456a6eccecfeffd2ec69f7937d901f8
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: avg(rate(apiserver_request_latencies_count{}[5m]))>1
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.kube.apiserver.request.latency
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "1"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.kube.apiserver.request.latency-hjzmp
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.kube.apiserver.request.count.5xx-863lm-2436dc99cd149a18aa8262af7bace2c3
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: sum(rate(apiserver_request_count{code=~"5.."}[5m]))>10
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.kube.apiserver.request.count.5xx
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "10"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.kube.apiserver.request.count.5xx-863lm
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.kube.etcd.has.leader-lei4r-85bfc916fb3496241d98264291c552e8
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: max(etcd_server_has_leader{namespace="kube-system"})!=1
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.kube.etcd.has.leader
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: "!="
+            alert_indicator_threshold: "1"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.kube.etcd.has.leader-lei4r
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.kube.etcd.up-zj93z-2bbda62190f8d5fed245597cce3b00f9
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: up{job="kube-etcd"}!=1
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.kube.etcd.up
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: "!="
+            alert_indicator_threshold: "1"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.kube.etcd.up-zj93z
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.node.ready-lafrn-a26eede27229091eeacb15b8c43c16af
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: avg by (node) (kube_node_status_condition{condition="Ready",status="true"})!=1
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.node.ready
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: "!="
+            alert_indicator_threshold: "1"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.node.ready-lafrn
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.pod.restarted.total-xhb8a-34baba25e448c78285494c81b4e73a3a
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: count(sum by (pod)(delta(kube_pod_container_status_restarts_total[5m])>0))>10
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.pod.restarted.total
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "10"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.pod.restarted.total-xhb8a
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.pod.status.phase.unknown-w6r2o-584cc4377bfd9be6ca520cf7dad0251b
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: sum(kube_pod_status_phase{phase="Unknown"})>1
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.pod.status.phase.unknown
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "1"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.pod.status.phase.unknown-w6r2o
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.cpu.utilization-u0e59-6d6f6aaa1ec9445422ea4a1fa7600ae6
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            cluster_cpu_utilization / count(avg by(instance,cpu)(node_cpu{job="node-exporter",mode="idle"}))
+            > 0.85
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.cpu.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.85"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.cpu.utilization-u0e59
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.memory.utilization-dvp5b-278bcb42fabce6ff68fd5bf9f7befac4
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: cluster_memory_MemUsed / sum(node_memory_MemTotal) > 0.85
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.memory.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.85"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.memory.utilization-dvp5b
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.resource.request.cpu.utilization-8909t-abb2b3bf413be4d264922286d0febb45
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            cluster_resource_requests_cpu_cores / sum(kube_node_status_allocatable_cpu_cores)
+            > 0.9
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.resource.request.cpu.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.9"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.resource.request.cpu.utilization-8909t
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.resource.request.memory.utilization-f6btb-d2f3120ce277185d55d01b1ecbc11edb
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            cluster_resource_requests_memory_bytes / sum(kube_node_status_allocatable_memory_bytes)
+            > 0.9
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.resource.request.memory.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.9"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.resource.request.memory.utilization-f6btb
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        - alert: cluster.resource.request.cpu.utilization-8909t-abb2b3bf413be4d264922286d0febb45
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            cluster_resource_requests_cpu_cores / sum(kube_node_status_allocatable_cpu_cores)
+            > 0.9
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: cluster.resource.request.cpu.utilization
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0.9"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.resource.request.cpu.utilization-8909t
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        # [add]pod无限创建告警
+        - alert: cluster.infinite.pod.created-eef5f-26cfebd94c8146dea9f910086055e4a6
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr:
+            count(kube_pod_info_with_label{phase="Failed"}) by (namespace) - count(kube_pod_info_with_label{phase="Failed"} offset 10m) by (namespace)
+            > 50
+          for: 60s
+          labels:
+            alert_cluster: global
+            alert_indicator: custom
+            alert_indicator_alias: 10分钟内失败pod的创建数量
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "50"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.infinite.pod.created
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        # [add]pod长时间卡Pending
+        - alert: cluster.pod.stuck.in.pending-4274a-8b02453eb72d41179b02d92c5ea68cbb
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: kube_pod_info_with_label{phase="Pending"} == 1
+          for: 600s
+          labels:
+            alert_cluster: global
+            alert_indicator: custom
+            alert_indicator_alias: 状态为Pending的Pod
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: "=="
+            alert_indicator_threshold: "1"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.pod.stuck.in.pending
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        # [add]大量异常pod产生告警
+        - alert: cluster.pod.inactive-4275a-8b02453eb72d41179b02d92c5ea69cbb
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: count(kube_pod_info_with_label{phase!~"Running|Succeeded|Pending"}) > 30
+          for: 600s
+          labels:
+            alert_cluster: global
+            alert_indicator: custom
+            alert_indicator_alias: 状态不为Running|Succeeded|Pending
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "30"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.pod.inactive
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium
+        # [add]异常事件告警
+        - alert: cluster.event.unusual.count-3768c-86fa1afb24ea4a3f874c6e9df1582470
+          annotations:
+            alert_current_value: "{{$value}}"
+            alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+          expr: count(kubernetes_events{event_type!="Normal"}) by (event_name) > 0
+          for: 900s
+          labels:
+            alert_cluster: global
+            alert_indicator: custom
+            alert_indicator_alias: 状态不为Normal的事件数量
+            alert_indicator_aggregate_range: "0"
+            alert_indicator_comparison: ">"
+            alert_indicator_threshold: "0"
+            alert_involved_object_kind: Cluster
+            alert_involved_object_name: global
+            alert_involved_object_namespace: ""
+            alert_name: cluster.event.unusual.count
+            alert_project: ""
+            alert_resource: cpaas-cluster-status-rules
+            severity: Medium

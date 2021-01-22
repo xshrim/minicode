@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Deployment
+    alert.cpaas.io/name: auth-controller2
+    alert.cpaas.io/namespace: cpaas-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: system
+    prometheus: kube-prometheus
+  name: cpaas-auth-controller2-controller-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/prometheusrules/cpaas-auth-controller2-controller-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: custom-mf340-101c55b3124328ef3797c9419e87d0c5
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg(rate(controller_runtime_reconcile_time_seconds_bucket{job="auth-controller2"}[5m]))
+        by (job, controller, le))>30
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.reconcile.latency.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "30"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: auth-controller2
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-mf340
+        alert_project: system
+        alert_resource: cpaas-auth-controller2-controller-rules
+        severity: Medium
+    - alert: custom-g09w2-f42003d0685579cce9302f71b6b8e9e9
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(workqueue_depth{job="auth-controller2"}) by (job, name)>20
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.workqueue.depth
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "20"
+        alert_indicator_unit: ""
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: auth-controller2
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-g09w2
+        alert_project: system
+        alert_resource: cpaas-auth-controller2-controller-rules
+        severity: Medium
+    - alert: custom-wp6w3-d3868d97f20fdf566f3476e3ae7c744c
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: histogram_quantile(0.9, avg(rate(controller_runtime_webhook_latency_seconds_bucket{job="auth-controller2"}[5m]))
+        by (job, le))>0.1
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.webhook.latency.seconds
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.1"
+        alert_indicator_unit: s
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: auth-controller2
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-wp6w3
+        alert_project: system
+        alert_resource: cpaas-auth-controller2-controller-rules
+        severity: Medium
+    - alert: custom-30s1h-199b26cf6a70068ceab4c85b80c96ec7
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(delta(controller_runtime_webhook_requests_total{job="auth-controller2",
+        succeeded="false"}[5m]))/sum(delta(controller_runtime_webhook_requests_total{job="auth-controller2"}[5m]))>0.2
+      for: 120s
+      labels:
+        alert_cluster: global
+        alert_indicator: custom
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_alias: custom.workload.controller.webhook.rejected.percent
+        alert_indicator_comparison: '>'
+        alert_indicator_query: ""
+        alert_indicator_threshold: "0.2"
+        alert_indicator_unit: '%'
+        alert_involved_object_kind: Deployment
+        alert_involved_object_name: auth-controller2
+        alert_involved_object_namespace: cpaas-system
+        alert_name: custom-30s1h
+        alert_project: system
+        alert_resource: cpaas-auth-controller2-controller-rules
+        severity: Medium

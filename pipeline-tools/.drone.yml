@@ -1,0 +1,36 @@
+---
+kind: pipeline
+name: default
+
+steps:
+- name: build
+  privileged: true
+  image: rancher/dapper:1.11.2
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+  commands:
+  - dapper ci
+
+- name:  publish-pipeline-tools
+  image: plugins/docker
+  settings: 
+    dockerfile: package/Dockerfile
+    repo: rancher/pipeline-tools
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    tags: 
+    - ${DRONE_TAG}
+  when:
+    instance:
+    - drone-publish.rancher.io
+    ref:
+    - refs/head/master
+    - refs/tags/*
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock

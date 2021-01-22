@@ -1,0 +1,21 @@
+annotations:
+  category: Analytics
+apiVersion: v1
+appVersion: 1.0.1
+description: Prometheus exporter for hardware and OS metrics exposed by UNIX kernels,
+  with pluggable metric collectors.
+engine: gotpl
+home: https://prometheus.io/
+icon: https://bitnami.com/assets/stacks/node-exporter/img/node-exporter-stack-220x234.png
+keywords:
+- prometheus
+- node-exporter
+- monitoring
+maintainers:
+- email: containers@bitnami.com
+  name: Bitnami
+name: node-exporter
+sources:
+- https://github.com/bitnami/bitnami-docker-node-exporter
+- https://github.com/prometheus/node_exporter
+version: 1.1.0

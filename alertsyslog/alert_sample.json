@@ -1,0 +1,54 @@
+{
+  "receiver": "default-receiver",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alert_cluster": "global",
+        "alert_indicator": "cluster.kube.apiserver.request.error.rate",
+        "alert_indicator_aggregate_range": "0",
+        "alert_indicator_comparison": "\u003e",
+        "alert_indicator_threshold": "0.1",
+        "alert_involved_object_kind": "Cluster",
+        "alert_involved_object_name": "global",
+        "alert_name": "cluster.kube.apiserver.request.error.rate-rq4pq",
+        "alert_resource": "cpaas-cluster-status-rules",
+        "alertname": "cluster.kube.apiserver.request.error.rate-rq4pq-34f7ab10ab1e492e39a4b4542a94ed4e",
+        "prometheus": "cpaas-system/kube-prometheus",
+        "severity": "Medium"
+      },
+      "annotations": {
+        "alert_current_value": "0.2533179785055868",
+        "alert_notifications": "[{\"namespace\":\"cpaas-system\",\"name\":\"cpaas-admin-notification\"},{\"name\":\"wh\",\"namespace\":\"cpaas-system\"}]"
+      },
+      "startsAt": "2020-07-31T12:14:05.077340425Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://kube-prometheus.cpaas-system:9090/graph?g0.expr=1+-+sum%28rate%28apiserver_request_count%7Bcode%3D~%222..%22%7D%5B5m%5D%29%29+%2F+sum%28rate%28apiserver_request_count%5B5m%5D%29%29+%3E+0.1\u0026g0.tab=1"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "cluster.kube.apiserver.request.error.rate-rq4pq-34f7ab10ab1e492e39a4b4542a94ed4e"
+  },
+  "commonLabels": {
+    "alert_cluster": "global",
+    "alert_indicator": "cluster.kube.apiserver.request.error.rate",
+    "alert_indicator_aggregate_range": "0",
+    "alert_indicator_comparison": "\u003e",
+    "alert_indicator_threshold": "0.1",
+    "alert_involved_object_kind": "Cluster",
+    "alert_involved_object_name": "global",
+    "alert_name": "cluster.kube.apiserver.request.error.rate-rq4pq",
+    "alert_resource": "cpaas-cluster-status-rules",
+    "alertname": "cluster.kube.apiserver.request.error.rate-rq4pq-34f7ab10ab1e492e39a4b4542a94ed4e",
+    "prometheus": "cpaas-system/kube-prometheus",
+    "severity": "Medium"
+  },
+  "commonAnnotations": {
+    "alert_current_value": "0.2533179785055868",
+    "alert_notifications": "[{\"namespace\":\"cpaas-system\",\"name\":\"cpaas-admin-notification\"},{\"name\":\"wh\",\"namespace\":\"cpaas-system\"}]"
+  },
+  "externalURL": "http://kube-prometheus-alertmanager.cpaas-system:9093",
+  "version": "4",
+  "groupKey": "{}:{alertname=\"cluster.kube.apiserver.request.error.rate-rq4pq-34f7ab10ab1e492e39a4b4542a94ed4e\"}"
+}

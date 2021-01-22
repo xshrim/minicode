@@ -1,0 +1,11 @@
+name: bk-paas
+description: 蓝鲸智云PaaS平台是一个开放式的开发平台，让开发者可以方便快捷地创建、开发、部署和管理SaaS应用。
+version: 0.0.1
+apiVersion: v1
+keywords:
+  - paas
+  - blueking
+sources:
+- https://github.com/Tencent/bk-paas
+home: https://bk.tencent.com/
+icon: file://../logo.png

@@ -1,0 +1,111 @@
+set +x
+if [[ "$DEBUG" = "true" ]];then
+  set -x
+fi
+
+exiterr(){
+  echo "[ERROR]""$1"
+  exit 1
+}
+
+checkerr(){
+  if [[ $? != 0 ]];then
+    exit 1
+  fi
+}
+
+loginfo(){
+  echo "[INFO]""$1"
+}
+
+# check required env vars
+checkFunc(){
+  if [[ -z "$CATALOG_TEMPLATE_NAME" ]];then
+    exiterr "CATALOG_TEMPLATE_NAME variable is not set"
+  fi
+  if [[ -z "$APP_NAME" ]];then
+    exiterr "APP_NAME variable is not set"
+  fi
+  if [[ -z "$VERSION" ]];then
+    exiterr "VERSION variable is not set"
+  fi
+  if [[ -z "$TARGET_NAMESPACE" ]];then
+    exiterr "TARGET_NAMESPACE variable is not set"
+  fi
+  if [[ -z "$RANCHER_URL" ]];then
+    exiterr "RANCHER_URL variable is not set"
+  fi
+  if [[ -z "$API_TOKEN" ]];then
+    exiterr "API_TOKEN variable is not set"
+  fi
+  if [[ -z "$ANSWERS" ]];then
+    exiterr "ANSWERS variable is not set"
+  fi
+  loginfo "check done..."
+}
+
+prepareFunc(){
+  if [[ -n "$ANSWERS" ]];then
+    printf "%s" "$ANSWERS" > /tmp/answers.file
+  fi
+  loginfo "prepare config done..."
+
+  rancher l -t $API_TOKEN --context $CICD_CLUSTER_ID:$CICD_PROJECT_ID --skip-verify $RANCHER_URL
+  checkerr
+
+  loginfo "refreshing catalog"
+  curl -ks -o /dev/null -u $API_TOKEN -d '' "$RANCHER_URL""/v3/catalogs?action=refresh"
+  curl -ks -o /dev/null -u $API_TOKEN -d '' "$RANCHER_URL""/v3/clustercatalogs?action=refresh"
+  curl -ks -o /dev/null -u $API_TOKEN -d '' "$RANCHER_URL""/v3/projectcatalogs?action=refresh"
+  if [[ "$WAIT_REFRESH_TIME" != "" ]];then
+    sleep $WAIT_REFRESH_TIME
+  else
+    sleep 10
+  fi
+}
+
+waitAppActiveFunc(){
+  loginfo "waiting $APP_NAME to be active..."
+  count=0
+  limit=60
+  until test "$state" = "active" || test $count -gt $limit
+  do
+    resourceItem=$(rancher app ls --format '{{.App.Name}} {{.App.State}} {{.App.Transitioning}} {{.App.TransitioningMessage}}'|grep "$APP_NAME ")
+    checkerr
+
+    state=$(echo $resourceItem|cut -f2 -d' ')
+    transitioning=$(echo $resourceItem|cut -f3 -d' ')
+    transitioningMessage=$(echo $resourceItem|cut -f4- -d' ')
+    if [[ $transitioning = "error" ]];then
+      exiterr "$transitioningMessage"
+    fi
+    sleep 5
+    count=$((count + 1))
+    if [[ $count -gt $limit ]];then
+      exiterr "timeout waiting $APP_NAME to be active"
+    fi
+  done
+}
+
+installAppFunc(){
+  apps=$(rancher app ls --format '{{.App.Name}}')
+  checkerr
+  exist=$(echo "$apps"|{ grep $APP_NAME || true; })
+  if  [[ -z "$exist" ]];then
+    loginfo "installing new $CATALOG_TEMPLATE_NAME app \"$APP_NAME\" in $TARGET_NAMESPACE namespace"
+    rancher app install --no-prompt -a /tmp/answers.file --version $VERSION --namespace $TARGET_NAMESPACE $CATALOG_TEMPLATE_NAME $APP_NAME
+    checkerr
+    waitAppActiveFunc
+    loginfo "successfully installed the \"$APP_NAME\" app"
+  else
+  	loginfo "upgrading the \"$APP_NAME\" app"
+    rancher app upgrade -a /tmp/answers.file $APP_NAME $VERSION
+    checkerr
+    waitAppActiveFunc
+    loginfo "successfully upgraded the \"$APP_NAME\" app"
+  fi
+}
+    
+checkFunc
+prepareFunc
+installAppFunc

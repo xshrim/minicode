@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:41Z"
+  generation: 1
+  labels:
+    app: exporter-dockerd
+    chart: exporter-dockerd-0.1.0
+    component: dockerd-exporter
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: cpaas-monitor
+  name: cpaas-monitor-exporter-dockerd
+  namespace: cpaas-system
+  resourceVersion: "4477"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/cpaas-monitor-exporter-dockerd
+  uid: 6169b359-25be-4ead-aa0d-270e2fa12fc4
+spec:
+  endpoints:
+  - interval: 60s
+    port: dockerd
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node_name
+    - action: replace
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      app: exporter-dockerd
+      component: dockerd-exporter

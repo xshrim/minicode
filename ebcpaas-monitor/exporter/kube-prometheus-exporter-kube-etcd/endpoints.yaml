@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:37:42Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-etcd
+    chart: exporter-kube-etcd-0.1.15
+    component: kube-etcd
+    heritage: Helm
+    release: kube-prometheus
+    service.kubernetes.io/headless: ""
+  name: kube-prometheus-exporter-kube-etcd
+  namespace: kube-system
+  resourceVersion: "121571602"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-prometheus-exporter-kube-etcd
+  uid: 2e681e02-743d-49fa-8fee-edb996c8edaf
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+    nodeName: 25.2.20.37
+    targetRef:
+      kind: Pod
+      name: etcd-25.2.20.37
+      namespace: kube-system
+      resourceVersion: "121571294"
+      uid: 0b3eb30a-edf8-445e-acb2-b025a3053330
+  - ip: 25.2.20.38
+    nodeName: 25.2.20.38
+    targetRef:
+      kind: Pod
+      name: etcd-25.2.20.38
+      namespace: kube-system
+      resourceVersion: "121524296"
+      uid: 9d441233-dbfc-458b-9702-8206d86365fd
+  - ip: 25.2.20.39
+    nodeName: 25.2.20.39
+    targetRef:
+      kind: Pod
+      name: etcd-25.2.20.39
+      namespace: kube-system
+      resourceVersion: "121524846"
+      uid: 3fe1d55b-c867-432c-b5f9-0d73891c3852
+  ports:
+  - name: https-metrics
+    port: 2379
+    protocol: TCP

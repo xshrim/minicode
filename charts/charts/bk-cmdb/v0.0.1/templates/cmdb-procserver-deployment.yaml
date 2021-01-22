@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: procserver
+    release: {{ .Release.Name }}
+  name: procserver
+spec:
+  replicas: {{ .Values.cmdb.procserver.replicas }}
+  selector:
+    matchLabels:
+      app: procserver
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: procserver
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: procserver
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.procserver.image }}:{{ .Values.cmdb.procserver.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: procserver
+          ports:
+            - containerPort: 60003
+          resources:
+{{ toYaml .Values.cmdb.procserver.resources | indent 12 }}
+{{- with .Values.cmdb.procserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

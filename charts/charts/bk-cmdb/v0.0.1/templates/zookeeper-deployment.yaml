@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: zookeeper
+    release: {{ .Release.Name }}
+  name: zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: ALLOW_ANONYMOUS_LOGIN
+              valueFrom:
+                configMapKeyRef:
+                  key: ALLOW_ANONYMOUS_LOGIN
+                  name: {{ .Release.Name }}-configures
+            - name: ZOO_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  key: ZOO_SERVERS
+                  name: {{ .Release.Name }}-configures
+            - name: ZOO_MY_ID
+              valueFrom:
+                configMapKeyRef:
+                  key: ZOO_MY_ID
+                  name: {{ .Release.Name }}-configures
+          image: "{{ .Values.repository }}/{{ .Values.zookeeper.image }}:{{ .Values.zookeeper.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: zookeeper
+          ports:
+            - containerPort: 2181
+          resources:
+{{ toYaml .Values.zookeeper.resources | indent 12 }}
+{{- with .Values.zookeeper.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

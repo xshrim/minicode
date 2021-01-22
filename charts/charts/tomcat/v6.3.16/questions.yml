@@ -1,0 +1,178 @@
+﻿categories:
+- WebServer
+labels:
+  io.rancher.certified: experimental   #partner
+questions:
+- variable: defaultImage
+  default: true
+  description: "使用默认Docker镜像"
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: image.repository
+    default: "bitnami/tomcat"
+    description: "Tomcat Docker镜像名称"
+    type: string
+    label: Tomcat Docker镜像名称
+  - variable: image.tag
+    default: "9.0.37-debian-10-r42"
+    description: "Tomcat镜像标签"
+    type: string
+    label: 镜像标签
+  - variable: pullPolicy
+    default: IfNotPresent
+    description: "指定镜像拉取策略"
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+## volumePermissions
+- variable: volumePermissions.enabled
+  default: false
+  label: 启用将永久卷的所有者和组更改为的初始化容器runAsUser:fsGroup
+  type: boolean
+  show_subquestion_if: true
+  group: "Bitnami Minideb镜像"
+  subquestions:
+  - variable: volumePermissions.image.repository
+    default: "bitnami/minideb"
+    type: string
+    label: Minideb Docker镜像名称
+  - variable: volumePermissions.image.tag
+    default: "buster"
+    type: string
+    label: 镜像标签
+  - variable: volumePermissions.image.pullPolicy
+    default: Always
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略    
+  - variable: volumePermissions.resources.limits.cpu
+    default: ""
+    type: string
+    label: Minideb CPU限制
+    group: "容器的资源请求和限制"
+  - variable: resources.limits.memory
+    default: ""
+    type: string
+    label: Minideb 内存限制
+    group: "容器的资源请求和限制"
+  - variable: resources.requests.cpu
+    default: ""  
+    type: string
+    label: Minideb初始化工具预留CPU
+    group: "容器的资源请求和限制"
+  - variable: resources.requests.memory
+    default: ""
+    type: string
+    label: Minideb初始化工具预留内存
+    group: "容器的资源请求和限制"  
+
+## Tomcat containers' resource
+- variable: resources.limits.cpu
+  default: ""
+  description: "Tomcat CPU限制"
+  type: string
+  label: Tomcat CPU限制
+  group: 资源配额
+- variable: resources.limits.memory
+  default: ""
+  description: "Tomcat内存限制"
+  type: string
+  label: Tomcat 内存限制
+  group: 资源配额
+- variable: resources.requests.cpu
+  default: "300m"   
+  description: "Tomcat初始化工具预留CPU"
+  type: string
+  label: Tomcat初始化工具预留CPU
+  group: 资源配额
+- variable: resources.requests.memory
+  default: "512Mi"
+  description: "Tomcat初始化工具CPU限制"
+  type: string
+  label: Tomcat初始化工具CPU限制
+  group: 资源配额
+
+## persistence setting
+- variable: persistence.enabled
+  default: true
+  type: boolean
+  label: 是否开启持久化
+  group: "存储选项"
+  show_subquestion_if: true
+  subquestions:
+  - variable: persistence.storageClass
+    default: ""
+    type: storageclass
+    label: 存储类        
+  - variable: persistence.accessMode
+    default: "ReadWriteOnce"
+    description: "ReadWriteOnce单主机读写, ReadOnlyMany多主机只读, ReadWriteMany多主机读写"
+    type: enum
+    label: 访问模型
+    show_if: "persistence.enabled=true"
+    group: "持久化"
+    options:
+    - "ReadWriteOnce"
+    - "ReadOnlyMany"
+    - "ReadWriteMany"
+  - variable: persistence.size
+    default: "8Gi"
+    type: string
+    label: tomcat的卷容量
+    group: "存储选项"
+  - variable: persistence.existingClaim
+    default: ""
+    type: pvc
+    label: 使用已存在的PVC
+
+## Service paramaters
+- variable: service.type
+  default: "ClusterIP" #LoadBalancer
+  description: "Tomcat Service类型"
+  type: enum
+  show_if: "ingress.enabled=false"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+  required: true
+  label: Tomcat Service类型
+  show_subquestion_if: "NodePort"
+  group: "Services和负载均衡"
+  subquestions:
+  - variable: service.nodePort
+    default: ""
+    description: "NodePort端口(请明确设置，选择30000-32767之间的端口)"
+    type: int
+    min: 30000
+    max: 32767
+    label: NodePort端口
+
+# Service and L7 LoadBalancer
+- variable: ingress.enabled
+  default: false
+  description: "使用七层负载均衡公开访问应用 - ingress"
+  type: boolean
+  label: 使用七层负载均衡公开访问应用
+  show_subquestion_if: true
+  group: "Services和负载均衡"
+  required: true
+  subquestions:
+  - variable: ingress.hosts[0]
+    default: "xip.io"
+    description: "安装tomcat的主机名"
+    type: hostname
+    required: true
+    label: 主机名
+
+
+

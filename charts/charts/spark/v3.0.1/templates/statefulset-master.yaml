@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "common.names.fullname" . }}-master
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: master
+spec:
+  serviceName: {{ template "common.names.fullname" . }}-headless
+  replicas: 1
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/component: master
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: master
+      {{- if .Values.master.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.master.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+{{- include "spark.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.master.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.master.affinity "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.master.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.master.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.master.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.master.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.master.securityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.master.securityContext.fsGroup }}
+        runAsUser: {{ .Values.master.securityContext.runAsUser }}
+      {{- end }}
+      containers:
+        - name: spark-master
+          image: {{ template "spark.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.master.webPort }}
+              protocol: TCP
+            - name: cluster
+              containerPort: {{ .Values.master.clusterPort }}
+          volumeMounts:
+            {{- if .Values.master.configurationConfigMap }}
+            - name: config
+              mountPath: '/opt/bitnami/spark/conf/'
+            {{- end }}
+            {{- if .Values.security.certificatesSecretName }}
+            - name: certs
+              mountPath: '/opt/bitnami/spark/conf/certs'
+              readOnly: true
+            {{- end }}
+            {{- if .Values.master.extraVolumeMounts }}
+            {{- tpl (toYaml .Values.master.extraVolumeMounts) $ | nindent 12 }}
+            {{- end }}
+          env:
+            - name: SPARK_MODE
+              value: "master"
+            {{- if .Values.master.debug }}
+            - name: BASH_DEBUG
+              value: {{ ternary "1" "0" .Values.image.debug | quote }}
+            {{- end }}
+            - name: SPARK_DAEMON_MEMORY
+              value: {{ .Values.master.daemonMemoryLimit | quote }}
+            {{- if .Values.master.clusterPort }}
+            - name: SPARK_MASTER_PORT
+              value: {{ .Values.service.clusterPort | quote }}
+            {{- end }}
+            {{- if .Values.master.webPort }}
+            - name: SPARK_MASTER_WEBUI_PORT
+              value: {{ .Values.master.webPort | quote }}
+            {{- end }}
+            {{- if .Values.master.configOptions }}
+            - name: SPARK_MASTER_OPTS
+              value: {{ .Values.master.configOptions | quote }}
+            {{- end }}
+            {{- if .Values.security.rpc.authenticationEnabled }}
+            - name: SPARK_RPC_AUTHENTICATION_ENABLED
+              value: {{ .Values.security.rpc.authenticationEnabled | quote }}
+            - name: SPARK_RPC_AUTHENTICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: rpc-authentication-secret
+            {{- end }}
+            {{- if .Values.security.rpc.encryptionEnabled }}
+            - name: SPARK_RPC_ENCRYPTION_ENABLED
+              value: {{ .Values.security.rpc.encryptionEnabled | quote }}
+            {{- end }}
+            {{- if .Values.security.storageEncryptionEnabled }}
+            - name: SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED
+              value: {{ .Values.security.storageEncryptionEnabled | quote }}
+            {{- end }}
+            {{- if .Values.security.ssl.enabled }}
+            - name: SPARK_SSL_ENABLED
+              value: {{ .Values.security.ssl.enabled | quote }}
+            - name: SPARK_SSL_KEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: ssl-key-password
+            - name: SPARK_SSL_KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: ssl-keystore-password
+            - name: SPARK_SSL_TRUSTSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "spark.passwordsSecretName" . }}
+                  key: ssl-truststore-password
+            - name: SPARK_SSL_NEED_CLIENT_AUTH
+              value: {{ .Values.security.ssl.needClientAuth | quote }}
+            - name: SPARK_SSL_PROTOCOL
+              value: {{ .Values.security.ssl.protocol | quote }}
+            {{- end }}
+            {{- if .Values.master.extraEnvVars }}
+            {{- toYaml .Values.master.extraEnvVars | nindent 12 }}
+            {{- end }}
+          {{- if .Values.master.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.master.webPort }}
+            initialDelaySeconds: {{ .Values.master.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.master.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.master.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.master.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.master.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.master.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.master.webPort }}
+            initialDelaySeconds: {{ .Values.master.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.master.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.master.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.master.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.master.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.master.resources }}
+          resources: {{- toYaml .Values.master.resources | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- if .Values.master.configurationConfigMap }}
+        - name: config
+          configMap:
+            name: {{ .Values.master.configurationConfigMap }}
+        {{- end }}
+        {{- if .Values.security.certificatesSecretName }}
+        - name: certs
+          secret:
+            secretName: {{ .Values.security.certificatesSecretName }}
+        {{- end }}
+        {{- if .Values.master.extraVolumes }}
+        {{- tpl (toYaml .Values.master.extraVolumes) $ | nindent 8 }}
+        {{- end }}

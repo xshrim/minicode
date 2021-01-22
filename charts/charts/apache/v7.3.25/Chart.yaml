@@ -1,0 +1,23 @@
+annotations:
+  category: Infrastructure
+apiVersion: v1
+appVersion: 2.4.46
+description: Chart for Apache HTTP Server
+engine: gotpl
+home: https://github.com/bitnami/charts/tree/master/bitnami/apache
+icon: file://../logo.png
+keywords:
+- apache
+- http
+- https
+- www
+- web
+- reverse proxy
+maintainers:
+- email: containers@bitnami.com
+  name: Bitnami
+name: apache
+sources:
+- https://github.com/bitnami/bitnami-docker-apache
+- https://httpd.apache.org
+version: 7.3.25

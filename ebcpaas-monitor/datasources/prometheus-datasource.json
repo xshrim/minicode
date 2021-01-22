@@ -1,0 +1,24 @@
+{
+    "name":"prometheus",
+    "type":"prometheus",
+    "typeLogoUrl":"",
+    "access":"proxy",
+    "url": "http://kube-prometheus:9090",
+    "password":"",
+    "user":"",
+    "database":"",
+    "basicAuth":false,
+    "basicAuthUser":"",
+    "basicAuthPassword":"",
+    "withCredentials":false,
+    "isDefault":true,
+    "jsonData":{
+        "httpMethod":"GET",
+        "keepCookies":[
+        ]
+    },
+    "secureJsonFields":{
+    },
+    "readOnly":false
+}
+

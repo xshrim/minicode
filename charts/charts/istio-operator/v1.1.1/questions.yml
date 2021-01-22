@@ -1,0 +1,7 @@
+categories:
+- Observability
+- DevOps
+- MicroService
+labels:
+  io.rancher.certified: operator
+questions:

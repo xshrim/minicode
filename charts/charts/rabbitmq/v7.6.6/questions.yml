@@ -1,0 +1,121 @@
+categories:
+- MQ
+labels:
+  io.rancher.certified: experimental   #partner
+questions:
+# RabbitMQ image version
+- variable: defaultImage
+  default: true
+  label: 使用默认Docker镜像
+  type: boolean
+  show_subquestion_if: false
+  group: "容器镜像"
+  subquestions:
+  - variable: image.repository
+    default: "bitnami/rabbitmq"
+    type: string
+    label: Apache Docker镜像名称
+  - variable: image.tag
+    default: "3.8.8-debian-10-r0"
+    type: string
+    label: 镜像标签
+  - variable: image.pullPolicy
+    default: IfNotPresent
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+# RabbitMQ application username
+- variable: auth.username
+  default: user
+  label: 用户名
+  type: string
+  group: "用户配置"
+# RabbitMQ application tls
+- variable: auth.tls.enabled
+  default: false
+  label: 在RabbitMQ上是否启用TLS支持
+  type: boolean
+  show_subquestion_if: true
+  group: "TLS支持设置"
+  subquestions:
+  - variable: auth.tls.failIfNoPeerCert
+    default: true
+    type: boolean
+    label: 当设置为真时，如果客户端未能提供证书，则TLS连接将被拒绝
+  - variable: auth.tls.sslOptionsVerify
+    default: verify_peer
+    type: string
+    label: 是否应该启用对等验证
+  - variable: auth.tls.caCertificate
+    default: nil
+    type: string
+    label: 证书颁发机构捆绑内容
+  - variable: auth.tls.serverCertificate
+    default: nil
+    type: string
+    label: 服务器证书内容 
+  - variable: auth.tls.serverKey
+    default: nil
+    type: string
+    label: 服务器私钥内容
+  - variable: auth.tls.existingSecret
+    default: nil
+    type: string
+    label: 证书内容为RabbitMQ凭据的现有机密  
+
+ # RabbitMQ  containers' resource requests and limits   
+- variable: resources.limits.cpu
+  default: {}
+  type: string
+  label: RabbitMQ CPU限制
+  group: "容器的资源请求和限制"
+- variable: resources.limits.memory
+  default: {}
+  type: string
+  label: RabbitMQ 内存限制
+  group: "容器的资源请求和限制"
+- variable: resources.requests.cpu
+  default: {}   
+  type: string
+  label: RabbitMQ初始化工具预留CPU
+  group: "容器的资源请求和限制"
+- variable: resources.requests.memory
+  default: {}
+  type: string
+  label: RabbitMQ初始化工具预留内存
+  group: "容器的资源请求和限制"
+# Number of replicas to deploy
+- variable: replicaCount
+  default: 1
+  type: int
+  label: 部署的副本数量
+  group: "副本设置"
+# values from the securityContext section of the component
+- variable: volumePermissions.enabled
+  default: false
+  label: 启用将永久卷的所有者和组更改为的初始化容器runAsUser:fsGroup
+  type: boolean
+  show_subquestion_if: true
+  group: "Bitnami Minideb镜像"
+  subquestions:
+  - variable: volumePermissions.image.repository
+    default: "bitnami/minideb"
+    type: string
+    label: Minideb Docker镜像名称
+  - variable: volumePermissions.image.tag
+    default: "buster"
+    type: string
+    label: 镜像标签
+  - variable: volumePermissions.image.pullPolicy
+    default: Always
+    type: enum
+    options:
+    - IfNotPresent
+    - Always
+    - Never
+    label: 镜像拉取策略
+
+

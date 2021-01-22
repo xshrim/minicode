@@ -1,0 +1,385 @@
+---
+# Source: paas/charts/mysql/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: paas-mysql
+  namespace: bk
+  labels:
+    app: paas-mysql
+    chart: "mysql-1.6.9"
+    release: "paas"
+    heritage: "Helm"
+type: Opaque
+data:
+  
+  mysql-root-password:  "YWRtaW4="
+  
+  
+  mysql-password:  "YWRtaW4="
+---
+# Source: paas/templates/secret.yaml
+apiVersion: v1
+data:
+  DB_PASSWORD: "YWRtaW4="
+kind: Secret
+metadata:
+  name: paas
+type: Opaque
+---
+# Source: paas/charts/mysql/templates/tests/test-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paas-mysql-test
+  namespace: bk
+  labels:
+    app: paas-mysql
+    chart: "mysql-1.6.9"
+    heritage: "Helm"
+    release: "paas"
+data:
+  run.sh: |-
+    @test "Testing MySQL Connection" {
+      mysql --host=paas-mysql --port=3306 -u root -padmin
+    }
+---
+# Source: paas/templates/configmap.yaml
+apiVersion: v1
+data:
+    DB_HOST: paas-mysql
+    DB_NAME: open_paas
+    DB_PORT: '3306'
+    DB_USER: root
+    PYTHONUNBUFFERED: "0"
+    TLS_ENABLE: "0"
+    ADMIN_USERNAME: "admin"
+    ADMIN_PASSWORD: "admin"
+    DOMAIN_APPENGINE: "appengine.bk.d.ebcpaas.com"
+    DOMAIN_ESB: "esb.bk.d.ebcpaas.com"
+    DOMAIN_PAAS: "paas.bk.d.ebcpaas.com"
+    DOMAIN_LOGIN: "login.bk.d.ebcpaas.com"
+kind: ConfigMap
+metadata:
+  name: paas
+---
+# Source: paas/charts/mysql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: paas-mysql
+  namespace: bk
+  labels:
+    app: paas-mysql
+    chart: "mysql-1.6.9"
+    release: "paas"
+    heritage: "Helm"
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: mysql
+  selector:
+    app: paas-mysql
+---
+# Source: paas/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: paas
+  labels:
+    app.kubernetes.io/name: paas
+    helm.sh/chart: paas-0.1.0
+    app.kubernetes.io/instance: paas
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8001
+      targetPort: 8001
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: paas
+    app.kubernetes.io/instance: paas
+---
+# Source: paas/charts/mysql/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paas-mysql
+  namespace: bk
+  labels:
+    app: paas-mysql
+    chart: "mysql-1.6.9"
+    release: "paas"
+    heritage: "Helm"
+
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paas-mysql
+      release: paas
+  template:
+    metadata:
+      labels:
+        app: paas-mysql
+        release: paas
+    spec:
+      serviceAccountName: default
+      initContainers:
+      - name: "remove-lost-found"
+        image: "busybox:latest"
+        imagePullPolicy: "IfNotPresent"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        command:  ["rm", "-fr", "/var/lib/mysql/lost+found"]
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+      # - name: do-something
+      #   image: busybox
+      #   command: ['do', 'something']
+      
+      containers:
+      - name: paas-mysql
+        image: "mysql:5.7.30"
+        imagePullPolicy: "IfNotPresent"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: paas-mysql
+              key: mysql-root-password
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: paas-mysql
+              key: mysql-password
+        - name: MYSQL_USER
+          value: "admin"
+        - name: MYSQL_DATABASE
+          value: ""
+        ports:
+        - name: mysql
+          containerPort: 3306
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+        # - name: extras
+        #   mountPath: /usr/share/extras
+        #   readOnly: true
+        
+      volumes:
+      - name: data
+        emptyDir: {}
+      # - name: extras
+      #   emptyDir: {}
+---
+# Source: paas/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paas
+  labels:
+    app.kubernetes.io/name: paas
+    helm.sh/chart: paas-0.1.0
+    app.kubernetes.io/instance: paas
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paas
+      app.kubernetes.io/instance: paas
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: paas
+        app.kubernetes.io/instance: paas
+    spec:
+      containers:
+        - name: paas
+          envFrom:
+          - secretRef:
+              name: paas
+              optional: false
+          - configMapRef:
+              name: paas
+              optional: false
+          image: "regdev.ebchina.com/bk/paas-paas:5.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8001
+              name: paas
+              protocol: TCP
+            - containerPort: 8000
+              name: appengine
+              protocol: TCP
+            - containerPort: 8002
+              name: esb
+              protocol: TCP
+            - containerPort: 8003
+              name: login
+              protocol: TCP
+          # TODO-EBCPAAS 需要补全健康检查
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {}
+        - name: login
+          envFrom:
+          - secretRef:
+              name: paas
+              optional: false
+          - configMapRef:
+              name: paas
+              optional: false
+          image: "regdev.ebchina.com/bk/paas-login:5.1"
+          imagePullPolicy: IfNotPresent
+          resources:
+            {}
+        - name: esb
+          envFrom:
+          - secretRef:
+              name: paas
+              optional: false
+          - configMapRef:
+              name: paas
+              optional: false
+          image: "regdev.ebchina.com/bk/paas-esb:5.1"
+          imagePullPolicy: IfNotPresent
+          resources:
+            {}
+        - name: appengine
+          envFrom:
+          - secretRef:
+              name: paas
+              optional: false
+          - configMapRef:
+              name: paas
+              optional: false
+          image: "regdev.ebchina.com/bk/paas-appengine:5.1"
+          imagePullPolicy: IfNotPresent
+          resources:
+            {}
+      initContainers:
+      - image: "mysql:5.7.30"
+        name: init
+        args:
+        - mysql
+        - "-hpaas-mysql"
+        - "-uroot"
+        - "-padmin"
+        - "-e"
+        - "CREATE DATABASE IF NOT EXISTS open_paas DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;"
+---
+# Source: paas/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: paas
+  labels:
+    app.kubernetes.io/name: paas
+    helm.sh/chart: paas-0.1.0
+    app.kubernetes.io/instance: paas
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  rules:
+    - host: "appengine.bk.d.ebcpaas.com"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: paas
+              servicePort: 8000
+    - host: "paas.bk.d.ebcpaas.com"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: paas
+              servicePort: 8001
+    - host: "esb.bk.d.ebcpaas.com"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: paas
+              servicePort: 8002
+    - host: "login.bk.d.ebcpaas.com"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: paas
+              servicePort: 8003
+---
+# Source: paas/charts/mysql/templates/tests/test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: paas-mysql-test
+  namespace: bk
+  labels:
+    app: paas-mysql
+    chart: "mysql-1.6.9"
+    heritage: "Helm"
+    release: "paas"
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: paas-test
+      image: "bats/bats:1.2.1"
+      imagePullPolicy: "IfNotPresent"
+      command: ["/opt/bats/bin/bats", "-t", "/tests/run.sh"]
+      volumeMounts:
+      - mountPath: /tests
+        name: tests
+        readOnly: true
+  volumes:
+  - name: tests
+    configMap:
+      name: paas-mysql-test
+  restartPolicy: Never

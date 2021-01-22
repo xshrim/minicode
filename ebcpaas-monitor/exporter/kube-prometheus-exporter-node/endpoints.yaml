@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:37:42Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-node
+    chart: exporter-node-0.4.5
+    component: node-exporter
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-node
+  namespace: cpaas-system
+  resourceVersion: "121571601"
+  selfLink: /api/v1/namespaces/cpaas-system/endpoints/kube-prometheus-exporter-node
+  uid: c05ffbb2-f43f-44be-ae54-0216c8672eca
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+    nodeName: 25.2.20.37
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-2dfrj
+      namespace: cpaas-system
+      resourceVersion: "121571295"
+      uid: 0ace7833-e138-4ef5-96b6-963ed7813f6a
+  - ip: 25.2.20.38
+    nodeName: 25.2.20.38
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-96v22
+      namespace: cpaas-system
+      resourceVersion: "82806650"
+      uid: 4b333179-29d1-457c-a475-5e9815619e24
+  - ip: 25.2.20.39
+    nodeName: 25.2.20.39
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-58dmk
+      namespace: cpaas-system
+      resourceVersion: "82806764"
+      uid: 7b3db4b7-d3e0-4bab-a077-5d78e1a794a3
+  - ip: 25.2.20.40
+    nodeName: 25.2.20.40
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-p2fqn
+      namespace: cpaas-system
+      resourceVersion: "112485727"
+      uid: 0f935b0d-4370-4be2-965f-a7b5ccb234e5
+  - ip: 25.2.20.44
+    nodeName: 25.2.20.44
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-qvt7j
+      namespace: cpaas-system
+      resourceVersion: "5348290"
+      uid: edd0548f-23a5-465c-9cc6-ccde3e711505
+  - ip: 25.2.20.45
+    nodeName: 25.2.20.45
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-9vdxn
+      namespace: cpaas-system
+      resourceVersion: "5348325"
+      uid: c0567956-725b-4f7b-96e9-f65c3182c7c3
+  - ip: 25.2.20.46
+    nodeName: 25.2.20.46
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-d74n7
+      namespace: cpaas-system
+      resourceVersion: "5348387"
+      uid: 021fe366-3b3a-4ca2-be0f-ee8dfdb81153
+  - ip: 25.2.20.47
+    nodeName: 25.2.20.47
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-mfc2c
+      namespace: cpaas-system
+      resourceVersion: "5348205"
+      uid: 304cc9bf-477f-4957-bc33-40040648959d
+  - ip: 25.2.20.48
+    nodeName: 25.2.20.48
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-mb9z4
+      namespace: cpaas-system
+      resourceVersion: "5348407"
+      uid: a87ea051-33dd-42bc-948c-d0477b67a6d0
+  - ip: 25.2.20.52
+    nodeName: 25.2.20.52
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-9g2tl
+      namespace: cpaas-system
+      resourceVersion: "5348439"
+      uid: f665f826-49ca-47dd-bf2b-3cdb8191b93a
+  - ip: 25.2.20.53
+    nodeName: 25.2.20.53
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-8h7r9
+      namespace: cpaas-system
+      resourceVersion: "5348418"
+      uid: 6af6af2b-3c94-4f90-b923-883cab33e2ab
+  - ip: 25.2.20.54
+    nodeName: 25.2.20.54
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-glvm6
+      namespace: cpaas-system
+      resourceVersion: "5348165"
+      uid: 05d42098-ee6a-48f9-a404-f500ef64d18c
+  - ip: 25.2.20.55
+    nodeName: 25.2.20.55
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-exporter-node-n5n5z
+      namespace: cpaas-system
+      resourceVersion: "5348330"
+      uid: a314feb1-fbc0-48f7-81c7-7b8e4e39e2d7
+  ports:
+  - name: metrics
+    port: 9100
+    protocol: TCP

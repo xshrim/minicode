@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: coreservice
+    release: {{ .Release.Name }}
+  name: coreservice
+spec:
+  replicas: {{ .Values.cmdb.coreservice.replicas }}
+  selector:
+    matchLabels:
+      app: coreservice
+      release: {{ .Release.Name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: coreservice
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - env:
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_AUTH_ENABLED
+                  name: {{ .Release.Name }}-configures
+            - name: DISCOVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CMDB_DISCOVER_URL
+                  name: {{ .Release.Name }}-configures
+            - name: REGISTE_URL
+              value: coreservice
+          image: "{{ .Values.repository }}/{{ .Values.cmdb.coreservice.image }}:{{ .Values.cmdb.coreservice.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: coreservice
+          ports:
+            - containerPort: 60007
+          resources:
+{{ toYaml .Values.cmdb.coreservice.resources | indent 12 }}
+{{- with .Values.cmdb.coreservice.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      restartPolicy: Always

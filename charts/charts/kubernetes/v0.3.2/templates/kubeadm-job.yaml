@@ -1,0 +1,110 @@
+{{- if .Values.admin.job.enabled }}
+{{- $fullName := include "kubernetes.fullname" . -}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ $fullName }}-kubeadm-tasks"
+  labels:
+    app: "{{ $fullName }}-kubeadm-tasks"
+    {{- with .Values.admin.job.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    checksum/config: {{ include (print $.Template.BasePath "/kubeadm-config.yaml") . | sha256sum }}
+    checksum/scripts: {{ include (print $.Template.BasePath "/kubeadm-scripts.yaml") . | sha256sum }}
+    {{- with .Values.admin.job.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: "{{ $fullName }}-kubeadm-tasks"
+        {{- with .Values.admin.job.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.admin.job.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.admin.job.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admin.job.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.admin.job.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admin.image.PullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
+      serviceAccountName: "{{ $fullName }}-kubeadm-tasks"
+      restartPolicy: OnFailure
+      containers:
+      - name: kubeadm
+        image: {{ .Values.admin.image.repository }}:{{ .Values.admin.image.tag }}
+        imagePullPolicy: {{ .Values.admin.image.PullPolicy }}
+        command: [ '/scripts/configure-cluster.sh' ]
+        env:
+        - name: FULL_NAME
+          value: "{{ $fullName }}"
+        {{- with .Values.controlPlaneEndpoint }}
+        - name: CONTROL_PLANE_ENDPOINT
+          value: "{{ . }}"
+        {{- end }}
+        {{- with .Values.admin.job.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - mountPath: /pki/front-proxy-client
+          name: pki-front-proxy-client
+        - mountPath: /pki/apiserver
+          name: pki-apiserver
+        - mountPath: /pki/apiserver-etcd-client
+          name: pki-apiserver-etcd-client
+        - mountPath: /pki/apiserver-kubelet-client
+          name: pki-apiserver-kubelet-client
+        - mountPath: /pki/ca
+          name: pki-ca
+        - mountPath: /pki/front-proxy-ca
+          name: pki-front-proxy-ca
+        - mountPath: /scripts
+          name: scripts
+        - mountPath: /config
+          name: config
+      volumes:
+      - secret:
+          secretName: "{{ $fullName }}-pki-front-proxy-client"
+        name: pki-front-proxy-client
+      - secret:
+          secretName: "{{ $fullName }}-pki-apiserver"
+        name: pki-apiserver
+      - secret:
+          secretName: "{{ $fullName }}-pki-apiserver-etcd-client"
+        name: pki-apiserver-etcd-client
+      - secret:
+          secretName: "{{ $fullName }}-pki-apiserver-kubelet-client"
+        name: pki-apiserver-kubelet-client
+      - secret:
+          secretName: "{{ $fullName }}-pki-ca"
+        name: pki-ca
+      - secret:
+          secretName: "{{ $fullName }}-pki-front-proxy-ca"
+        name: pki-front-proxy-ca
+      - name: scripts
+        configMap:
+          name: "{{ $fullName }}-kubeadm-scripts"
+          defaultMode: 0777
+      - name: config
+        configMap:
+          name: "{{ $fullName }}-kubeadm-config"
+{{- end }}

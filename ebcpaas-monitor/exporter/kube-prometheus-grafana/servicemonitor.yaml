@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: grafana
+    chart: grafana-0.0.37
+    component: grafana
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-grafana
+  namespace: cpaas-system
+  resourceVersion: "4640"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-grafana
+  uid: 56b31ce2-3d74-4888-85ab-3f8889fbd42d
+spec:
+  endpoints:
+  - interval: 30s
+    port: http
+  jobLabel: kube-prometheus-grafana
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      app: kube-prometheus-grafana

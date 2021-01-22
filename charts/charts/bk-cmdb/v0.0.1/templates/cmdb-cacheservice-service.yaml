@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cacheservice
+    release: {{ .Release.Name }}
+  name: cacheservice
+spec:
+  ports:
+    - name: "http"
+      port: 60008
+      targetPort: 60008
+  selector:
+    app: cacheservice
+    release: {{ .Release.Name }}

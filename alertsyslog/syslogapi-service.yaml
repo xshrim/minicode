@@ -4,11 +4,11 @@ metadata:
   labels:
     app: syslog
   name: syslogapi
-  namespace: system-ebcpaas
+  namespace: cpaas-system
 spec:
   ports:
-  - name: "10901"
-    port: 10901
-    targetPort: 10901
+    - name: "10901"
+      port: 10901
+      targetPort: 10901
   selector:
     app: syslog

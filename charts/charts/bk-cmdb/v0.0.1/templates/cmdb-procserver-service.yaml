@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: procserver
+    release: {{ .Release.Name }}
+  name: procserver
+spec:
+  ports:
+    - name: "http"
+      port: 60003
+      targetPort: 60003
+  selector:
+    app: procserver
+    release: {{ .Release.Name }}

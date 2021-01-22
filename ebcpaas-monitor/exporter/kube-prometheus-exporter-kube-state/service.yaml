@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-state
+    chart: exporter-kube-state-0.2.5
+    component: kube-state
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-state
+  namespace: cpaas-system
+  resourceVersion: "4560"
+  selfLink: /api/v1/namespaces/cpaas-system/services/kube-prometheus-exporter-kube-state
+  uid: b93691f4-785e-4f51-8f49-d48214c48cb5
+spec:
+  clusterIP: 10.199.192.69
+  ports:
+  - name: kube-state-metrics
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: self-metrics
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    app: kube-prometheus-exporter-kube-state
+    component: kube-state
+    release: kube-prometheus
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

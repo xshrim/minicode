@@ -1,0 +1,23 @@
+annotations:
+  category: ApplicationServer
+apiVersion: v1
+appVersion: 9.0.37
+description: Chart for Apache Tomcat
+engine: gotpl
+home: https://github.com/bitnami/charts/tree/master/bitnami/tomcat
+icon: file://../logo.png
+keywords:
+- tomcat
+- java
+- http
+- web
+- application server
+- jsp
+maintainers:
+- email: containers@bitnami.com
+  name: Bitnami
+name: tomcat
+sources:
+- https://github.com/bitnami/bitnami-docker-tomcat
+- http://tomcat.apache.org
+version: 6.3.16

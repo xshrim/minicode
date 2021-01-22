@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-05-08T09:37:42Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-scheduler
+    chart: exporter-kube-scheduler-0.1.9
+    component: kube-scheduler
+    heritage: Helm
+    release: kube-prometheus
+    service.kubernetes.io/headless: ""
+  name: kube-prometheus-exporter-kube-scheduler
+  namespace: kube-system
+  resourceVersion: "121571608"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-prometheus-exporter-kube-scheduler
+  uid: bd00ac4f-7434-4354-a395-41400d21f161
+subsets:
+- addresses:
+  - ip: 25.2.20.37
+    nodeName: 25.2.20.37
+    targetRef:
+      kind: Pod
+      name: kube-scheduler-25.2.20.37
+      namespace: kube-system
+      resourceVersion: "121571501"
+      uid: 701707d5-c78a-46ac-b1fa-94676d83dad6
+  - ip: 25.2.20.38
+    nodeName: 25.2.20.38
+    targetRef:
+      kind: Pod
+      name: kube-scheduler-25.2.20.38
+      namespace: kube-system
+      resourceVersion: "121524231"
+      uid: 73878752-c8cd-460b-ad21-8665f59bada0
+  - ip: 25.2.20.39
+    nodeName: 25.2.20.39
+    targetRef:
+      kind: Pod
+      name: kube-scheduler-25.2.20.39
+      namespace: kube-system
+      resourceVersion: "121524736"
+      uid: 3cf6188d-f8b4-4e4d-9f31-376d0c1ea24a
+  ports:
+  - name: http-metrics
+    port: 10251
+    protocol: TCP

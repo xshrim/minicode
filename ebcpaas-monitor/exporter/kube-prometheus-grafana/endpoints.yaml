@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-08-09T13:20:59Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: kube-prometheus-grafana
+    chart: grafana-0.0.37
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-grafana
+  namespace: cpaas-system
+  resourceVersion: "121540390"
+  selfLink: /api/v1/namespaces/cpaas-system/endpoints/kube-prometheus-grafana
+  uid: 020dd358-7120-4eba-b874-8718a9ae4101
+subsets:
+- addresses:
+  - ip: 10.199.12.25
+    nodeName: 25.2.20.53
+    targetRef:
+      kind: Pod
+      name: kube-prometheus-grafana-5f4db958b9-gdvbn
+      namespace: cpaas-system
+      resourceVersion: "121540388"
+      uid: 23e9b85c-23a9-4d42-a805-037e73e6e453
+  ports:
+  - name: http
+    port: 3000
+    protocol: TCP

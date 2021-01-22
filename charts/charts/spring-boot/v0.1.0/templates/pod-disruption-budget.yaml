@@ -1,0 +1,14 @@
+{{- if .Values.podDisruptionBudget -}}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "spring-boot.fullname" . }}
+  labels:
+{{ include "spring-boot.labels" . | indent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "spring-boot.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  {{- end }}

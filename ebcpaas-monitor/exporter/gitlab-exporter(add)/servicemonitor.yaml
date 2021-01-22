@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: gitlab-exporter
+    prometheus: kube-prometheus
+    release: gitlab-exporter
+  name: gitlab-exporter
+  namespace: cpaas-system
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-gitlab
+  - interval: 30s
+    port: http-node
+  - interval: 30s
+    port: http-redis
+  - interval: 30s
+    port: http-pg
+  jobLabel: gitlab-exporter
+  namespaceSelector:
+    matchNames:
+    - cpaas-system
+  selector:
+    matchLabels:
+      app: gitlab-exporter 

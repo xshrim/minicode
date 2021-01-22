@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-kube-scheduler
+    chart: exporter-kube-scheduler-0.1.9
+    component: kube-scheduler
+    heritage: Helm
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-scheduler
+  namespace: kube-system
+  resourceVersion: "5580299"
+  selfLink: /api/v1/namespaces/kube-system/services/kube-prometheus-exporter-kube-scheduler
+  uid: 0f7481f7-85e5-407e-aa1c-31b3c66fcf74
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 10251
+    protocol: TCP
+    targetPort: 10251
+  selector:
+    component: kube-scheduler
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,625 @@
+{
+    "root": {
+        "data": {
+            "id": "c46zs9mrlps0",
+            "created": 1594795393618,
+            "text": "PromQL"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "c46zsjdbw4w0",
+                    "created": 1594795414815,
+                    "text": "数据类型",
+                    "layout_mind_offset": {
+                        "x": -57.83333131339805,
+                        "y": 75.66666640175714
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46zspdfhs00",
+                            "created": 1594795427882,
+                            "text": "标量"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46ztlm6ysw0",
+                                    "created": 1594795498069,
+                                    "text": "10"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46zss7lxs80",
+                            "created": 1594795434060,
+                            "text": "向量"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46zsw6x9qg0",
+                                    "created": 1594795442726,
+                                    "text": "瞬时向量"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c46zto0uki80",
+                                            "created": 1594795503309,
+                                            "text": "http_requests_total{method=\"GET\"}"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "c46zsyusfa00",
+                                    "created": 1594795448523,
+                                    "text": "区间向量"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c46zuzsskwg0",
+                                            "created": 1594795607307,
+                                            "text": "http_requests_total{method=\"GET\"}[5m]"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "c46zt2uw78o0",
+                                    "created": 1594795457236,
+                                    "text": "偏移量"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c46zvffhu5c0",
+                                            "created": 1594795641332,
+                                            "text": "http_request_total{method=\"GET\"}[5m] offset 1d"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46zstvw4ps0",
+                            "created": 1594795437706,
+                            "text": "字符串"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46zvqqzklc0",
+                                    "created": 1594795665972,
+                                    "text": "\"Hello Prometheus\""
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c47025t6gu80",
+                    "created": 1594796168940,
+                    "text": "内置函数",
+                    "layout_mind_offset": {
+                        "x": -62.16666451427693,
+                        "y": 74.83333290285543
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c4702wejyzc0",
+                            "created": 1594796226829,
+                            "text": "increase"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4703a1uf800",
+                                    "created": 1594796256536,
+                                    "text": "区间增长量"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c4704tya9g80",
+                                            "created": 1594796378220,
+                                            "text": "increase(node_cpu[2m]) / 120"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c47059tvo5c0",
+                            "created": 1594796412782,
+                            "text": "rate"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4705c3ezds0",
+                                    "created": 1594796417712,
+                                    "text": "区间增长率"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c4705hvfrxk0",
+                                            "created": 1594796430291,
+                                            "text": "rate(node_cpu[2m])"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4706076hs00",
+                            "created": 1594796470183,
+                            "text": "irate"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c470628wm000",
+                                    "created": 1594796474641,
+                                    "text": "区间瞬时增长率"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c4706gdog0o0",
+                                            "created": 1594796505404,
+                                            "text": "irate(node_cpu[2m])"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c470888hbnc0",
+                            "created": 1594796644404,
+                            "text": "predict_linear"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4708d2ny740",
+                                    "created": 1594796654936,
+                                    "text": "预测Gauge指标变化趋势"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c4708odji4o0",
+                                            "created": 1594796679539,
+                                            "text": "predict_linear(node_filesystem_free{job=\"node\"}[2h], 4 * 3600) < 0",
+                                            "layout_right_offset": {
+                                                "x": -5,
+                                                "y": 0
+                                            }
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c47097yzgkg0",
+                            "created": 1594796722194,
+                            "text": "histogram_quantile"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c470cf2rtjc0",
+                                    "created": 1594796972753,
+                                    "text": "计算histogram分位数",
+                                    "layout_right_offset": {
+                                        "x": -18,
+                                        "y": 0
+                                    }
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c470cql4t400",
+                                            "created": 1594796997808,
+                                            "text": "histogram_quantile(0.9, rate(http_request_duration_seconds_bucket[10m]))",
+                                            "layout_right_offset": {
+                                                "x": -24,
+                                                "y": 0
+                                            }
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4713te08800",
+                            "created": 1594799119740,
+                            "text": "label_replace"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4713xahqao0",
+                                    "created": 1594799128234,
+                                    "text": "动态标签替换"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "c471473gc6w0",
+                                            "created": 1594799149577,
+                                            "text": "label_replace(up, \"host\", \"$1\", \"instance\",  \"(.*):.*\")"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4714fik1yo0",
+                            "created": 1594799167904,
+                            "text": "..."
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c46zzfv6f400",
+                    "created": 1594795955736,
+                    "text": "聚合操作",
+                    "layout_mind_offset": {
+                        "x": -647.6666697793535,
+                        "y": -561.1666661037344
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46zzpbe6540",
+                            "created": 1594795976308,
+                            "text": "sum"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46zztylvc00",
+                                    "created": 1594795986419,
+                                    "text": "求和"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46zzvv0fvs0",
+                            "created": 1594795990555,
+                            "text": "min"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4700xk7q9k0",
+                                    "created": 1594796072620,
+                                    "text": "最小值"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46zzy9gqsw0",
+                            "created": 1594795995782,
+                            "text": "max"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4700zyyq5s0",
+                                    "created": 1594796077865,
+                                    "text": "最大值"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c47000x1j4w0",
+                            "created": 1594796001562,
+                            "text": "avg"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c47011ptjmg0",
+                                    "created": 1594796081666,
+                                    "text": "平均值"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c47003angxs0",
+                            "created": 1594796006738,
+                            "text": "stddev"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c470148gt2g0",
+                                    "created": 1594796087147,
+                                    "text": "标准差"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4700510je00",
+                            "created": 1594796010509,
+                            "text": "stdvar"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c47018e6pmo0",
+                                    "created": 1594796096200,
+                                    "text": "方差"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4700938amg0",
+                            "created": 1594796019350,
+                            "text": "count"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4701b66m9k0",
+                                    "created": 1594796102246,
+                                    "text": "计数"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4700b2jey80",
+                            "created": 1594796023662,
+                            "text": "count_values"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4701dhoco00",
+                                    "created": 1594796107295,
+                                    "text": "value计数"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4700eirb4g0",
+                            "created": 1594796031173,
+                            "text": "topk"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4701i2f23c0",
+                                    "created": 1594796117256,
+                                    "text": "前N条"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4700jkl1ug0",
+                            "created": 1594796042167,
+                            "text": "bottomk"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4701lisng80",
+                                    "created": 1594796124777,
+                                    "text": "后N条"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c4700legkvk0",
+                            "created": 1594796046150,
+                            "text": "quantile"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c4701ozon8o0",
+                                    "created": 1594796132328,
+                                    "text": "分位数"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c46zwfk82tc0",
+                    "created": 1594795719982,
+                    "text": "操作符",
+                    "layout_mind_offset": {
+                        "x": 50.16666332218375,
+                        "y": 309.166666103734
+                    },
+                    "expandState": "expand"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c46zwrog42o0",
+                            "created": 1594795746358,
+                            "text": "数学运算"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46zwumfny00",
+                                    "created": 1594795752767,
+                                    "text": "加减乘除余幂"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46zx2g0ub40",
+                            "created": 1594795769794,
+                            "text": "布尔运算"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46zx9pf9nc0",
+                                    "created": 1594795785599,
+                                    "text": "大于小于等于不等于"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "c46zxozxk5c0",
+                            "created": 1594795818887,
+                            "text": "集合运算"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "c46zxr8jjj40",
+                                    "created": 1594795823761,
+                                    "text": "and/or/unless"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "c47ub67xvaw0",
+                    "created": 1594881508408,
+                    "text": "Record",
+                    "layout_mind_offset": {
+                        "x": 376.50000228484475,
+                        "y": 174.66666640175708
+                    },
+                    "expandState": "expand"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "c47uch0wcy00",
+                            "created": 1594881610290,
+                            "text": "与告警规则一样配置在rule_files中",
+                            "layout_right_offset": {
+                                "x": 391,
+                                "y": 37
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c47ucwtlm680",
+                            "created": 1594881644678,
+                            "text": "与告警规则一样定时计算",
+                            "layout_right_offset": {
+                                "x": 318,
+                                "y": 37
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "c47udbhuw7k0",
+                            "created": 1594881676619,
+                            "text": "对已有指标计算产生新的指标",
+                            "layout_right_offset": {
+                                "x": 343,
+                                "y": -114
+                            }
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-green",
+    "version": "1.4.43"
+}

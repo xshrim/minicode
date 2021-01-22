@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2020-08-09T15:14:33Z"
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  labels:
+    app: exporter-coredns
+    chart: exporter-coredns-0.0.3
+    component: kube-dns
+    heritage: Helm
+    release: kube-prometheus
+    service.kubernetes.io/headless: ""
+  name: kube-prometheus-exporter-coredns
+  namespace: kube-system
+  resourceVersion: "121612432"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-prometheus-exporter-coredns
+  uid: ee708704-11ef-46cd-a74d-b10a0b21541a
+subsets:
+- addresses:
+  - ip: 10.199.0.55
+    nodeName: 25.2.20.39
+    targetRef:
+      kind: Pod
+      name: coredns-854c5946d4-xvs64
+      namespace: kube-system
+      resourceVersion: "121612430"
+      uid: 8605b7e7-8016-45bd-bd1e-af195ee3073f
+  - ip: 10.199.9.129
+    nodeName: 25.2.20.52
+    targetRef:
+      kind: Pod
+      name: coredns-854c5946d4-g9dvd
+      namespace: kube-system
+      resourceVersion: "121612393"
+      uid: 77f27870-dac2-46cd-a3d8-e4f43ed514fe
+  ports:
+  - name: http-metrics-coredns
+    port: 9153
+    protocol: TCP

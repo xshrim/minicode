@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  creationTimestamp: "2020-05-08T09:37:42Z"
+  generation: 1
+  labels:
+    app: exporter-kube-etcd
+    chart: exporter-kube-etcd-0.1.15
+    component: kube-etcd
+    heritage: Helm
+    prometheus: kube-prometheus
+    release: kube-prometheus
+  name: kube-prometheus-exporter-kube-etcd
+  namespace: cpaas-system
+  resourceVersion: "4633"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/cpaas-system/servicemonitors/kube-prometheus-exporter-kube-etcd
+  uid: 226cd9e2-3cab-4710-bc75-4bfaae2bf93b
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 15s
+    port: https-metrics
+    scheme: https
+    tlsConfig:
+      certFile: /etc/prometheus/secrets/etcd-ca/tls.crt
+      insecureSkipVerify: true
+      keyFile: /etc/prometheus/secrets/etcd-ca/tls.key
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      app: exporter-kube-etcd
+      component: kube-etcd

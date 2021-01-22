@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hive.fullname" . }}-server
+  labels:
+    app.kubernetes.io/name: {{ include "hive.name" . }}
+    app.kubernetes.io/component: server
+    {{- include "hive.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "hive.name" . }}
+      app.kubernetes.io/component: server
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  serviceName: {{ include "hive.fullname" . }}-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "hive.name" . }}
+        app.kubernetes.io/component: server
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    spec:
+      containers:
+      - name: server
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        command:
+          - /bin/bash
+          - /opt/hive/conf/startup.sh
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 10002
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 10002
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+        volumeMounts:
+        - name: hive-config
+          mountPath: /opt/hive/conf
+        - name: hadoop-config
+          mountPath: /opt/hadoop/etc/hadoop
+      volumes:
+      - name: hadoop-config
+        configMap:
+          {{- if .Values.conf.hadoopSite }}
+          name: {{ include "hive.fullname" . }}-hadoop
+          {{- else }}
+          {{- if .Values.conf.hadoopConfigMap }}
+          name: {{ .Values.conf.hadoopConfigMap }}
+          {{- else }}
+          name: {{ .Release.Name }}-hdfs-hadoop
+          {{- end }}
+          {{- end }}
+      - name: hive-config
+        configMap:
+          name: {{ include "hive.fullname" . }}

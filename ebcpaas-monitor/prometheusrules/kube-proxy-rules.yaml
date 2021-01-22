@@ -1,0 +1,60 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    alert.cpaas.io/notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+    cpaas.io/description: Deployed by charts, it will be overwritten if charts updated,
+      Please Do Not edit this resource.
+  generation: 1
+  labels:
+    alert.cpaas.io/cluster: global
+    alert.cpaas.io/kind: Daemonset
+    alert.cpaas.io/name: kube-proxy
+    alert.cpaas.io/namespace: kube-system
+    alert.cpaas.io/owner: System
+    alert.cpaas.io/project: ""
+    prometheus: kube-prometheus
+  name: cpaas-kube-proxy-rules
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/kube-system/prometheusrules/cpaas-kube-proxy-rules
+spec:
+  groups:
+  - name: general
+    rules:
+    - alert: workload.pod.restarted.count-1uvrd-2d09a75e2b75aeb44109fb2634bce561
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum (delta(kube_pod_container_status_restarts_total{namespace="kube-system",pod=~"kube-proxy-[a-z0-9]{5}"}[5m]))>5
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.restarted.count
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "5"
+        alert_involved_object_kind: Daemonset
+        alert_involved_object_name: kube-proxy
+        alert_involved_object_namespace: kube-system
+        alert_name: workload.pod.restarted.count-1uvrd
+        alert_project: ""
+        alert_resource: cpaas-kube-proxy-rules
+        severity: Medium
+    - alert: workload.pod.status.phase.not.running-h13ud-84449cced2d71a2e1bf11539ce8bcd36
+      annotations:
+        alert_current_value: '{{$value}}'
+        alert_notifications: '[{"namespace":"cpaas-system","name":"cpaas-admin-notification"}]'
+      expr: sum(kube_pod_status_phase{namespace="kube-system",pod=~"kube-proxy-[a-z0-9]{5}",phase!="Running"})>2
+      for: 60s
+      labels:
+        alert_cluster: global
+        alert_indicator: workload.pod.status.phase.not.running
+        alert_indicator_aggregate_range: "0"
+        alert_indicator_comparison: '>'
+        alert_indicator_threshold: "2"
+        alert_involved_object_kind: Daemonset
+        alert_involved_object_name: kube-proxy
+        alert_involved_object_namespace: kube-system
+        alert_name: workload.pod.status.phase.not.running-h13ud
+        alert_project: ""
+        alert_resource: cpaas-kube-proxy-rules
+        severity: Medium
