@@ -228,6 +228,7 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
+      serviceAccountName: polaris
       securityContext: {}
       terminationGracePeriodSeconds: 30
 

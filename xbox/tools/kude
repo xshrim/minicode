@@ -75,9 +75,9 @@ function usage() {
   gl                       git一键拉取
   gg                       git查看提交日志
   pq,promq                 prometheus查询api
-  ghp,ghelp                查看go命令帮助
-  dhp,dhelp                查看docker命令帮助
-  khp,khelp                查看kubectl命令帮助
+  ghp,gweb,ghelp           查看go命令帮助
+  dhp,dweb,dhelp           查看docker命令帮助
+  khp,kweb,khelp           查看kubectl命令帮助
   dr,drun                  运行容器
   drt,dtmp                 运行临时容器
   dat,dattach              attach到目标容器
@@ -2552,14 +2552,20 @@ EOF
     require go
     shift
     go help $*
+  elif [ "$1" == "gweb" ]; then
+    xdg-open https://golang.org/cmd/go/
   elif [ "$1" == "dhp" ] || [ "$1" == "dhelp" ]; then
     require docker
     shift
     docker $* --help
+  elif [ "$1" == "dweb" ]; then
+    xdg-open https://docs.docker.com/engine/reference/commandline/docker/
   elif [ "$1" == "khp" ] || [ "$1" == "khelp" ]; then
     require kubectl
     shift
     kubectl $* --help
+  elif [ "$1" == "kweb" ]; then
+    xdg-open https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
   elif [ "$1" == "dq" ] || [ "$1" == "dsearch" ]; then
     require docker
     shift
@@ -4229,7 +4235,29 @@ EOF
       kubectl config use-context default-system --kubeconfig=admin.kubeconfig
     elif [ "$subcmd" == "cfg" ] || [ "$subcmd" == "config" ]; then
       require kubectl
-      kubectl $kc $context config view
+      ctgt="${mandatory[*]}"
+      if [ -z $ctgt ]; then
+        kubectl $kc $context config view
+      elif [ "$ctgt" == "ctx" ] || [ "$ctgt" == "context" ]; then
+        kubectl $kc $context config view -o jsonpath='{.contexts[*].name}'
+      elif [ "$ctgt" == "user" ]; then
+        kubectl $kc $context config view -o jsonpath='{.users[*].name}'
+      elif [ "$ctgt" == "cluster" ]; then
+        kubectl $kc $context config view -o jsonpath='{.clusters[*].name}'
+      else
+        cur=$(kubectl $kc $context config view -o jsonpath='{.current-context}')
+        for ctx in $(kubectl $kc $context config view -o jsonpath='{.contexts[*].name}'); do
+          #echo $ctx
+          u=$(kubectl $kc $context config view -o jsonpath="{.contexts[?(@.name==\"$ctx\")].context.user}")
+          c=$(kubectl $kc $context config view -o jsonpath="{.contexts[?(@.name==\"$ctx\")].context.cluster}")
+          cluster=$(kubectl $kc $context config view -o jsonpath="{.clusters[?(@.name==\"$c\")].cluster.server}")
+          if [ "$ctx" == "$cur" ]; then
+            echo "*[$ctx] <$u> $cluster"
+          else
+            echo " [$ctx] <$u> $cluster"
+          fi
+        done
+      fi
     elif [ "$subcmd" == "dump" ]; then
       require kubectl
       kubectl $kc $context cluster-info dump

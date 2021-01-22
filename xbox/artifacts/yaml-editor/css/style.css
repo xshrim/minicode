@@ -1,0 +1,430 @@
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  box-sizing: border-box;
+  font-style: sans-serif;
+  font-family: 'Rubik', sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+body * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+input[type=checkbox] {
+  visibility: hidden;
+}
+
+.button {
+  min-width: 128px;
+  line-height: 40px;
+  height: 40px;
+  border: 1px solid white;
+  padding: 0 32px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 1000px;
+  color: white;
+}
+
+.button.outline {
+  color: #212b35;
+  border: 1px solid #dfe3e8;
+  background: none;
+}
+
+.button.primary {
+  background: black;
+  border: 1px solid transparent;
+  color: white;
+}
+
+.button.inverse {
+  background: white;
+  border: 1px solid #dfe3e8;
+  color: #212b35;
+}
+
+.add-remove {
+  animation: FadeInAnim 300ms ease;
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 16px;
+}
+
+.add-remove img {
+  cursor: pointer;
+  display: block;
+  margin-right: 16px;
+}
+
+@keyframes FadeInAnim {
+
+  from {
+    opacity: 0;
+    transform: scale(0.95, 0.95);
+  }
+  
+  to {
+    opacity: 1;
+    transform: scale(1, 1);
+  }
+
+}
+
+.editor-main {
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  padding: 64px 64px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-main h1 {
+  color: white;
+  margin-bottom: 32px;
+}
+
+.editor-main .bar {
+  display: flex;
+  margin-top: 32px;
+}
+
+.editor-main .bar .done {
+  background: white;
+}
+
+.editor-main .bar .save {
+  background: #00a2ff;
+}
+
+.left-right {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.left-right .text-edit {
+  font-family: monospace;
+  border: none;
+  padding: 32px;
+  outline: none;
+  font-size: 12px;
+  border-radius: 8px;
+  resize: none;
+  background: black;
+  color: white;
+}
+
+.object-editor {
+  position: relative;
+  border: 1px solid #dfe3e8;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.object-editor.hover {
+  border: 1px solid #00a2ff;
+  box-shadow: 0 5px 25px 0 rgba(46, 91, 255, 0.4);
+}
+
+.object-editor  > span {
+  display: block;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+.object-editor .element:hover img {
+  display: block;
+}
+
+.object-editor .element {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  grid-template-columns: auto auto 32px;
+  grid-gap: 8px;
+  margin-bottom: 8px;
+}
+
+.object-editor .element img {
+  display: none;
+  position: relative;
+  top: 8px;
+}
+
+.object-editor label {
+  display: block;
+}
+
+.text-input label {
+  display: block;
+  font-size: 12px;
+  font-weight: normal;
+  margin-bottom: 4px;
+  opacity: 0.5;
+}
+
+.text-input input {
+  border: 1px solid #dfe3e8;
+  border-radius: 4px;
+  font-size: 16px;
+  height: 40px;
+  outline: none;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.text-input input.error {
+  border: 1px solid red;
+}
+
+.key-picker {
+  right: 0;
+  top: 0;
+  position: fixed;
+  animation: FadeInAnim 300ms ease;
+  z-index: 2;
+  font-size: 14px;
+  bottom: 0;
+  background: linear-gradient(170deg, #212b35, #081018);
+  left: 0;
+}
+
+.key-picker .close {
+  line-height: 26px;
+  width: 32px;
+  right: 64px;
+  top: 32px;
+  height: 32px;
+  border: 2px solid white;
+  text-align: center;
+  position: absolute;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+  border-radius: 50%;
+  color: white;
+}
+
+.key-picker .button {
+  position: absolute;
+  bottom: -64px;
+  right: 64px;
+  transition: bottom 300ms ease;
+  z-index: 2;
+}
+
+.key-picker .button.show {
+  bottom: 32px;
+}
+
+.key-picker .content {
+  display: grid;
+  grid-template-columns: 61% 39%;
+  height: 100%;
+  max-height: 100%;
+  transition: opacity 300ms ease;
+}
+
+.key-picker .content .description {
+  line-height: 1.6em;
+  max-width: 100%;
+  overflow-y: auto;
+  word-break: break-word;
+  padding: 64px;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.5), 0 5px 25px 0 #081018;
+  background: black;
+  max-height: 100%;
+  color: #b0bac9;
+}
+
+.key-picker .content .description .fade {
+  opacity: 0;
+  animation: FadeInAnim 300ms ease forwards;
+}
+
+.key-picker .content h4 {
+  margin-top: 16px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.key-picker .properties {
+  color: #212b35;
+  max-height: 100%;
+  padding: 64px;
+  overflow-y: auto;
+}
+
+.key-picker .properties h1 {
+  color: white;
+  margin-bottom: 32px;
+}
+
+.key-picker .property {
+  margin: 12px;
+  border: 1px solid transparent;
+  padding: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: box-shadow 750ms ease, border 250ms ease;
+  background: #081018;
+  color: white;
+  list-style: none;
+}
+
+.key-picker .property span {
+  color: #00a2ff;
+}
+
+.key-picker .property.selected {
+  border: 1px solid #00a2ff;
+  box-shadow: 0 5px 25px 0 rgba(46, 91, 255, 0.4);
+}
+
+.key-picker .property:hover {
+  border: 1px solid #00a2ff;
+}
+
+.editor {
+  width: 100%;
+  overflow-y: auto;
+  border: 1px solid #dfe3e8;
+  padding: 16px;
+  position: relative;
+  box-shadow: 0px 0px 0px rgba(0,0,0,0);
+  border-radius: 8px;
+  transition: box-shadow 500ms ease, border 500ms ease;
+  background: white;
+}
+
+.editor.hover {
+  border: 1px solid #00a2ff;
+  box-shadow: 0 5px 25px 0 rgba(46, 91, 255, 0.4);
+}
+
+.editor .obj-add-remove {
+  animation: FadeInAnim 300ms ease;
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 16px;
+}
+
+.editor .obj-add-remove img {
+  cursor: pointer;
+  display: block;
+  margin-right: 16px;
+}
+
+.editor  > .add {
+  line-height: 64px;
+  width: 64px;
+  height: 64px;
+  text-align: center;
+  position: fixed;
+  z-index: 2;
+  cursor: pointer;
+  box-shadow: 0 5px 25px 0 rgba(46, 91, 255, 0.4);
+  border-radius: 50%;
+  bottom: 128px;
+  background: #00a2ff;
+  color: white;
+  left: calc(50% - 96px);
+}
+
+.editor .kind {
+  padding-right: 8px;
+  max-height: 100%;
+  font-weight: bold;
+  font-size: 10pt;
+}
+
+.editor .kind > * {
+  margin-top: 8px;
+}
+
+.editor .kind  > span {
+  display: block;
+  margin-top: 0;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+.array {
+  border: 1px solid #dfe3e8;
+  border-radius: 4px;
+  position: relative;
+  padding: 16px;
+}
+
+.array.hover {
+  border: 1px solid #00a2ff;
+  box-shadow: 0 5px 25px 0 rgba(46, 91, 255, 0.4);
+}
+
+.array .array-add-remove {
+  animation: FadeInAnim 300ms ease;
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 16px;
+}
+
+.array .array-add-remove img {
+  cursor: pointer;
+  display: block;
+  margin-right: 16px;
+}
+
+.array  > span {
+  display: block;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+.array .add-remove {
+  color: white;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: center;
+}
+
+.array .add-remove .array-button {
+  border: 1px solid #dfe3e8;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 4px;
+}
+
+.array .add-remove .add {
+  background: green;
+}
+
+.array .add-remove .remove {
+  background: red;
+}
