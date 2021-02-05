@@ -49,6 +49,7 @@ function usage() {
   ts,tsk,tshark            运行tshark抓包命令(wireshark)
   it,iptable,iptables      运行iptables命令
   nm,nmap                  运行nmap命令
+  pt,pst,pstree            查看进程书
   ps,portstat,portstatus   运行端口检测命令
   pc,portctl,portcontrol   运行端口开放关闭命令
   py,py3,python            执行python3命令
@@ -57,9 +58,15 @@ function usage() {
   ldf                      统计系统分区空间占用
   lfd                      统计系统磁盘大小
   ldu                      统计目录磁盘占用
+  lkl                      查看内核信息
+  ljc                      查看系统日志
+  ldd                      查看动态链接库文件依赖
+  so                       查看动态链接库文件信息
   st                       查看系统各项stat信息
   n,net                    运行网络相关命令
   ym,yum                   运行yum相关命令
+  jy,j2y                   json数据转换为yaml格式
+  yj,y2j                   yaml数据转换为json格式
   ac,autocomplete          开启命令自动补全
   cu,au,createuser,adduser 创建用户
   opt,optimize             对操作系统进行k8s环境优化
@@ -347,6 +354,8 @@ function nethelp() {
   brf                      查看bridge fdb
   brm                      查看bridge mdb
   ip                       执行ip命令
+  ipf                      查看bridge fdb
+  ipn                      查看主机arp表
   ipr                      查看主机路由信息
   ipa                      查看主机网卡列表
   ipp                      查看主机物理网卡列表
@@ -581,6 +590,7 @@ function converthelp() {
   sw,swirl                 图片漩涡效果
   ri,raise                 图片凸起效果
   bd,border                图片加边框
+  wm,watermark             图片加水印
   '
 }
 
@@ -1589,13 +1599,28 @@ EOF
         lpath=$1
       fi
     fi
-    cd $lpath
-    if [ $(ls -d .{[!.],.?}* 2>/dev/null | wc -l) -gt 0 ]; then
-      du -sb $lpath/* $lpath/.[^.]* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
-    else
-      du -sb $lpath/* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
-    fi
+    #cd $lpath
+#     if [ $(ls -d .{[!.],.?}* 2>/dev/null | wc -l) -gt 0 ]; then
+#       du -sb $lpath/* $lpath/.[^.]* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
+#     else
+#       du -sb $lpath/* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
+#     fi
+    du -sb $lpath/* | sort -nr | awk 'BEGIN{split("B K M G T P E Z Y",v)} {s=1;while($1>1024&&s<9){$1/=1024;s++}printf "%7.2f%s\t%s\n",$1,v[s],$2}'
     # du -sh $lpath
+  elif [ "$1" == "lkl" ]; then
+    require dmesg
+    dmesg $*
+  elif [ "$1" == "ljc" ]; then
+    require journalctl
+    journalctl $*
+  elif [ "$1" == "ldd" ]; then
+    require ldd
+    ldd $*
+  elif [ "$1" == "so" ]; then
+    require objdump
+    objdump -TC $*
+    #readelf -Ws $*
+    #nm -gD $*
   elif [ "$1" == "st" ]; then
     shift
     if [ "$1" == "c" ] || [ "$1" == "cpu" ]; then
@@ -1748,6 +1773,9 @@ EOF
     for pport in $*; do
       sudo /sbin/iptables -I INPUT -p tcp --dport $pport -j $paction
     done
+  elif [ "$1" == "pt" ] || [ "$1" == "pst" ] || [ "$1" == "pstree" ]; then
+   require ps
+   ps -alfx | grep -- " $(ps -o ppid= $2) \| $2 " | grep -v "grep" 
   elif [ "$1" == "ps" ] || [ "$1" == "portstat" ] || [ "$1" == "portstatus" ]; then
     shift
     if [ $# -eq 1 ]; then
@@ -1851,6 +1879,12 @@ EOF
       echo "source <(kubectl completion zsh)" >>~/.zshrc
       # echo "if [ $commands[kubectl] ]; then source <(kubectl completion zsh); fi" >> ~/.zshrc
     fi
+  elif [ "$1" == "jy" ] || [ "$1" == "j2y" ]; then
+    require yq
+    cat $2 | yq r -P -
+  elif [ "$1" == "yj" ] || [ "$1" == "y2j" ]; then
+    require yq
+    cat $2 | yq r -jP -
   elif [ "$1" == "ym" ] || [ "$1" == "yum" ]; then
     require yum
     shift
@@ -2205,6 +2239,27 @@ EOF
         require convert
         convert -border $2 -bordercolor "$3" $fl $fl.${fl##*.}
         ;;
+      "wm" | "watermark")
+        require convert
+        wtext="text 0,0 \"$2\""
+        wsize="54"
+        wfill="rgba(221, 34, 17, 0.25)"
+        wfont=""
+        wloc="center"
+
+        if [ $# -gt 2 ]; then
+          wsize="$3"
+        fi
+        if [ $# -gt 3 ]; then
+          wfill="$4"
+        fi
+        if [ $# -gt 4 ]; then
+          wfont="-font $5"
+        fi
+        if [ $# -gt 5 ]; then
+          wloc="$6"
+        fi
+        convert -draw "$wtext" -fill "$wfill" -pointsize $wsize $wfont -gravity $wloc $fl $fl.${fl##*.}
       esac
     done
   elif [ "$1" == "n" ] || [ "$1" == "net" ]; then
@@ -2251,7 +2306,7 @@ EOF
       require bridge
       bridge vlan show -d
       ;;
-    "brf")
+    "brf"|"ipf")
       require bridge
       bridge fdb show -d
       ;;
@@ -2262,6 +2317,10 @@ EOF
     "ip")
       require ip
       ip $*
+      ;;
+    "ipn")
+      require ip
+      ip n
       ;;
     "ipr")
       require ip
@@ -3483,7 +3542,7 @@ EOF
           fi
           pid=$(docker inspect --format '{{.State.Pid}}' $(echo ${conts[$dcidx]} | awk '{print $1}'))
         fi
-        ps -alfx | grep -- " $(ps -o ppid= $pid) \| $pid " | grep -v "grep" 
+        ps -aelfx | grep -- " $(ps -o ppid= $pid) \| $pid " | grep -v "grep" 
       fi
     elif [ "$subcmd" == "die" ] || [ "$subcmd" == "diexe" ] || [ "$subcmd" == "diexec" ]; then
       if [ -n "$kwd" ]; then

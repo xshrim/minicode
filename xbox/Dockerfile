@@ -10,12 +10,15 @@ RUN set -ex \
     && apk upgrade \
     && apk --virtual add --no-cache \
     wget tar g++ make xz perl patch
-
+COPY advcpmv-0.8-8.32.patch /root/
+COPY coreutils-8.32.tar.xz /root/
 # From https://github.com/atdt/advcpmv
-RUN cd /root && wget http://ftp.gnu.org/gnu/coreutils/coreutils-8.32.tar.xz \
+RUN cd /root \
+    # && wget http://ftp.gnu.org/gnu/coreutils/coreutils-8.32.tar.xz 
     && tar xvJf coreutils-8.32.tar.xz \
+    && mv advcpmv-0.8-8.32.patch coreutils-8.32/ \
     && cd coreutils-8.32/ \
-    && wget https://raw.githubusercontent.com/jarun/advcpmv/master/advcpmv-0.8-8.32.patch \
+    # && wget --no-check-certificate https://raw.githubusercontent.com/jarun/advcpmv/master/advcpmv-0.8-8.32.patch 
     && patch -p1 -i advcpmv-0.8-8.32.patch \
     && FORCE_UNSAFE_CONFIGURE=1 ./configure \
     && make
@@ -158,7 +161,8 @@ RUN set -ex \
     vim \
     zsh \
     && mkdir /share \
-    && mv /usr/sbin/tcpdump /usr/bin/tcpdump \
+    #&& find / -name tcpdump 
+    #&& mv /usr/sbin/tcpdump /usr/bin/tcpdump 
     && echo 'alias iperf="iperf3"' >> "$ENV" \
     && echo 'export TERM="xterm-256color"' >> "$ENV" \
     && chgrp root /usr/bin/dumpcap \
