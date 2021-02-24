@@ -1,0 +1,767 @@
+swagger: "2.0"
+info:
+  description: "定义ACP中所需的f5 api 路由、参数与数据结构"
+  version: "1.0.0"
+  title: "F5 ACP对接"
+host: "petstore.swagger.io"
+basePath: "/v2"
+schemes:
+  - "https"
+  - "http"
+tags:
+  - name: Provider
+    description: "移动到集群管理页面"
+paths:
+  /cluster/{cluster}/provider:
+    post:
+      tags:
+        - "Provider"
+      summary: "Create Provider"
+      produces:
+        - "application/xml"
+        - "application/json"
+      parameters:
+        - in: "path"
+          name: "cluster"
+          type: "string"
+          required: true
+          description: "所属的集群"
+        - in: "body"
+          name: "body"
+          description: "Created Provider object"
+          required: true
+          schema:
+            $ref: "#/definitions/Provider"
+      responses:
+        default:
+          description: "successful operation"
+  /cluster/{cluster}/providers:
+    get:
+      tags:
+        - "Provider"
+      summary: "Get Provider list"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "path"
+          name: "cluster"
+          type: "string"
+          required: true
+          description: "所属的集群"
+        - name: "limit"
+          in: "query"
+          description: "每个分页的最大内容数量"
+          required: true
+          type: "integer"
+        - name: "continue"
+          in: "query"
+          description: "每页起始对象名称"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Provider"
+  /cluster/{cluster}/provider/{name}:
+    get:
+      tags:
+        - "Provider"
+      summary: "Get Provider by name"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "path"
+          name: "cluster"
+          type: "string"
+          required: true
+          description: "所属的集群"
+        - name: name
+          in: "path"
+          required: true
+          type: string
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Loadbalancer"
+        "400":
+          description: "Invalid name supplied"
+        "404":
+          description: "Loadbalancer not found"
+    put:
+      tags:
+        - "Provider"
+      summary: "Updated Provider"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "path"
+          name: "cluster"
+          type: "string"
+          required: true
+          description: "所属的集群"
+        - name: "name"
+          in: "path"
+          description: "name that need to be updated"
+          required: true
+          type: string
+        - in: "body"
+          name: "body"
+          description: "Updated Provider object"
+          required: true
+          schema:
+            $ref: "#/definitions/Provider"
+      responses:
+        "400":
+          description: "Invalid Provider supplied"
+        "404":
+          description: "Provider not found"
+    delete:
+      tags:
+        - "Provider"
+      summary: "Delete Provider"
+      description: "This can only be done by the logged in Provider."
+      operationId: "deleteUser"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "path"
+          name: "cluster"
+          type: "string"
+          required: true
+          description: "所属的集群"
+        - name: "name"
+          in: "path"
+          description: "The name that needs to be deleted"
+          required: true
+          type: string
+      responses:
+        "400":
+          description: "Invalid name supplied"
+        "404":
+          description: "Provider not found"
+
+  /cluster/{cluster}/namespace/{namespace}/loadbalancer:
+    post:
+      tags:
+        - "Loadbalancer"
+      summary: "Create Loadbalancer"
+      produces:
+        - "application/xml"
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "body"
+          description: "Created Loadbalancer object"
+          required: true
+          schema:
+            $ref: "#/definitions/Loadbalancer"
+      responses:
+        default:
+          description: "successful operation"
+  /cluster/{cluster}/provider/{name}/loadbalancer:
+    get:
+      tags:
+        - "Loadbalancer"
+      summary: "通过供应者得到全部负载均衡"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "目标供应者所在集群"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          description: "通过localbalancer获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "limit"
+          in: "query"
+          description: "每个分页的最大内容数量"
+          required: true
+          type: "integer"
+        - name: "continue"
+          in: "query"
+          description: "每页起始对象名称"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Loadbalancer"
+  /cluster/{cluster}/namespace/{namespace}/loadbalancers:
+    get:
+      tags:
+        - "Loadbalancer"
+      summary: "通过命名空间得到全部负载均衡"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "limit"
+          in: "query"
+          description: "每个分页的最大内容数量"
+          required: true
+          type: "integer"
+        - name: "continue"
+          in: "query"
+          description: "每页起始对象名称"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Loadbalancer"
+  /cluster/{cluster}/namespace/{namespace}/loadbalancer/{name}:
+    get:
+      tags:
+        - "Loadbalancer"
+      summary: "Get Loadbalancer by name"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Loadbalancer"
+        "400":
+          description: "Invalid username supplied"
+        "404":
+          description: "User not found"
+    put:
+      tags:
+        - "Loadbalancer"
+      summary: "Updated Loadbalancer"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          description: "name that need to be updated"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "body"
+          description: "Updated Loadbalancer object"
+          required: true
+          schema:
+            $ref: "#/definitions/Loadbalancer"
+      responses:
+        "400":
+          description: "Invalid Loadbalancer supplied"
+        "404":
+          description: "Loadbalancer not found"
+    delete:
+      tags:
+        - "Loadbalancer"
+      summary: "Delete Loadbalancer"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          description: "The name that needs to be deleted"
+          required: true
+          type: "string"
+      responses:
+        "400":
+          description: "Invalid name supplied"
+        "404":
+          description: "User not found"
+
+  ? /cluster/{cluster}/namespace/{namespace}/loadbalancer/{loadbalancer}/listener/{listener}/rule
+  : post:
+      tags:
+        - "Rule"
+      summary: "Create Rule"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "loadbalancer"
+          in: "path"
+          description: "代表当前rule的父Loadbalancer"
+          required: true
+          type: "string"
+        - name: "listener"
+          in: "path"
+          description: "代表当前rule的父监听器名称"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "body"
+          description: "Created Rule object"
+          required: true
+          schema:
+            $ref: "#/definitions/Rule"
+      responses:
+        default:
+          description: "successful operation"
+  ? /cluster/{cluster}/namespace/{namespace}/loadbalancer/{loadbalancer}/listener/{listener}/rules
+  : get:
+      tags:
+        - "Rule"
+      summary: "Get Rule list"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "loadbalancer"
+          in: "path"
+          description: "代表当前rule的父Loadbalancer"
+          required: true
+          type: "string"
+        - name: "listener"
+          in: "path"
+          description: "代表当前rule的父监听器名称"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Rule"
+  ? /cluster/{cluster}/namespace/{namespace}/loadbalancer/{loadbalancer}/listener/{listener}/rule/{name}
+  : get:
+      tags:
+        - "Rule"
+      summary: "Get Rule by name"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "loadbalancer"
+          in: "path"
+          description: "代表当前rule的父Loadbalancer"
+          required: true
+          type: "string"
+        - name: "listener"
+          in: "path"
+          description: "代表当前rule的父监听器名称"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Rule"
+        "400":
+          description: "Invalid username supplied"
+        "404":
+          description: "User not found"
+    put:
+      tags:
+        - "Rule"
+      summary: "Updated Rule"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "loadbalancer"
+          in: "path"
+          description: "代表当前rule的父Loadbalancer"
+          required: true
+          type: "string"
+        - name: "listener"
+          in: "path"
+          description: "代表当前rule的父监听器名称"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          description: "name that need to be updated"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "body"
+          description: "Updated Rule object"
+          required: true
+          schema:
+            $ref: "#/definitions/Rule"
+      responses:
+        "400":
+          description: "Invalid Rule supplied"
+        "404":
+          description: "Rule not found"
+    delete:
+      tags:
+        - "Rule"
+      summary: "Delete Rule"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - name: "loadbalancer"
+          in: "path"
+          description: "代表当前rule的父Loadbalancer"
+          required: true
+          type: "string"
+        - name: "listener"
+          in: "path"
+          description: "代表当前rule的父监听器名称"
+          required: true
+          type: "string"
+        - name: "name"
+          in: "path"
+          description: "The name that needs to be deleted"
+          required: true
+          type: "string"
+      responses:
+        "400":
+          description: "Invalid name supplied"
+        "404":
+          description: "User not found"
+
+  /cluster/{cluster}/namespace/{namespace}/ingress:
+    post:
+      tags:
+        - "Ingress"
+      summary: "创建ingress，原yaml不动传上去"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "cluster"
+          in: "path"
+          description: "通过集群限定命名空间的范围"
+          required: true
+          type: "string"
+        - name: "namespace"
+          in: "path"
+          description: "通过命名空间获取对应的Loadbalancer"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "body"
+          description: "ingress yaml"
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: "successful operation"
+definitions:
+  Rule:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        example: "可以随机生成，用户不会填写，但api要用到"
+      description:
+        type: "string"
+        example: "xxx用"
+      loadbancer:
+        type: "string"
+        example: "demo"
+      listener:
+        type: "string"
+        example: "lsnr1"
+      services:
+        type: "array"
+        items:
+          type: object
+          properties:
+            service:
+              type: string
+              example: nginx
+            port:
+              type: integer
+              example: 80
+            weight:
+              type: integer
+              example: 20
+      rules:
+        type: "array"
+        items:
+          type: object
+          properties:
+            type:
+              type: string
+              example: domain
+              enum:
+                - domain
+                - url
+                - header
+                - cookie
+                - query
+            key:
+              type: string
+              example: a.b.com
+            values:
+              type: "array"
+              items:
+                type: object
+                properties:
+                  operator:
+                    type: string
+                    example: equal
+                    enum:
+                      - equal
+                      - range
+                      - regex
+                  value:
+                    type: "string"
+                    example: "a.b.com"
+  Loadbalancer:
+    type: object
+    properties:
+      loadbalancer:
+        type: "string"
+        example: "demo"
+      cluster:
+        type: "string"
+        example: "local"
+      namespace:
+        type: "string"
+        example: "demo"
+      veip:
+        type: "string"
+        enum:
+          - "automatic"
+          - "25.1.2.1"
+        example: "25.1.2.1"
+      ltmip:
+        type: "string"
+        enum:
+          - "automatic"
+          - "25.1.2.1"
+        example: "25.2.1.1"
+      type:
+        type: "string"
+        example: "ingress"
+        enum:
+          - "ingress"
+          - "listener"
+      # FIXME tickets 接口中不显示listeners字段
+      listeners:
+        type: "array"
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              example: "test-00080"
+            port:
+              type: integer
+              example: "80"
+            protocal:
+              type: string
+              example: tcp
+            session:
+              type: string
+              example: cookie
+              enum:
+                - "hash"
+                - "cookie"
+            services:
+              type: "array"
+              items:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: nginx
+                  port:
+                    type: integer
+                    example: 80
+                  weight:
+                    type: integer
+                    example: 20
+      status:
+        readOnly: true
+        type: "object"
+        properties:
+          process:
+            type: "string"
+            example: "READY"
+            enum:
+              - "APPROVALING"
+              - "APPROVAL_OK"
+              - "APPROVAL_FAILED"
+              - "READY"
+              - "STOPING"
+              - "STOPED"
+              - "DELETING"
+              - "DELETED"
+
+  Provider:
+    type: object
+    properties:
+      cluster:
+        readOnly: true
+        type: "string"
+        example: "region-dev-01"
+      name:
+        type: "string"
+        example: "l-sd3mc"
+      labelValue:
+        type: "string"
+        example: "default"
+      ve:
+        type: "object"
+        properties:
+          addr:
+            type: "string"
+            example: "200.1.1.1"
+          user:
+            type: "string"
+            example: "admin"
+          password:
+            type: "string"
+            example: "admin"
+          cidr:
+            type: "string"
+            example: "25.0.0.0/8"
+      smartNet:
+        type: "object"
+        properties:
+          Url:
+            type: "string"
+            example: "http://200.1.1.2:8080"
+          Token:
+            type: "string"
+            example: "sz2342sfds-="
+          cidr:
+            type: "string"
+            example: "25.0.0.0./8"
+
+  Responses:
+    type: "object"
+    properties:
+      code:
+        type: integer
+        enum:
+          - 200
+          - 401
+          - 501
+          - 502
+        example: "200"
+      error:
+        type: "string"
+        enum:
+          - "已创建负载均衡，不可更新"
+          - "token认证失败"
+          - "内部错误"
+        example: "已创建负载均衡，不可更新"
+      message:
+        type: "object"
+        example: "{data信息}"
+
+externalDocs:
+  description: "Swagger OpenAPI3 文档"
+  url: "https://swagger.io/specification"

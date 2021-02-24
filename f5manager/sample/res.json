@@ -1,0 +1,124 @@
+{
+  "class": "ADC",
+  "region_default": {
+    "class": "Tenant",
+    "default_http_app": {
+      "svc01_8080_pool": {
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ],
+        "class": "Pool",
+        "monitors": [
+          "http"
+        ]
+      },
+      "svc02_8080_pool": {
+        "monitors": [
+          "http"
+        ],
+        "members": [
+          {
+            "serverAddresses": [],
+            "servicePort": 8080
+          }
+        ],
+        "class": "Pool"
+      },
+      "svc03_8080_pool": {
+        "class": "Pool",
+        "monitors": [
+          "http"
+        ],
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "svc04_8080_pool": {
+        "class": "Pool",
+        "monitors": [
+          "http"
+        ],
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "template": "http",
+      "80_vs": {
+        "virtualPort": 80,
+        "iRules": [
+          "80_vs_default_irule",
+          "80_vs_default_irule"
+        ],
+        "virtualAddresses": [
+          "20.1.0.10"
+        ],
+        "pool": "svc01_8080_pool",
+        "persistenceMethods": [
+          "cookie"
+        ],
+        "class": "Service_HTTP"
+      },
+      "80_vs_default_irule": {
+        "class": "iRule",
+        "iRule": "when HTTP_REQUEST { if {([HTTP::host] equals \"a.domain.com\") or ([HTTP::header exists \"Content-Length\"] and (([HTTP::header values \"Content-Length\"] equals \"10\") or (([HTTP::header values \"Content-Length\"] >= 100 and [HTTP::header values \"Content-Length\"] <= 1000))))} { if {[expr {[expr {0xffffffff & [crc32 [IP::client_addr]]}] % 100}] < 90} { svc03_8080_pool } else { svc04_8080_pool } } }"
+      },
+      "class": "Application"
+    },
+    "default_tcp_app": {
+      "template": "tcp",
+      "class": "Application",
+      "22_vs_default_irule": {
+        "iRule": "when CLIENT_ACCEPTED { if {[expr {[expr {0xffffffff & [crc32 [IP::client_addr]]}] % 100}] < 90} { svc02_2222_pool } else { svc01_2222_pool } }",
+        "class": "iRule"
+      },
+      "22_vs": {
+        "virtualAddresses": [
+          "20.1.0.10"
+        ],
+        "pool": "svc01_2222_pool",
+        "class": "Service_TCP",
+        "persistenceMethods": [
+          "source-address"
+        ],
+        "virtualPort": 22,
+        "iRules": [
+          "22_vs_default_irule"
+        ]
+      },
+      "svc02_2222_pool": {
+        "class": "Pool",
+        "monitors": [
+          "tcp"
+        ],
+        "members": [
+          {
+            "serverAddresses": [],
+            "servicePort": 2222
+          }
+        ]
+      },
+      "svc01_2222_pool": {
+        "members": [
+          {
+            "servicePort": 2222,
+            "serverAddresses": []
+          }
+        ],
+        "class": "Pool",
+        "monitors": [
+          "tcp"
+        ]
+      }
+    }
+  },
+  "schemaVersion": "3.2.0"
+}

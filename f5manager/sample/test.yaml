@@ -1,0 +1,27 @@
+apiVersion: ebcpaas.lb/v1
+kind: Lbrule
+metadata:
+  name: irule
+spec:
+  lbticket: test      # 规则关联的lbticket
+  listner: lsnr1      # 规则匹配后关联的lbticket中生效的listner名称(irule选择pool)
+  services:           # 匹配指定规则后可路由到其他service
+  - service: svc03
+    port: 8080
+    weight: 90
+  - service: svc04
+    port: 8080
+    weight: 10
+  rules:              
+  - type: domain              # domain, url, ip, header, cookie, urlparam
+    key:                      # 运算左值(可为空)
+    values:
+    - operator: equal         # equal, range, startwith, regexp
+      value: "a.domain.com"
+  - type: header
+    key: Content-Length
+    values:
+    - operator: equal
+      value: "10"
+    - operator: range
+      value: "100-1000"

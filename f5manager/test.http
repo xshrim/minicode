@@ -1,0 +1,361 @@
+@url = https://cpaasdev.ebchina.com
+@contentType = application/json
+@token = eyJhbGciOiJSUzI1NiIsImtpZCI6ImJjN2QzN2M5MTQxZWUzNzlhODVhMzczM2U1ZTg2ZDQ3MGFmNTJmMDAifQ.eyJpc3MiOiJodHRwczovL2NwYWFzZGV2LmViY2hpbmEuY29tL2RleCIsInN1YiI6IkNpUXdPR0U0TmpnMFlpMWtZamc0TFRSaU56TXRPVEJoT1MwelkyUXhOall4WmpVME5qWVNCV3h2WTJGcyIsImF1ZCI6ImFsYXVkYS1hdXRoIiwiZXhwIjozMTg3MTUzNDMzLCJpYXQiOjE2MTAzNTM0MzMsIm5vbmNlIjoiYWxhdWRhLWNvbnNvbGUiLCJhdF9oYXNoIjoiTHg0ZWlPQzBLT3A4cnhMU01JUWsxZyIsImVtYWlsIjoiY3BhYXNAZWJjaGluYXRlY2guY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiLnrqHnkIblkZgiLCJleHQiOnsiaXNfYWRtaW4iOnRydWUsImNvbm5faWQiOiJsb2NhbCJ9fQ.dE4WeaEete4PeZcVAveg5wCXKkmsnEa7F_mBlCfhxKJufKA027rnDf3rU4acxh3h5V3UxNkLqsVmVIEQ2JstGwl90WyDqYSPjfYDD_Q8ecc7MhO_dOUOxYo42Oawmpft71fyo6GwcWuT2qMPP2Yjaafjj2k24EJMxGLkkATMmRMQlLT0RVamyQUH-rcwHFWuaqPWtF7IDkEv8IsZx-OPIPgQt8QpKCn87h5cy_fnl6zhUTL5tjPewUy5YDP8XakWbUELu_SHW0PZKcdA549NyyxaFcxYJR4lQQHKQC2UIK-wtdzlQDuElgivhHvWRh62eAmlYg1MFQIWxtdiryS0RA
+
+###
+
+@path = apis/auth.alauda.io/v1/userbindings
+GET {{url}}/{{path}} HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+
+@path = apis/auth.alauda.io/v1/userbindings
+GET {{url}}/{{path}} HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+    "content": "foo bar"
+}
+
+### Provider ###################################################################################
+
+@url = http://127.0.0.1:6666
+POST {{url}}/api/v1/cluster/region/provider HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "name": "test",
+  "cluster": "region",
+  "selector": "cis=demo",
+  "ltm": {
+    "url": "http://100.1.1.1/api",
+    "token": "foo",
+    "cidr": "10.0.0.0/24"
+  },
+  "ve": {
+    "addr": "200.1.1.1",
+    "username": "admin",
+    "password": "admin",
+    "cidr": "20.1.0.0/16"
+  },
+  "status": {
+    "ippairs": [
+      {
+        "ltmip": "10.0.0.10",
+        "veip": "20.1.0.10",
+        "status": "bond"
+      },
+      {
+        "ltmip": "10.0.0.11",
+        "veip": "20.1.0.11",
+        "status": "bond"
+      }
+    ]
+  }
+}
+
+###
+
+@url = http://127.0.0.1:6666
+PUT {{url}}/api/v1/cluster/region/provider/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "name": "test",
+  "cluster": "region",
+  "selector": "cis=demo",
+  "ltm": {
+    "url": "http://100.1.1.1/api",
+    "token": "bar",
+    "cidr": "10.0.0.0/24"
+  },
+  "ve": {
+    "addr": "200.1.1.1",
+    "username": "admin",
+    "password": "admin",
+    "cidr": "20.1.0.0/16"
+  },
+  "status": {
+    "ippairs": [
+      {
+        "ltmip": "10.0.0.10",
+        "veip": "20.1.0.10",
+        "status": "bond"
+      },
+      {
+        "ltmip": "10.0.0.12",
+        "veip": "20.1.0.12",
+        "status": "bond"
+      }
+    ]
+  }
+}
+
+###
+
+@url = http://127.0.0.1:6666
+GET {{url}}/api/v1/cluster/region/provider/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+@url = http://127.0.0.1:6666
+GET {{url}}/api/v1/cluster/region/providers HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+
+@url = http://127.0.0.1:6666
+DELETE {{url}}/api/v1/cluster/region/provider/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+### Loadbalance ###################################################################################
+
+@url = http://127.0.0.1:6666
+POST {{url}}/api/v1/cluster/region/namespace/default/loadbalance HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "name": "test",
+  "kind": "listner",
+  "listners": [
+    {
+      "name": "lsnr1",
+      "port": 80,
+      "protocal": "http",
+      "services": [
+        {
+          "port": 8080,
+          "svc": "svc01",
+          "weight": 60
+        },
+        {
+          "port": 8080,
+          "svc": "svc02",
+          "weight": 40
+        }
+      ],
+      "session": "cookie"
+    },
+    {
+      "name": "lsnr2",
+      "port": 22,
+      "protocal": "tcp",
+      "services": [
+        {
+          "port": 2222,
+          "svc": "svc01",
+          "weight": 60
+        },
+        {
+          "port": 2222,
+          "svc": "svc02",
+          "weight": 40
+        }
+      ],
+      "session": "source-address"
+    }
+  ],
+  "providerName": "test",
+  "ltmip": "",
+  "namespace": "default",
+  "veip": "20.1.0.10",
+  "status": {
+    "process": "apply"
+  }
+}
+
+###
+
+@url = http://127.0.0.1:6666
+PUT {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "name": "test",
+  "kind": "listner",
+  "listners": [
+    {
+      "name": "lsnr1",
+      "port": 80,
+      "protocal": "http",
+      "services": [
+        {
+          "port": 8080,
+          "svc": "svc01",
+          "weight": 30
+        },
+        {
+          "port": 8080,
+          "svc": "svc02",
+          "weight": 70
+        }
+      ],
+      "session": "cookie"
+    },
+    {
+      "name": "lsnr2",
+      "port": 22,
+      "protocal": "tcp",
+      "services": [
+        {
+          "port": 2222,
+          "svc": "svc01",
+          "weight": 10
+        },
+        {
+          "port": 2222,
+          "svc": "svc02",
+          "weight": 90
+        }
+      ],
+      "session": "source-address"
+    }
+  ],
+  "providerName": "test",
+  "ltmip": "",
+  "namespace": "default",
+  "veip": "20.1.0.10",
+  "status": {
+    "process": "apply"
+  }
+}
+
+###
+
+@url = http://127.0.0.1:6666
+GET {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+
+@url = http://127.0.0.1:6666
+DELETE {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+### Rule ###################################################################################
+
+@url = http://127.0.0.1:6666
+POST {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test/listner/lsnr1/rule HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "name": "test",
+  "loadbalanceName": "test",
+  "listnerName": "lsnr1",
+  "matchers": [
+    {
+      "key": "",
+      "kind": "domain",
+      "values": [
+        {
+          "op": "equal",
+          "val": "a.domain.com"
+        }
+      ]
+    },
+    {
+      "key": "Content-Length",
+      "kind": "header",
+      "values": [
+        {
+          "op": "equal",
+          "val": "10"
+        },
+        {
+          "op": "range",
+          "val": "100-1000"
+        }
+      ]
+    }
+  ],
+  "services": [
+    {
+      "port": 8080,
+      "svc": "svc03",
+      "weight": 90
+    },
+    {
+      "port": 8080,
+      "svc": "svc04",
+      "weight": 10
+    }
+  ]
+}
+
+###
+
+@url = http://127.0.0.1:6666
+PUT {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test/listner/lsnr1/rule/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "name": "test",
+  "loadbalanceName": "test",
+  "listnerName": "lsnr1",
+  "matchers": [
+    {
+      "key": "",
+      "kind": "domain",
+      "values": [
+        {
+          "op": "equal",
+          "val": "a.domain.com"
+        }
+      ]
+    },
+    {
+      "key": "Content-Length",
+      "kind": "header",
+      "values": [
+        {
+          "op": "equal",
+          "val": "10"
+        },
+        {
+          "op": "range",
+          "val": "200-1000"
+        }
+      ]
+    }
+  ],
+  "services": [
+    {
+      "port": 8080,
+      "svc": "svc03",
+      "weight": 30
+    },
+    {
+      "port": 8080,
+      "svc": "svc04",
+      "weight": 70
+    }
+  ]
+}
+
+###
+
+@url = http://127.0.0.1:6666
+GET {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test/listner/lsnr1/rule/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+
+@url = http://127.0.0.1:6666
+DELETE {{url}}/api/v1/cluster/region/namespace/default/loadbalance/test/listner/lsnr1/rule/test HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}

@@ -1,0 +1,133 @@
+{
+  "class": "ADC",
+  "schemaVersion": "3.2.0",
+  "id": "8675309",
+  "label": "Sample 1",
+  "remark": "Simple HTTP application with round robin pool",
+  "acp-region01_default": { // tenant: partition, cluster_namespace
+    "class": "Tenant",
+    "default_http_app": { // application: namespace_protocal
+      "class": "Application",
+      "template": "http", // match application protocal
+      "80_vs": { // virtual server: listner port_vs
+        "class": "Service_HTTP", // match template
+        "remark": "Defaults to port 80",
+        "virtualAddresses": [ // ve vip
+          "20.1.0.10"
+        ],
+        "virtualPort": 80, // listner port
+        "persistenceMethods": [ // session persistence
+          "cookie" // first element is default
+        ],
+        "pool": "svc01_8080_pool", // default pool
+        "iRules": [ // last element is default
+          "80_vs_smpl_irule",
+          "80_vs_default_irule"
+        ]
+      },
+      "svc01_8080_pool": { // pool: service _port
+        "class": "Pool",
+        "monitors": [
+          "http" // match template
+        ],
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "svc02_8080_pool": { // pool: service _port
+        "class": "Pool",
+        "monitors": [
+          "http" // match template
+        ],
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "svc03_8080_pool": { // pool: service _port
+        "class": "Pool",
+        "monitors": [
+          "http" // match template
+        ],
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "svc04_8080_pool": { // pool: service _port
+        "class": "Pool",
+        "monitors": [
+          "http" // match template
+        ],
+        "members": [
+          {
+            "servicePort": 8080,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "80_vs_default_irule": { // irule: vsname_default_irule
+        "class": "iRule",
+        "iRule": "when HTTP_REQUEST { \n if {[expr {[expr {0xffffffff & [crc32 [IP::client_addr]]}] % 100}] < 60} { \n pool svc01_8080_pool \n } else { \n pool svc02_8080_pool \n } \n }"
+      },
+      "80_vs_smpl_irule": { // irule: vsname_lbrulename_irule
+        "class": "iRule",
+        "iRule": "when HTTP_REQUEST { \n if {[HTTP::host] equals \"a.domain.com\" or ([HTTP::header exists \"Content-Length\"] and ([HTTP::header values \"Content-Length\"] equals 10 or ([HTTP::header values \"Content-Length\"] >= 100 and [HTTP::header values \"Content-Length\"] <= 1000)))} { \n if {[expr {[expr {0xffffffff & [crc32 [IP::client_addr]]}] % 100}] < 90} { \n pool svc03_8080_pool  \n } else {  \n pool svc04_8080_pool \n } \n } \n }"
+      }
+    },
+    "default_tcp_app": { // application: namespace_protocal
+      "class": "Application",
+      "template": "tcp", // match application protocal
+      "22_vs": { // virtual server: listner port
+        "class": "Service_TCP", // match template
+        "remark": "Defaults to port 80",
+        "virtualAddresses": [ // ve vip
+          "20.1.0.10"
+        ],
+        "virtualPort": 22,
+        "persistenceMethods": [
+          "source-address"
+        ],
+        "pool": "svc01_2222_pool",
+        "iRules": [
+          "22_vs_default_irule"
+        ]
+      },
+      "svc01_2222_pool": { // pool: service _port
+        "class": "Pool",
+        "monitors": [
+          "tcp" // match template
+        ],
+        "members": [
+          {
+            "servicePort": 2222,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "svc02_2222_pool": { // pool: service _port
+        "class": "Pool",
+        "monitors": [
+          "tcp" // match template
+        ],
+        "members": [
+          {
+            "servicePort": 2222,
+            "serverAddresses": []
+          }
+        ]
+      },
+      "22_vs_default_irule": { // vsname_default_irule
+        "class": "iRule",
+        "iRule": "when CLIENT_ACCEPTED { \n if {[expr {[expr {0xffffffff & [crc32 [IP::client_addr]]}] % 100}] < 60} { \n pool svc01_2222_pool \n } else { \n pool svc02_2222_pool \n } \n }"
+      }
+    }
+  }
+}
