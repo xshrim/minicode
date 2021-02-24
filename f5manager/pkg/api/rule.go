@@ -1,8 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +31,7 @@ func getRule(name string, opts ...string) model.Rule {
 	}
 
 	if len(opts) > 3 {
-		tx = tx.Where("listner_name=?", opts[3])
+		tx = tx.Where("listener_name=?", opts[3])
 	}
 
 	tx.Preload("Matchers.Values").Preload("Services").First(&rule)
@@ -52,7 +50,7 @@ func getRule(name string, opts ...string) model.Rule {
 	return rule
 }
 
-func getRules(opts ...string) []model.Rule {
+func getRules(name string, opts ...string) []model.Rule {
 	db := global.Ctx.GetDB()
 	rules := []model.Rule{}
 
@@ -62,7 +60,7 @@ func getRules(opts ...string) []model.Rule {
 	}
 
 	if len(opts) > 3 {
-		tx = tx.Where("listner_name=?", opts[3])
+		tx = tx.Where("listener_name=?", opts[3])
 	}
 
 	tx.Preload("Matchers.Values").Preload("Services").Find(&rules)
@@ -73,11 +71,14 @@ func getRules(opts ...string) []model.Rule {
 			args = opts[:2]
 		}
 
-		for idx, rule := range rules {
-			if getLoadbalance(rule.LoadbalanceName, args...).Name == "" {
-				rules = append(rules[:idx], rules[idx+1:]...)
+		res := make([]model.Rule, 0)
+		for _, rule := range rules {
+			if getLoadbalance(rule.LoadbalanceName, args...).Name != "" {
+				// 这种删除方法只适用于待删除对象不超过两个的场景
+				res = append(res, rule)
 			}
 		}
+		rules = res
 	}
 
 	return rules
@@ -123,7 +124,7 @@ func delRule(name string, opts ...string) error {
 	}
 
 	if len(opts) > 3 {
-		tx = tx.Where("listner_name=?", opts[3])
+		tx = tx.Where("listener_name=?", opts[3])
 	}
 
 	tx.Find(&rules)
@@ -153,10 +154,10 @@ func GetRule(c *gin.Context) {
 	cluster := c.Param("cluster")
 	namespace := c.Param("namespace")
 	loadbalance := c.Param("loadbalance")
-	listner := c.Param("listner")
+	listener := c.Param("listener")
 	name := c.Param("rule")
 
-	rule := getRule(name, cluster, namespace, loadbalance, listner)
+	rule := getRule(name, cluster, namespace, loadbalance, listener)
 
 	resp(c, http.StatusOK, code, err, rule)
 }
@@ -168,10 +169,10 @@ func GetRules(c *gin.Context) {
 	cluster := c.Param("cluster")
 	namespace := c.Param("namespace")
 	loadbalance := c.Param("loadbalance")
-	listner := c.Param("listner")
+	listener := c.Param("listener")
 	name := c.Param("name")
 
-	rules := getRules(name, cluster, namespace, loadbalance, listner)
+	rules := getRules(name, cluster, namespace, loadbalance, listener)
 
 	resp(c, http.StatusOK, code, err, rules)
 }
@@ -183,20 +184,17 @@ func SetRule(c *gin.Context) {
 	cluster := c.Param("cluster")
 	namespace := c.Param("namespace")
 	loadbalance := c.Param("loadbalance")
-	listner := c.Param("listner")
+	listener := c.Param("listener")
 	name := c.Param("rule")
 
-	rule := model.Rule{}
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	var rule model.Rule
+	err = c.ShouldBindJSON(&rule)
 	if err != nil {
-		code = global.ERROR_BODY_NOT_EXIST
-	} else {
-		if err = json.Unmarshal(jsonData, &rule); err != nil {
-			code = global.ERROR_BODY_PARSE_FAIL
-		}
+		code = global.ERROR_BODY_PARSE_FAIL
 	}
+
 	rule.LoadbalanceName = loadbalance
-	rule.ListnerName = listner
+	rule.ListenerName = listener
 
 	if getLoadbalance(rule.LoadbalanceName, cluster, namespace).Name == "" {
 		code = global.ERROR_BODY_VALUE_CHECK_FAIL
@@ -223,10 +221,10 @@ func DelRule(c *gin.Context) {
 	cluster := c.Param("cluster")
 	namespace := c.Param("namespace")
 	loadbalance := c.Param("loadbalance")
-	listner := c.Param("listner")
+	listener := c.Param("listener")
 	name := c.Param("rule")
 
-	err = delRule(name, cluster, namespace, loadbalance, listner)
+	err = delRule(name, cluster, namespace, loadbalance, listener)
 	if err != nil {
 		code = global.ERROR_DB_DELETE_FAIL
 	}

@@ -1,8 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -135,14 +133,10 @@ func SetProvider(c *gin.Context) {
 	cluster := c.Param("cluster")
 	name := c.Param("provider")
 
-	provider := model.Provider{}
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	var provider model.Provider
+	err = c.ShouldBindJSON(&provider)
 	if err != nil {
-		code = global.ERROR_BODY_NOT_EXIST
-	} else {
-		if err = json.Unmarshal(jsonData, &provider); err != nil {
-			code = global.ERROR_BODY_PARSE_FAIL
-		}
+		code = global.ERROR_BODY_PARSE_FAIL
 	}
 	provider.Cluster = cluster
 

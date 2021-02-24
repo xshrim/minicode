@@ -13,8 +13,9 @@ func Run() {
 	global.Ctx = global.New()
 	r := router.New()
 
+	// 6665-6669会被chrome认为是危险端口，不允许用户访问
 	svr := &http.Server{
-		Addr:           ":6666",
+		Addr:           ":9090",
 		Handler:        r,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,

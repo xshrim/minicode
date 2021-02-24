@@ -224,10 +224,10 @@ func Gen(provider model.Provider, loadbalance model.Loadbalance, rules []model.R
 
 	js := initAS3Json(tenantName, httpApp, tcpApp)
 
-	for _, listner := range loadbalance.Listners {
-		port := listner.Port
-		protocal := listner.Protocal
-		session := listner.Session
+	for _, listener := range loadbalance.Listeners {
+		port := listener.Port
+		protocal := listener.Protocal
+		session := listener.Session
 
 		app := httpApp
 		if protocal == "tcp" {
@@ -236,10 +236,10 @@ func Gen(provider model.Provider, loadbalance model.Loadbalance, rules []model.R
 
 		js = addVirtualServer(js, gol.Sprtf("%s.%s.%s", tenantName, app, gol.Sprtf("%d_vs", port)), protocal, virtualAddr, session, port)
 
-		js = addPoolRule(js, tenantName, app, protocal, port, listner.Services, nil)
+		js = addPoolRule(js, tenantName, app, protocal, port, listener.Services, nil)
 
 		// var pools Pools
-		// for _, svc := range listner.Services {
+		// for _, svc := range listener.Services {
 		// 	poolName := gol.Sprtf("%s_%d_pool", svc.Svc, svc.Port)
 		// 	pools = append(pools, Pool{Name: poolName, Weight: svc.Weight})
 		// 	js = addPool(js, gol.Sprtf("%s.%s.%s", tenantName, app, poolName), protocal, svc.Port)
@@ -263,7 +263,7 @@ func Gen(provider model.Provider, loadbalance model.Loadbalance, rules []model.R
 		// }
 
 		for _, rule := range rules {
-			if rule.ListnerName == listner.Name {
+			if rule.ListenerName == listener.Name {
 				js = addPoolRule(js, tenantName, app, protocal, port, rule.Services, rule.Matchers)
 				// var pools Pools
 				// for _, svc := range rule.Spec.Services {

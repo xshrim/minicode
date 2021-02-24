@@ -10,6 +10,7 @@ func New() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	r.Use(midware.CORS)
 	gin.SetMode(gin.DebugMode)
 	r.GET("/auth", api.GetAuth)
 	apiv1 := r.Group("/api/v1")
@@ -23,16 +24,16 @@ func New() *gin.Engine {
 
 		apiv1.GET("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance", api.GetLoadbalance)
 		apiv1.GET("/cluster/:cluster/namespace/:namespace/loadbalances", api.GetLoadbalances)
-		apiv1.GET("/provider/:provider/loadbalances", api.GetLoadbalances)
+		apiv1.GET("/cluster/:cluster/provider/:provider/loadbalances", api.GetLoadbalances)
 		apiv1.POST("/cluster/:cluster/namespace/:namespace/loadbalance", api.SetLoadbalance)
 		apiv1.PUT("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance", api.SetLoadbalance)
 		apiv1.DELETE("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance", api.DelLoadbalance)
 
-		apiv1.GET("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listner/:listner/rule/:rule", api.GetRule)
-		apiv1.GET("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listner/:listner/rules", api.GetRules)
-		apiv1.POST("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listner/:listner/rule", api.SetRule)
-		apiv1.PUT("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listner/:listner/rule/:rule", api.SetRule)
-		apiv1.DELETE("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listner/:listner/rule/:rule", api.DelRule)
+		apiv1.GET("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listener/:listener/rule/:rule", api.GetRule)
+		apiv1.GET("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listener/:listener/rules", api.GetRules)
+		apiv1.POST("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listener/:listener/rule", api.SetRule)
+		apiv1.PUT("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listener/:listener/rule/:rule", api.SetRule)
+		apiv1.DELETE("/cluster/:cluster/namespace/:namespace/loadbalance/:loadbalance/listener/:listener/rule/:rule", api.DelRule)
 	}
 
 	return r

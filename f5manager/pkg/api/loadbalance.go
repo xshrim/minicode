@@ -1,8 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +19,7 @@ func getLoadbalance(name string, opts ...string) model.Loadbalance {
 		tx = tx.Where("namespace=?", opts[1])
 	}
 
-	tx.Preload("Listners.Services").Preload("Status").First(&loadbalance)
+	tx.Preload("Listeners.Services").Preload("Status").First(&loadbalance)
 
 	if len(opts) > 0 {
 		if getProvider(loadbalance.ProviderName, opts[0]).Name == "" {
@@ -41,7 +39,7 @@ func getLoadbalances(opts ...string) []model.Loadbalance {
 		tx = tx.Where("namespace=?", opts[1])
 	}
 
-	tx.Preload("Listners.Services").Preload("Status").Find(&loadbalances)
+	tx.Preload("Listeners.Services").Preload("Status").Find(&loadbalances)
 
 	if len(opts) > 0 {
 		for idx, loadbalance := range loadbalances {
@@ -58,7 +56,7 @@ func getLoadbalancesByProvider(providerName string) []model.Loadbalance {
 	db := global.Ctx.GetDB()
 	loadbalances := []model.Loadbalance{}
 
-	db.Where("provider_name=?", providerName).Preload("Listners.Services").Preload("Status").Find(&loadbalances)
+	db.Where("provider_name=?", providerName).Preload("Listeners.Services").Preload("Status").Find(&loadbalances)
 
 	return loadbalances
 }
@@ -156,14 +154,10 @@ func SetLoadbalance(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("loadbalance")
 
-	loadbalance := model.Loadbalance{}
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	var loadbalance model.Loadbalance
+	err = c.ShouldBindJSON(&loadbalance)
 	if err != nil {
-		code = global.ERROR_BODY_NOT_EXIST
-	} else {
-		if err = json.Unmarshal(jsonData, &loadbalance); err != nil {
-			code = global.ERROR_BODY_PARSE_FAIL
-		}
+		code = global.ERROR_BODY_PARSE_FAIL
 	}
 	loadbalance.Namespace = namespace
 	if getProvider(loadbalance.ProviderName, cluster).Name == "" {

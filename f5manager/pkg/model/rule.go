@@ -31,7 +31,7 @@ type Rule struct {
 	Model           `json:"-"`
 	Name            string        `json:"name" gorm:"not null;uniqueIndex"`
 	LoadbalanceName string        `json:"loadbalanceName"`
-	ListnerName     string        `json:"listnerName"`
+	ListenerName    string        `json:"listenerName"`
 	Services        []RuleService `json:"services" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Matchers        []Matcher     `json:"matchers" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
