@@ -3,6 +3,13 @@
 " disable all pulgins
 " vim -U NONE -u
 
+" 设置.vim文件路径
+" vim -u ~/.vimrc  " 设置vim启动时使用的配置文件
+set runtimepath=~/.vim,$VIM/vimfiles,$VIMRUNTIME,$VIM/vimfiles/after,~/.vim/after
+if version >=800
+  set packpath=~/.vim,$VIM/vimfiles,$VIMRUNTIME,$VIM/vimfiles/after,~/.vim/after
+endif
+
 set encoding=utf-8
 scriptencoding utf-8
 " 识别文件编码
@@ -126,8 +133,8 @@ set fillchars=vert:\ ,stl:\ ,stlnc:\
 set showmatch
 " 匹配括号高亮的时间（单位是十分之一秒）
 set matchtime=1
-"设置映射延迟和按键延迟
-set timeoutlen=10
+" 设置映射延迟和按键延迟
+set timeoutlen=500
 set ttimeoutlen=10
 " 保存全局变量
 set viminfo+=!
@@ -136,6 +143,7 @@ set iskeyword+=_,$,@,%,#,-
 " 字符间插入的像素行数目
 set ruler           " 显示标尺
 set showcmd         " 输入的命令显示出来，看的清楚些
+set showmode        " 显示当前模式
 " 将tab替换为空格
 "nmap tt :%s/\t/    /g<CR>
 " 仅需要时重绘
@@ -223,8 +231,8 @@ function! LinterStatus() abort
 endfunction
 
 " 自定义状态栏
-"set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=/%03.3b]\ [POS=%l,%v]\ [LEN=%L]\ [%p%%]\ %=\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}\ %{LinterStatus()}   "状态行显示的内容
-set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=/%03.3b]\ [POS=%l,%v]\ [LEN=%L]\ [%p%%]\ %=\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}   "状态行显示的内容
+"set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=/%03.3b]\ [POS=%l,%v]\ [LEN=%L]\ [%p%%]\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}\ %{LinterStatus()}   "状态行显示的内容
+set statusline=%F%m%r%h%w\ [FORMAT=%{&ff}]\ [TYPE=%Y]\ [ASCII=/%03.3b]\ [POS=%l,%v]\ [LEN=%L]\ [%p%%]\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}   "状态行显示的内容
 
 
 " 设置当文件被改动时自动载入
@@ -245,7 +253,7 @@ augroup filetype_dict
     autocmd FileType html set dict+=~/.vim/dict/css.dict
 augroup END
 
-" 修改文件为unix格式
+"修改文件为unix格式
 map <C-!> :call FormatClean()<CR>
 func! FormatClean()
     exec 'set fileformat=unix'
@@ -253,7 +261,7 @@ func! FormatClean()
 endfunc
 
 " 统一缩进
-nnoremap <F2> gg=G<CR>
+"nnoremap <F2> gg=G<CR>
 " 设置代码折叠
 "map <F2> :call CodeFold()<CR>
 "func! CodeFold()
@@ -263,7 +271,7 @@ nnoremap <F2> gg=G<CR>
 "endfunc
 
 " 去空行
-nnoremap <F10> :g/^\s*$/d<CR>
+nnoremap <F7> :g/^\s*$/d<CR>
 
 "taglist
 ":nmap <silent> <F4> <ESC>:Tlist<RETURN>
@@ -360,11 +368,13 @@ func! Rungdb()
     exec '!gdb ./%<'
 endfunc
 
-
-map <F4> :call FormatSrc()<CR><CR>
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""代码格式化
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+map <F4> :call FormatSrc()<CR>
 
 " 定义FormartSrc()
-func FormatSrc()
+func! FormatSrc()
     exec 'w'
     if &filetype ==? 'c'
         exec '!astyle --style=ansi -a --suffix=none %'
@@ -397,6 +407,54 @@ if has('autocmd')
     augroup END
 endif
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""切换行号显示
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nmap <F3> :call ToggleLineNumber()<CR>
+func! ToggleLineNumber()
+  if !exists("b:togglenum")
+    let b:togglenum=1
+  endif
+  if b:togglenum==0
+    execute "set number"
+    execute "set norelativenumber"
+    let b:togglenum=1
+  else
+    if b:togglenum==1
+      execute "set number"
+      execute "set relativenumber"
+      let b:togglenum=2
+    else
+      execute "set nonumber"
+      execute "set norelativenumber"
+      let b:togglenum=0
+    endif
+  endif
+endfunc
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""解决输入法问题
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:input_toggle = 0          " 设置默认为英文输入法
+function! Fcitx2en()
+   let s:input_status = system("fcitx5-remote")
+   if s:input_status == 2
+      let g:input_toggle = 1
+      let l:a = system("fcitx5-remote -c")
+   endif
+endfunction
+
+function! Fcitx2zh()
+   let s:input_status = system("fcitx5-remote")
+   if s:input_status != 2 && g:input_toggle == 1
+      let l:a = system("fcitx5-remote -o")
+      let g:input_toggle = 0
+   endif
+endfunction
+
+set timeoutlen=150
+autocmd InsertLeave * call Fcitx2en()    " 退出Insert模式时关闭中文输入法
+autocmd InsertEnter * call Fcitx2zh()   " 进入Insert模式时开启中文输入法
 
 " 为C程序提供自动缩进
 " 自动补全

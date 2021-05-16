@@ -4,8 +4,8 @@ RUN set -ex \
     && echo "http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
     && echo "http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
     && echo "http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
-    && sed -i 's/nl.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
+    && sed -i 's/nl.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
     && apk update \
     && apk upgrade \
     && apk --virtual add --no-cache \
@@ -46,8 +46,8 @@ RUN set -ex \
     && echo "http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
     && echo "http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
     && echo "http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
-    && sed -i 's/nl.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
+    && sed -i 's/nl.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
     && apk update \
     && apk upgrade \
     && apk --virtual add --no-cache \
@@ -62,10 +62,7 @@ RUN set -ex \
     conntrack-tools \
     ctop \
     curl \
-    docker-cli \
-    docker-compose \
-    docker-compose-zsh-completion \
-    docker-zsh-completion \
+    delta \
     dhcping \
     dfc \
     dos2unix \
@@ -74,7 +71,6 @@ RUN set -ex \
     ethtool \
     exa \
     expect \
-    fabric \
     fd \
     fd-zsh-completion \
     file\
@@ -82,6 +78,7 @@ RUN set -ex \
     fio \
     fzf \
     fzf-zsh-completion \
+    lf \
     git \
     git-zsh-completion \
     hexdump \
@@ -112,7 +109,6 @@ RUN set -ex \
     minio-client \
     mtr \
     mysql-client \
-    mycli \
     net-snmp-tools \
     netcat-openbsd \
     nftables \
@@ -129,8 +125,8 @@ RUN set -ex \
     openssh-server \
     openssh-client \
     postgresql-client \
-    pgcli \
     pv \
+    procs \
     qperf \
     tree \
     redis \
@@ -160,6 +156,18 @@ RUN set -ex \
     util-linux \
     vim \
     zsh \
+    docker-cli \
+    docker-compose \
+    docker-compose-zsh-completion \
+    docker-zsh-completion \
+    ansible \
+    pgcli \
+    mycli \
+    && mkdir -p /root/.config \
+    && mkdir -p /root/.cache/lf \
+    && mv /root/lf /root/.config/ \
+    && chmod a+x /root/.config/lf/clean \
+    && chmod a+x /root/.config/lf/preview \
     && mkdir /share \
     #&& find / -name tcpdump 
     #&& mv /usr/sbin/tcpdump /usr/bin/tcpdump 
@@ -178,17 +186,18 @@ RUN set -ex \
     && addgroup -g 1111 smb \
     && adduser -D -H -G smb -s /bin/false -u 1111 smb \
     && echo -e "smb\nsmb" | smbpasswd -a -s -c /root/smb.conf smb \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/* \
+    && chmod a+x /root/run.sh
 
 #RUN echo 'export PATH=/root/tools/:$PATH' >> "$ENV"
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2   # 解决go语言程序无法在alpine执行的问题
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
 # 开放ssh webssh gofs gohttpserver smb端口
-EXPOSE 22 2222 2333 2444 2555 135/tcp 137/udp 138/udp 139/tcp 445/tcp
+EXPOSE 22 2222 2333 2444 2555 2666 4666 135/tcp 137/udp 138/udp 139/tcp 445/tcp
 
 # CMD ["/usr/sbin/sshd", "-D"]
-CMD ["sh","/root/run.sh"]
+CMD ["/root/run.sh"]
 # CMD ["/bin/zsh","-l"]
 
 # docker build --squash -t xshrim/xo . --network=host

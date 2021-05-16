@@ -5,6 +5,7 @@ image=xo
 port=""
 timeout=60
 user=root
+cfile=""
 #passwd=root
 idx=0
 since=""
@@ -49,12 +50,14 @@ function usage() {
   ts,tsk,tshark            运行tshark抓包命令(wireshark)
   it,iptable,iptables      运行iptables命令
   nm,nmap                  运行nmap命令
-  pt,pst,pstree            查看进程书
+  pt,pst,pstree            查看进程树
   ps,portstat,portstatus   运行端口检测命令
   pc,portctl,portcontrol   运行端口开放关闭命令
   py,py3,python            执行python3命令
   px                       在http代理环境执行命令
   pxs,goproxy              运行goproxy代理服务器
+  ans                      提取ansible的json输出
+  bat                      批量执行远程命令
   ldf                      统计系统分区空间占用
   lfd                      统计系统磁盘大小
   ldu                      统计目录磁盘占用
@@ -134,8 +137,7 @@ function usage() {
   exp,explain              查看k8s资源描述
   expr,explainr            查看k8s资源及嵌套资源描述
   dry,dryrun               模拟执行kubectl命令
-  eg,etcdget               通过etcdctl获取k8s的etcd数据
-  egp,etcdgetp             通过etcdctl获取k8s的包括子目录在内的etcd数据
+  ee,etcd,etcdexe          执行etcdctl命令操作etcd数据库
   ap,apl,apply             执行kubectl apply命令
   cr,crt,create            执行kubectl create命令
   r,run                    执行kubectl run命令
@@ -393,6 +395,27 @@ function idhelp() {
   id nu <num>              随机打印num个大写字母和数字组合的字符
   id nc <num>              随机打印num个字母和数字组合的字符
   id a <num>               随机打印num个字母和数字组合的字符
+  '
+}
+
+function kindhelp() {
+  echo '
+**USAGE**:
+  kude kd [<commands>]
+
+**COMMANDS**:
+  h,hp                    打印命令帮助
+  help                    打印kind命令帮助
+  cl,ls,list              打印集群列表
+  ssl,pki                 复制集群相关凭证到本地
+  ac,completion           kind命令自动补全
+  l,log                   查看kind节点中的容器内的日志
+  lf,logf                 实时查看kind节点中的容器内的日志
+  ld,load                 向kind节点中加载镜像
+  d,dc                    在kind节点中执行docker命令
+  e,exe                   在kind节点中的容器内执行命令
+  i,ie,iexe               交互式进入kind节点中的容器内
+  rm,del,delete           删除集群
   '
 }
 
@@ -1426,12 +1449,20 @@ function main() {
   elif [ "$1" == "kd" ]; then
     require kind
     shift
-    if [ "$1" == "h" ] || [ "$1" == "hp" ] || [ "$1" == "help" ]; then
+    if [ "$1" == "h" ] || [ "$1" == "hp" ]; then
+      kindhelp
+    elif [ "$1" == "help" ]; then
       kind help
     elif [ "$1" == "cl" ] || [ "$1" == "ls" ] || [ "$1" == "list" ]; then
       kind get clusters
     elif [ "$1" == "info" ]; then
       kubectl cluster-info 
+    elif [ "$1" == "ssl" ] || [ "$1" == "pki" ]; then
+      dest="."
+      if [ $# -gt 1 ]; then
+        dest=$2
+      fi
+      docker cp $(kind get nodes|grep control-plane|sed -n '1p'):/etc/kubernetes/$1 $dest
     elif [ "$1" == "ac" ] || [ "$1" == "completion" ]; then
       shift
       shl="bash"
@@ -1463,12 +1494,60 @@ function main() {
       fi
     elif [ "$1" == "d" ] || [ "$1" == "dc" ]; then
       shift
-      docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl $*
-    elif [ "$1" == "exec" ]; then
+      docker exec $(kind get nodes|grep control-plane|sed -n '1p') crictl $*
+    elif [ "$1" == "l" ] || [ "$1" == "log" ]; then
       shift
-      if [ $# -eq 1 ]; then
-        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec -it $1
+      if [ $# -eq 0 ]; then
+        cids=$(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q)
+        if [ $(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q | wc -l) -lt 2 ]; then
+          cid=$cids
+        else
+          echo "====== More than one container ======"
+          SIFS=$IFS
+          IFS=$'\n'
+          cids=($cids)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cids[@]}; i++)); do
+            echo "$i: ${cids[$i]}"
+          done
+          read -p "====== select one with number[0]: " kcdidx
+          if [ -z "$kcdidx" ]; then
+            kcdidx=0
+          fi
+          cid=$(echo ${cids[$kcdidx]})
+        fi
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl logs ${cid:0:12}
       else
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl logs $1
+      fi
+    elif [ "$1" == "lf" ] || [ "$1" == "logf" ]; then
+      shift
+      if [ $# -eq 0 ]; then
+        cids=$(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q)
+        if [ $(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q | wc -l) -lt 2 ]; then
+          cid=$cids
+        else
+          echo "====== More than one container ======"
+          SIFS=$IFS
+          IFS=$'\n'
+          cids=($cids)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cids[@]}; i++)); do
+            echo "$i: ${cids[$i]}"
+          done
+          read -p "====== select one with number[0]: " kcdidx
+          if [ -z "$kcdidx" ]; then
+            kcdidx=0
+          fi
+          cid=$(echo ${cids[$kcdidx]})
+        fi
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl logs -f ${cid:0:12}
+      else
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl logs -f $1
+      fi
+    elif [ "$1" == "i" ] || [ "$1" == "ie" ] || [ "$1" == "iexe" ]; then
+      shift
+      if [ $# -eq 0 ]; then
         cids=$(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q)
         if [ $(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q | wc -l) -lt 2 ]; then
           cid=$cids
@@ -1488,6 +1567,35 @@ function main() {
           cid=$(echo ${cids[$kcdidx]})
         fi
         docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec -it ${cid:0:12} sh
+      elif [ $# -eq 1 ]; then
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec -it $1 sh
+      else
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec -it $1 $2
+      fi
+    elif [ "$1" == "e" ] || [ "$1" == "exe" ]; then
+      shift
+      if [ $# -eq 1 ]; then
+        cids=$(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q)
+        if [ $(docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl ps -q | wc -l) -lt 2 ]; then
+          cid=$cids
+        else
+          echo "====== More than one container ======"
+          SIFS=$IFS
+          IFS=$'\n'
+          cids=($cids)
+          IFS=$SIFS
+          for ((i = 0; i < ${#cids[@]}; i++)); do
+            echo "$i: ${cids[$i]}"
+          done
+          read -p "====== select one with number[0]: " kcdidx
+          if [ -z "$kcdidx" ]; then
+            kcdidx=0
+          fi
+          cid=$(echo ${cids[$kcdidx]})
+        fi
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec ${cid:0:12} $*
+      else
+        docker exec -it $(kind get nodes|grep control-plane|sed -n '1p') crictl exec $*
       fi
     elif [ "$1" == "rm" ] || [ "$1" == "del" ] || [ "$1" == "delete" ]; then
       shift
@@ -1522,6 +1630,9 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
   image: kindest/node:v1.17.11@sha256:5240a7a2c34bf241afb54ac05669f8a46661912eab05705d660971eeb12f6555
+  extraPortMappings:
+  - containerPort: 2379
+    hostPort: 23790
 EOF
       else
         reg_name='registry'
@@ -1542,6 +1653,9 @@ containerdConfigPatches:
 nodes:
 - role: control-plane
   image: kindest/node:v1.17.11@sha256:5240a7a2c34bf241afb54ac05669f8a46661912eab05705d660971eeb12f6555
+  extraPortMappings:
+  - containerPort: 2379
+    hostPort: 23790
 EOF
 
         docker network connect "kind" "${reg_name}"
@@ -1564,7 +1678,7 @@ EOF
   elif [ "$1" == "ec" ] || [ "$1" == "edc" ] || [ "$1" == "etcdctl" ]; then
     require etcdctl
     shift
-    etcdctl $*
+    ETCDCTL_API=3 etcdctl $*
   elif [ "$1" == "py" ] || [ "$1" == "py3" ] || [ "$1" == "python" ] || [ "$1" == "python3" ]; then
     shift
     if type python3 &>/dev/null; then
@@ -2767,7 +2881,8 @@ EOF
           savedir="$OPTARG"
           ;;
         f)
-          kc="--kubeconfig $OPTARG"
+          cfile="$OPTARG"
+          kc="--kubeconfig $cfile"
           ;;
         g)
           list=1
@@ -2888,6 +3003,34 @@ EOF
         fi
       else
         echo "error: need arguments"
+        exit 1
+      fi
+    elif [ "$subcmd" == "bat" ]; then
+      local text
+      local host=$1
+      host=$(echo $host|sed 's/\./\\./g')
+      shift
+      read text
+      cat $text | \grep -Pzo "\[?$host\]?.* => {\n(.*\n)*?}"|sed "s/^\S.* => {/{/g"
+    elif [ "$subcmd" == "bat" ]; then
+      if [ ${#mandatory[@]} -gt 0 ]; then
+        mode=${mandatory[0]}
+        if [ -f "$cfile" ]; then
+          IFS=$'\r\n' read -d '' -r -a hosts < $cfile
+          args="${mandatory[@]:1}"
+        else
+          if [ ${#mandatory[@]} -le 1 ]; then
+            batch "help" "help"
+            exit 1
+          fi
+          hosts=${mandatory[1]}
+          args="${mandatory[@]:2}"
+        fi
+        for ip in ${hosts[*]}; do
+          batch "$mode" "$ip" "$args"
+        done
+      else
+        batch "help" "help"
         exit 1
       fi
     elif [ "$subcmd" == "scp" ]; then
@@ -4430,12 +4573,16 @@ EOF
     elif [ "$subcmd" == "a" ] || [ "$subcmd" == "all" ]; then
       require kubectl
       kubectl $kc $context get all $selector $ns $dryrun $output
-    elif [ "$subcmd" == "eg" ] || [ "$subcmd" == "etcdget" ]; then
+    elif [ "$subcmd" == "ee" ] || [ "$subcmd" == "etcd" ] || [ "$subcmd" == "etcdexe" ]; then
       require etcdctl
+      emode=${mandatory[0]}
+      mandatory=("${mandatory[@]:1}")
       if [ -d /etc/kubernetes/pki ]; then
         rpath="/etc/kubernetes/pki"
-      else
+      elif [ -d /etc/kubernetes/ssl ]; then
         rpath="/etc/kubernetes/ssl"
+      else
+        rpath="."
       fi
       if [ -z "$host" ]; then
         host="127.0.0.1"
@@ -4444,7 +4591,7 @@ EOF
         port="2379"
       fi
       ep="$host:$port"
-      if [ ${#mandatory[@]} -eq 1 ]; then
+      if [ ${#mandatory[@]} -le 2 ]; then
         if [ -f $rpath/ca.crt ]; then
           ca=$rpath/ca.crt
         else
@@ -4460,12 +4607,12 @@ EOF
         else
           key=$rpath/$(ls $rpath | grep etcd | grep key.pem | sed -n '1p')
         fi
-        etcdkey=${mandatory[0]}
-      elif [ ${#mandatory[@]} -eq 4 ]; then
+        etcdargs="${mandatory[*]}"
+      else
         ca=${mandatory[0]}
         cert=${mandatory[1]}
         key=${mandatory[2]}
-        etcdkey=${mandatory[3]}
+        etcdargs="${mandatory[@]:3}"
         if [ "${ca:0:1}" != "/" ]; then
           ca=$rpath/$ca
         fi
@@ -4475,63 +4622,42 @@ EOF
         if [ "${key:0:1}" != "/" ]; then
           key=$rpath/$key
         fi
+      fi
+
+      # echo "=== endpoint: $ep | cacert: $ca | cert: $cert | key: $key ==="
+      if [ "$emode" == "h" ] || [ "$emode" == "hp" ] || [ "$emode" == "help" ]; then
+        echo '
+USAGE:
+  COMMAND:
+    kude etcd -h [host] -p [port] <mode> <args>
+  MODES:
+    get,key: get the value of the key from etcd
+    getp,keyp: get the value and sub path of the key from etcd
+    meta: get etcd meta keys
+    status: get etcd endpoint status
+    ctl,run,cmd: execute etcdctl command
+    list: list etcd member
+    perf: check etcd perf
+  EXAMPLES:
+    kude etcd status
+    kude etcd -h 127.0.0.1 -p 2379 get /registry/namespaces/default
+    kude etcd -p 2379 cmd ca.crt server.crt server.key endpoint health
+    '
+      elif [ "$emode" == "get" ] || [ "$emode" == "key" ]; then
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get "$etcdargs" -w=json
+      elif [ "$emode" == "getp" ] || [ "$emode" == "keyp" ]; then
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get "$etcdargs" --prefix -w=json
+      elif [ "$emode" == "meta" ]; then
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get / --prefix --keys-only
+      elif [ "$emode" == "status" ]; then
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key endpoint status
+      elif [ "$emode" == "list" ]; then
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key member list
+      elif [ "$emode" == "perf" ]; then
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key check perf
       else
-        echo "error: need arguments"
-        exit 1
+        ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key $etcdargs
       fi
-      echo "=== endpoint: $ep | cacert: $ca | cert: $cert | key: $key ==="
-      ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get "$etcdkey" -w=json
-    elif [ "$subcmd" == "egp" ] || [ "$subcmd" == "etcdgetp" ]; then
-      require etcdctl
-      if [ -d /etc/kubernetes/pki ]; then
-        rpath="/etc/kubernetes/pki"
-      else
-        rpath="/etc/kubernetes/ssl"
-      fi
-      if [ -z "$host" ]; then
-        host="127.0.0.1"
-      fi
-      if [ -z "$port" ]; then
-        port="2379"
-      fi
-      ep="$host:$port"
-      if [ ${#mandatory[@]} -eq 1 ]; then
-        if [ -f $rpath/ca.crt ]; then
-          ca=$rpath/ca.crt
-        else
-          ca=$rpath/kube-ca.pem
-        fi
-        if [ -f $rpath/etcd/peer.crt ]; then
-          cert=$rpath/etcd/peer.crt
-        else
-          cert=$rpath/$(ls $rpath | grep etcd | grep -v key.pem | sed -n '1p')
-        fi
-        if [ -f $rpath/etcd/peer.key ]; then
-          key=$rpath/etcd/peer.key
-        else
-          key=$rpath/$(ls $rpath | grep etcd | grep key.pem | sed -n '1p')
-        fi
-        etcdkey=${mandatory[0]}
-      elif [ ${#mandatory[@]} -eq 4 ]; then
-        ca=${mandatory[0]}
-        cert=${mandatory[1]}
-        key=${mandatory[2]}
-        etcdkey=${mandatory[3]}
-        if [ "${ca:0:1}" != "/" ]; then
-          ca=$rpath/$ca
-        fi
-        if [ "${cert:0:1}" != "/" ]; then
-          cert=$rpath/$cert
-        fi
-        if [ "${key:0:1}" != "/" ]; then
-          key=$rpath/$key
-        fi
-      else
-        echo "error: need arguments"
-        exit 1
-      fi
-      echo "=== endpoint: $ep | cacert: $ca | cert: $cert | key: $key ==="
-      ETCDCTL_API=3 etcdctl --endpoints=$ep --cacert=$ca --cert=$cert --key=$key get "$etcdkey" --prefix -w=json
     elif [ "$subcmd" == "np" ] || [ "$subcmd" == "nodepod" ]; then
       require kubectl
       if [ -z "$kwd" ] && [ ${#mandatory[@]} -gt 0 ]; then
@@ -5518,6 +5644,101 @@ function execmd() {
   fi
 }
 
+function batch() {
+  pw=""
+  if [ -z "$port" ]; then
+    port="22"
+  fi
+  if [ -z "$user" ]; then
+    user="root"
+  fi
+  if [ -n "$passwd" ]; then
+    if ! type sshpass &>/dev/null; then
+      echo "sshpass required"
+      exit 1
+    fi
+    pw="sshpass -p $passwd"
+  fi
+
+  local mode=$1
+  local host=$2
+  local cmd=$3
+  
+  ipd=${host%.*}
+  ipr=${host##*.}
+
+  ipstart=$ipr
+  ipend=$ipr
+
+  if [[ "$ipr" =~ "-" ]]; then
+    ipstart=${ipr%-*}
+    ipend=${ipr##*-}
+  fi
+  
+  for ((i = $ipstart; i <= $ipend; i++)); do
+    if [ $ipd == $ipr ]; then
+      cip=$ipd
+    else
+      cip=$ipd.$i
+    fi
+
+    echo "============================== $cip =============================="
+    case $mode in
+    ping)
+      if /bin/ping -c 1 -w 1 $cip &>/dev/null; then
+        echo "$cip [succ]"
+      else
+        echo "$cip [fail]"
+      fi
+      ;;
+    shell)
+      $pw ssh -p $port $user@$cip $cmd
+      ;;
+    script)
+      $pw ssh -p $port $user@$cip "bash $cmd"
+      ;;
+    copy)
+      local src=`echo $cmd | awk '{print $1}'`
+      local dest=`echo $cmd | awk '{print $2}'`
+      $pw scp -r -P $port $src $user@$cip:$dest
+      ;;
+    fetch)
+      local src=`echo $cmd | awk '{print $1}'`
+      local dest=`echo $cmd | awk '{print $2}'`
+      $pw scp -r -P $port $user@$cip:$src $dest
+      ;;
+    template)
+      local src=`echo $cmd | awk '{print $1}'`
+      local old=`echo $cmd | awk '{print $2}'`
+      local new=`echo $cmd | awk '{print $3}'`
+      $pw ssh -p $port $user@$cip "sed -i 's/$old/$new/g' $src"
+      ;;
+    *)
+      echo '
+USAGE:
+  COMMAND:
+    kude bat -u [user] -s [password] -p [port] <mode> <hosts> <args>
+  MODES:
+    ping: ping hosts
+    shell: run command on hosts
+    script: execute script on hosts
+    copy: copy local files to hosts
+    fetch: fetch files on hosts to local
+    template: replace string for the file on hosts
+  EXAMPLES:
+    kude bat ping "127.0.0.1 196.168.0.1-10"
+    kude bat ping "${array[*]}"
+    kude bat -u root -p 22 shell "${array[*]}" "ps"
+    kude bat -s password script "${array[*]}" "run.sh"
+    kude bat copy "${array[*]}" "/home/demo/run.sh /root/"
+    kude bat template "${array[*]}" "/home/demo/run.sh foo bar"
+    '
+      exit 1
+      ;;
+    esac
+  done
+}
+
 function remotecp() {
   paths=$1
   ipaddr=$2
@@ -5569,7 +5790,7 @@ function remotecp() {
       if [ -n "$passwd" ] && type sshpass &>/dev/null; then
         sshpass $ipasswd scp $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $iuser$cip:$rpath
       else
-        scp -t -$iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r$lpath $iuser$cip:$rpath
+        scp $iport -o StrictHostKeyChecking=no -o ConnectTimeout=$timeout -r $lpath $iuser$cip:$rpath
       fi
     done
   fi

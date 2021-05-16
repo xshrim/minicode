@@ -1,0 +1,19 @@
+# https://pkg.go.dev/github.com/gokcehan/lf
+
+set previewer ~/.config/lf/preview
+#map i $LESSOPEN='| ~/.config/lf/pv.sh %s' less -R $f
+#set previewer ~/.config/lf/preview
+set cleaner ~/.config/lf/clean
+
+set icons
+set mouse
+set number
+
+map i $~/.config/lf/preview $f | less -R
+map <enter> open
+map <m-up> up
+map <m-down> down
+# map <m-1> open
+# map <m-2> updir
+
+

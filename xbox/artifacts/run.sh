@@ -3,8 +3,11 @@
 webhost=""
 webport="80"
 
-polarisport="--port 2555"
-polarispath=""
+kubexpport="2666"
+kubexpsport="4666"
+
+polarisport="2555"
+polarispath="/tmp/"
 
 if [ "$WEBHOST" ]; then
   webhost="$WEBHOST"
@@ -48,38 +51,51 @@ if [ "$HSUSER" ] && [ "$HSPASSWD" ]; then
 fi
 
 if [ "$POLARISPORT" ]; then
-  polarisport="--port $POLARISPORT"
+  polarisport="$POLARISPORT"
 fi
 
 if [ "$POLARISPATH" ]; then
-  polarispath="--audit-path=$POLARISPATH"
+  polarispath="$POLARISPATH"
 fi
-  
+
+if [ "$KUBEXPPORT" ]; then
+  kubexpport="$KUBEXPPORT"
+fi
+
+if [ "$KUBEXPSPORT" ]; then
+  kubexpsport="$KUBEXPSPORT"
+fi
+
+trap "echo SIGTERM/SIGINT detected; exit 1" SIGTERM SIGINT
 
 set -x
 
-if [ "$SSH" != "false" ]; then
+if [ "$SSH" == "true" ]; then
   /usr/sbin/sshd -D &
 fi
 
-if [ "$SAMBA" != "false" ]; then
+if [ "$SAMBA" == "true" ]; then
   smbd --no-process-group --configfile /root/smb.conf &
 fi
 
-if [ "$GOFS" != "false" ]; then
+if [ "$GOFS" == "true" ]; then
   WEBHOST=$webhost WEBPORT=$webport gofs -d $hsdir &
 fi
 
-if [ "$HS" != "false" ]; then
+if [ "$HS" == "true" ]; then
   gohttpserver -r $hsdir --port 2444 $hsauth --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
 fi
 
-if [ "$WEBSSH" != "false" ]; then
+if [ "$WEBSSH" == "true" ]; then
   /root/webssh &
 fi
 
-if [ "$POLARIS" != "false" ]; then
-  polaris dashboard $polarisport $polarispath &
+if [ "$POLARIS" == "true" ]; then
+  polaris dashboard --port $polarisport --audit-path $polarispath &
+fi
+
+if [ "$KUBEXP" == "true" ]; then
+  kubexp --http-listen-port $kubexpport --https-listen-port $kubexpsport &
 fi
 
 tail -f /dev/null
