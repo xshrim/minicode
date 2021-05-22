@@ -60,7 +60,6 @@ RUN set -ex \
     bridge-utils \
     busybox-extras \
     conntrack-tools \
-    ctop \
     curl \
     delta \
     dhcping \
@@ -156,13 +155,15 @@ RUN set -ex \
     util-linux \
     vim \
     zsh \
-    docker-cli \
-    docker-compose \
-    docker-compose-zsh-completion \
-    docker-zsh-completion \
-    ansible \
-    pgcli \
-    mycli \
+#     ctop \
+#     docker-cli \
+#     docker-compose \
+#     docker-compose-zsh-completion \
+#     docker-zsh-completion \
+#     ansible \
+#     pgcli \
+#     mycli \
+
     && mkdir -p /root/.config \
     && mkdir -p /root/.cache/lf \
     && mv /root/lf /root/.config/ \
@@ -171,6 +172,7 @@ RUN set -ex \
     && mkdir /share \
     #&& find / -name tcpdump 
     #&& mv /usr/sbin/tcpdump /usr/bin/tcpdump 
+    && echo 'alias lua="lua5.3"' >> "$ENV" \
     && echo 'alias iperf="iperf3"' >> "$ENV" \
     && echo 'export TERM="xterm-256color"' >> "$ENV" \
     && chgrp root /usr/bin/dumpcap \
@@ -194,7 +196,7 @@ RUN set -ex \
 #RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && apk add -U util-linux && apk add -U tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  # 解决go语言程序无法在alpine执行的问题和syslog不支持udp的问题和时区问题
 
 # 开放ssh webssh gofs gohttpserver smb端口
-EXPOSE 22 2222 2333 2444 2555 2666 4666 135/tcp 137/udp 138/udp 139/tcp 445/tcp
+EXPOSE 22 2222 2333 2444 2555 4555 135/tcp 137/udp 138/udp 139/tcp 445/tcp
 
 # CMD ["/usr/sbin/sshd", "-D"]
 CMD ["/root/run.sh"]

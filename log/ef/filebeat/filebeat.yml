@@ -1,0 +1,84 @@
+filebeat.inputs:
+- type: container
+    paths:
+    - /var/log/containers/*.log
+    # 排除忽略filebeat读取的日志文件列表
+    exclude_files: ['/var/log/containers/fluentd-es-*.log', '/var/log/containers/kube-*.log', '/var/log/containers/etcd-*.log','/var/log/containers/canal-*.log','/var/log/containers/nginx-ingress-controller*.log']
+    # 异常日志多行合并, 异常日志最多匹配300行，默认500行,这里与平台的filebeat配置保持一致
+    multiline.pattern: '^[1-9]\d{3}-(1[0-2]|0?[1-9])-([1-2][0-9]|3[0-1]|0?[1-9])\s([01][0-9]|2[0-3]):([0-5][0-9]|60):([0-5][0-9]|60)\.\d{3}'
+    multiline.negate: true
+    multiline.match: after
+    multiline.max_lines: 300
+    # 当文件重命名时关闭文件句柄,在滚存文件时会发生这种情况,默认filebeat收集器harvster保持打开状态并继续读取文件,启用这个选项后,filebeat不会继续读取该文件
+    close_renamed: true
+    # 日志文件没有新日志采集后，在一定时间内自动关闭文件句柄，默认5分钟，设置成10分钟，与平台的filebeat保持一致
+    close_inactive: 10m
+    # 默认filebeat会打开文件并保持打开状态，即使文件删除，filebeat也不会释放文件句柄，可以通过设置close_timeout参数设置时间，在一定延迟时间后释放文件句柄
+    close_timeout: 10m
+    # 在指定时间内处于不活动的文件清理注册表
+    clean_inactive: 24h
+    # 指定Filebeat忽略指定时间段以外修改的日志. 超过 2h 没更新内容的文件不再监听
+    ignore_older: 2h
+    # filebeat每5s检查一次指定用于收集的路径中的新文件,默认10s
+    scan_frequency: 5s
+    # max_bytes限制单个日志消息可以具有的最大字节数,多出的字节会被丢弃而不被发送(多行日志合并时限制),默认值为10MB（10485760）
+    max_bytes: 65536
+    # 每个harvester在获取文件时使用的缓冲区大小（以字节为单位）,默认值为16384,即实际读取文件时,每次读取 16384 字节
+    harvester_buffer_size: 65536
+    processors:
+    # 获取kubernetes元数据信息，包括pod名,containerId,pod的label
+    - add_kubernetes_metadata:
+        host: ${NODE_NAME}
+        matchers:
+        - logs_path:
+            logs_path: "/var/log/containers/"
+
+processors:
+    # 当kubernetes.lables没有collect字段时,在label下添加collect字段,值为platform,用于下面区分中心日志还是平台日志
+    - add_fields:
+        when.not.has_fields: ["kubernetes.labels.collect"]
+        target: kubernetes
+        fields:
+        labels.collect: platform
+    # 根据k8s不同环境,添加env字段,如果k8s为online,env就设置为online,目前k8s共分:online,offline,endpoint01,endpoint02
+    - add_fields:
+        target: ""
+        fields:
+        env: "offline"
+    # 如果labels标签下collect字段值为platform,就将平台日志丢弃
+    - drop_event:
+        when.equals:
+        kubernetes.labels.collect: "platform"
+
+# 控制注册表项何时写入磁盘的超时值(刷新),当未写入的更新超过此值时,它将触发对磁盘的写入,默认为0s 
+registry.flush: 5s
+# 如果队列已满，则不能将新事件插入内存队列。只有在来自output的信号之后，队列才会释放空间以接受更多事件
+queue.mem:
+    # 队列可以存储的事件数。默认值为4096个事件。最大可以攒够 4096 条数据一起发送出去。（up to the outputs bulk_max_size）
+    events: 25000
+    # 发出所需的最少事件数
+    flush.min_events: 2048
+    # 达到flush.min_events的最长等待时间,如果数量小于< min_flush_events，但是达到了时间则发送。如果设置为0，则event将立即发送
+    flush.timeout: 10s
+# Elasticsearch template setting
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"
+setup.template.overwrite: false
+    
+output.elasticsearch:
+    enable: true
+    # 指向log-adapter地址和端口,这里使用了变量,变量对应的值在下面填写
+    hosts: ['elasticsearch:9200']
+    headers:
+    X-My-Header: center
+    # 指定一个默认索引
+    index: "log.center-%{+yyyy.MM.dd}"
+    # 当labels标签collect字段值为center为中心日志,就指向pipeline
+    pipelines:
+    - pipeline: "logcenterpipeline"
+        when.equals:
+        kubernetes.labels.collect: "center"
+    # Number of workers per Elasticsearch host.This is best used with load balancing mode enabled. 示例：如果您有2个host和3个worker，则总共启动6个工作程序（每个主机3个）
+    worker: 5
+    # The maximum number of events to bulk in a single Elasticsearch bulk API index request. The default is 50.Filebeat will split batches larger than bulk_max_size into multiple batches
+    bulk_max_size: 25000

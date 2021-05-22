@@ -3,11 +3,14 @@
 webhost=""
 webport="80"
 
-kubexpport="2666"
-kubexpsport="4666"
+hsport="2444"
+hsdir="/root/"
 
-polarisport="2555"
-polarispath="/tmp/"
+kubexpport="2555"
+kubexpsport="4555"
+
+# polarisport="2666"
+# polarispath="/tmp/"
 
 if [ "$WEBHOST" ]; then
   webhost="$WEBHOST"
@@ -41,7 +44,10 @@ if [ "$SSL" == "true" ]; then
   sed -i "s#ws://#wss://#g" /root/static/index.html
 fi
 
-hsdir="/root/"
+if [ "$HSPORT" ]; then
+  hsport=$HSPORT
+fi
+
 if [ "$HSDIR" ]; then
   hsdir=$HSDIR
 fi
@@ -50,13 +56,13 @@ if [ "$HSUSER" ] && [ "$HSPASSWD" ]; then
   hsauth="--auth-type http --auth-http $HSUSER:$HSPASSWD"
 fi
 
-if [ "$POLARISPORT" ]; then
-  polarisport="$POLARISPORT"
-fi
-
-if [ "$POLARISPATH" ]; then
-  polarispath="$POLARISPATH"
-fi
+# if [ "$POLARISPORT" ]; then
+#   polarisport="$POLARISPORT"
+# fi
+# 
+# if [ "$POLARISPATH" ]; then
+#   polarispath="$POLARISPATH"
+# fi
 
 if [ "$KUBEXPPORT" ]; then
   kubexpport="$KUBEXPPORT"
@@ -83,16 +89,16 @@ if [ "$GOFS" == "true" ]; then
 fi
 
 if [ "$HS" == "true" ]; then
-  gohttpserver -r $hsdir --port 2444 $hsauth --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
+  gohttpserver -r $hsdir --port $hsport $hsauth --upload --delete --xheaders --cors --theme green --google-tracker-id "" &
 fi
 
 if [ "$WEBSSH" == "true" ]; then
   /root/webssh &
 fi
 
-if [ "$POLARIS" == "true" ]; then
-  polaris dashboard --port $polarisport --audit-path $polarispath &
-fi
+# if [ "$POLARIS" == "true" ]; then
+#   polaris dashboard --port $polarisport --audit-path $polarispath &
+# fi
 
 if [ "$KUBEXP" == "true" ]; then
   kubexp --http-listen-port $kubexpport --https-listen-port $kubexpsport &

@@ -1,0 +1,329 @@
+#!/bin/bash
+
+kind="logical"
+pause="false"
+
+##### docker-compose
+function run() {
+  clean
+
+  mkdir -p data/{ca_download,chart_storage,database,job_logs,psc,redis,registry,secret}
+
+  chown 10000:10000 data/ca_download
+  chown 10000:10000 data/chart_storage
+  chown 999:999 data/database
+  chown 10000:10000 data/job_logs
+  chown 10000:10000 data/psc
+  chown 999:999 data/redis
+  chown 10000:10000 data/registry
+  chown root:root data/secret
+
+  up
+}
+
+function up() {
+  docker-compose up -d
+}
+
+function down() {
+  docker-compose down
+}
+
+function clean() {
+  down
+
+  docker rm -f $(docker ps -a|grep goharbor|awk '{print $1}')
+  docker volume prune -f
+
+  rm -rf data
+}
+
+##### backup
+create_dir(){
+  rm -rf harbor
+  mkdir -p harbor/secret
+  chmod 777 harbor/secret
+}
+
+create_tarball() {
+  if [ -n "$1" ]; then
+    backup_filename=$1
+  else
+    timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+    backup_filename=harbor-$timestamp.tgz
+  fi
+  tar zcvf $backup_filename harbor
+}
+
+clean_harbor() {
+  rm -rf harbor
+}
+
+export_database() {
+  docker exec harbor-db sh -c 'rm -rf /home/postgres/database'
+  docker exec harbor-db sh -c 'mkdir /home/postgres/database'
+  docker exec harbor-db sh -c 'pg_dump -U postgres registry > /home/postgres/database/registry.bak'
+  docker exec harbor-db sh -c 'pg_dump -U postgres postgres > /home/postgres/database/postgres.bak'
+  docker exec harbor-db sh -c 'pg_dump -U postgres notarysigner > /home/postgres/database/notarysigner.bak'
+  docker exec harbor-db sh -c 'pg_dump -U postgres notaryserver > /home/postgres/database/notaryserver.bak'
+  docker cp harbor-db:/home/postgres/database harbor/
+  #chmod 755 harbor/database
+}
+
+save_database() {
+  cp -rf data/database harbor/
+  #chmod 755 harbor/database
+}
+
+backup_database() {
+  if [ "$kind" == "physical" ]; then
+    save_database
+  else
+    export_database
+  fi
+  if [ "$pause" == "true" ]; then
+    read -p "backup paused, continue?" tmpvar
+  fi
+}
+
+backup_registry() {
+  cp -rf data/registry harbor/
+}
+
+backup_chart_museum() {
+  if [ -d data/chart_storage ]; then
+    cp -rf data/chart_storage harbor/
+  fi
+}
+
+backup_redis() {
+  if [ -d data/redis ]; then
+    cp -rf data/redis harbor/
+  fi
+}
+
+backup_secret() {
+  if [ -f data/secretkey ]; then
+    cp data/secretkey harbor/secret/
+  fi
+  if [ -f data/defaultalias ]; then
+    cp data/defaultalias harbor/secret/
+  fi
+  # location changed after 1.8.0
+  if [ -d data/secret/keys/ ]; then
+    cp -r data/secret/keys/ harbor/secret/
+  fi
+}
+
+function backup() {
+  create_dir
+  backup_database
+  backup_redis
+  backup_registry
+  backup_chart_museum
+  backup_secret
+  create_tarball $1
+  clean_harbor
+}
+
+##### restore
+extract_backup(){
+  rm -rf data
+  mkdir -p data/secret
+  if [ -n "$1" ]; then
+    tar xvf $1
+  else
+    tar xvf harbor.tgz
+  fi
+}
+
+wait_for_db_ready() {
+  chown -R 999:999 data/database
+
+  TIMEOUT=12
+  while [ $TIMEOUT -gt 0 ]; do
+    docker exec harbor-db pg_isready | grep "accepting connections"
+    if [ $? -eq 0 ]; then
+      break
+    fi
+    TIMEOUT=$((TIMEOUT - 1))
+    sleep 5
+  done
+  if [ $TIMEOUT -eq 0 ]; then
+    echo "Harbor database cannot reach within one minute"
+    exit 1
+  fi
+}
+
+clean_database(){
+  docker exec harbor-db psql -U postgres -d template1 -c "drop database registry;" 
+  docker exec harbor-db psql -U postgres -d template1 -c "drop database postgres;"
+  docker exec harbor-db psql -U postgres -d template1 -c "drop database notarysigner; "
+  docker exec harbor-db psql -U postgres -d template1 -c "drop database notaryserver;"
+
+  docker exec harbor-db psql -U postgres -d template1 -c "create database registry;"
+  docker exec harbor-db psql -U postgres -d template1 -c "create database postgres;"
+  docker exec harbor-db psql -U postgres -d template1 -c "create database notarysigner;"
+  docker exec harbor-db psql -U postgres -d template1 -c "create database notaryserver;"
+}
+
+import_database() {
+  docker exec harbor-db sh -c 'rm -rf /home/postgres/database'
+  docker cp harbor/database harbor-db:/home/postgres/
+  docker exec harbor-db sh -c 'psql -U postgres registry < /home/postgres/database/registry.bak'
+  docker exec harbor-db sh -c 'psql -U postgres postgres < /home/postgres/database/postgres.bak'
+  docker exec harbor-db sh -c 'psql -U postgres notarysigner < /home/postgres/database/notarysigner.bak'
+  docker exec harbor-db sh -c 'psql -U postgres notaryserver < /home/postgres/database/notaryserver.bak'
+}
+
+load_database() {
+  cp -r harbor/database/ data/
+  chown -R 999:999 data/database
+}
+
+restore_database() {
+  if [ -d ./harbor/database ]; then
+    if [ "$kind" == "physical" ]; then
+      load_database
+      up
+    else
+      up
+      wait_for_db_ready
+      clean_database
+      import_database
+    fi
+  fi
+}
+
+restore_registry() {
+  if [ -d ./harbor/registry ]; then
+    cp -r harbor/registry/ data/
+    chown -R 10000:10000 data/registry
+  fi
+}
+
+restore_redis() {
+  if [ -d ./harbor/redis ]; then
+    cp -r harbor/redis/ data/
+    chown -R 999:999 data/redis
+  fi
+}
+
+restore_chartmuseum() {
+  if [ -d ./harbor/chart_storage ]; then
+    cp -r harbor/chart_storage/ data/
+    chown -R 10000:10000 data/chart_storage
+  fi
+}
+
+restore_secret() {
+  if [ -f harbor/secret/secretkey ]; then
+    cp -f harbor/secret/secretkey data/secretkey 
+  fi
+  if [ -f harbor/secret/defaultalias ]; then
+    cp -f harbor/secret/defaultalias data/secretkey 
+  fi
+  if [ -d harbor/secret/keys ]; then
+    cp -r harbor/secret/keys data/secret/
+  fi
+}
+
+restore() {
+  extract_backup $1
+  restore_redis
+  restore_registry
+  restore_chartmuseum
+  restore_secret
+  restore_database
+  clean_harbor
+}
+
+##### tools
+function push() {
+  img="test.ksc.com/library/alpine"
+  if [ -n "$1" ]; then
+    img="$1"
+  else
+    docker tag alpine test.ksc.com/library/alpine
+  fi
+  docker push $img
+}
+
+function pull() {
+  img="test.ksc.com/library/alpine"
+  if [ -n "$1" ]; then
+    img="$1"
+  fi
+  docker pull $img
+}
+
+function readonly() {
+  ro="true"
+  if [ -n "$1" ]; then
+    ro="$1"
+  fi
+  curl -XPUT -u admin:Harbor12345 http://test.ksc.com/api/configurations -H "Content-Type: application/json" -d "{\"read_only\": $ro}"
+}
+
+function query() {
+  id=1
+  if [ -n "$1" ]; then
+    id="$1"
+  fi
+  curl http://test.ksc.com/api/repositories?project_id=$id
+}
+
+function usage() {
+  echo "===== USAGE ====="
+  echo "./hbr [options] [action]"
+  echo "==== OPTIONS ===="
+  echo "-p: physical backup/restore for metadata"
+  echo "-i: pause after harbor database backup finished"
+  echo "-h: print help"
+  echo "==== ACTION ====="
+  echo "run: run a new harbor cluster"
+  echo "up: make the harbor cluster up"
+  echo "down: make the harbor cluster down"
+  echo "clean: clean the harbor cluster"
+  echo "backup: backup harbor data"
+  echo "restore: restore harbor from backup"
+  echo "push: push image to harbor"
+  echo "pull: pull image from harbor"
+  echo "readonly: set harbor to readonly mode"
+  echo "query: query repositories using harbor api"
+}
+
+while getopts 'pih' OPT; do
+  case $OPT in
+  p)
+    kind="physical"
+    ;;
+  i)
+    pause="true"
+    ;;
+  h)
+    usage
+    exit 0
+    ;;
+  ?)
+    usage
+    exit 1
+    ;;
+  esac
+done
+
+shift $(($OPTIND - 1))
+
+case $1 in
+"run") run ;;
+"up") up ;;
+"down") down ;;
+"clean") clean ;;
+"backup") backup $2;;
+"restore") restore $2;;
+"push") push $2;;
+"pull") pull $2;;
+"query") query $2;;
+"readonly") readonly $2;;
+*) usage && exit 1 ;;
+esac

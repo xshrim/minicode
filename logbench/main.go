@@ -11,6 +11,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v5"
 	"github.com/xshrim/gol"
+	"github.com/xshrim/gol/tk"
 )
 
 var operation = []string{"QUERY", "CREATE", "UPDATE", "DELETE"}
@@ -97,20 +98,20 @@ func RandOperation() string {
 }
 
 func RandPerson(s int) string {
-	var m gol.F
+	var m tk.M
 	switch {
 	case s <= 50:
-		m = gol.F{
+		m = tk.M{
 			"Name": RandCnName(),
 		}
 	case s <= 100:
-		m = gol.F{
+		m = tk.M{
 			"Name":  RandCnName(),
 			"Age":   gofakeit.Number(10, 130),
 			"Phone": gofakeit.Phone(),
 		}
 	case s <= 200:
-		m = gol.F{
+		m = tk.M{
 			"Name":     RandCnName(),
 			"Age":      gofakeit.Number(10, 130),
 			"Email":    gofakeit.Email(),
@@ -122,7 +123,7 @@ func RandPerson(s int) string {
 			"Motto":    gofakeit.Phrase(),
 		}
 	case s <= 300:
-		m = gol.F{
+		m = tk.M{
 			"Name":         RandCnName(),
 			"Age":          gofakeit.Number(10, 130),
 			"Email":        gofakeit.Email(),
@@ -136,7 +137,7 @@ func RandPerson(s int) string {
 			"HackerPhrase": gofakeit.HackerPhrase(),
 		}
 	case s <= 400:
-		m = gol.F{
+		m = tk.M{
 			"Name":         RandCnName(),
 			"Age":          gofakeit.Number(10, 130),
 			"Email":        gofakeit.Email(),
@@ -152,7 +153,7 @@ func RandPerson(s int) string {
 			"HackerPhrase": gofakeit.HackerPhrase(),
 		}
 	case s <= 500:
-		m = gol.F{
+		m = tk.M{
 			"Name":         RandCnName(),
 			"Age":          gofakeit.Number(10, 130),
 			"Birthday":     gofakeit.Date(),
@@ -172,7 +173,7 @@ func RandPerson(s int) string {
 			"HackerPhrase": gofakeit.HackerPhrase(),
 		}
 	case s <= 700:
-		m = gol.F{
+		m = tk.M{
 			"Name":         RandCnName(),
 			"Age":          gofakeit.Number(10, 130),
 			"Birthday":     gofakeit.Date(),
@@ -194,7 +195,7 @@ func RandPerson(s int) string {
 			"Question":     gofakeit.Question(),
 		}
 	case s <= 1000:
-		m = gol.F{
+		m = tk.M{
 			"Name":         RandCnName(),
 			"Age":          gofakeit.Number(10, 130),
 			"Birthday":     gofakeit.Date(),
@@ -217,7 +218,7 @@ func RandPerson(s int) string {
 			"Sentence":     gofakeit.Sentence(50),
 		}
 	default:
-		m = gol.F{
+		m = tk.M{
 			"Name":         RandCnName(),
 			"Age":          gofakeit.Number(10, 130),
 			"Birthday":     gofakeit.Date(),
@@ -240,7 +241,7 @@ func RandPerson(s int) string {
 			"Sentence":     gofakeit.Sentence((s - 1000) / 5),
 		}
 	}
-	return gol.Jsonify(m)
+	return tk.Jsonify(m)
 }
 
 func LogBench(duration time.Duration, count int64, sz int, cmd string) int64 {

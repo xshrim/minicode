@@ -84,12 +84,12 @@ metadata:
   name: xos
 spec:
   ports:
-  - name: kubexp
+  - name: polaris
     port: 2666
     protocol: TCP
     targetPort: 2666
     nodePort: 36666
-  - name: polaris
+  - name: kubexp
     port: 2555
     protocol: TCP
     targetPort: 2555
@@ -209,8 +209,8 @@ spec:
           value: "600"
         - name: SSL                  # enable ssl for webssh
           value: "true"
-        - name: POLARISPORT          # default port for polaris server
-          value: "2555"
+        - name: HSPORT          # default port for polaris server
+          value: "2444"
         - name: SSH         # run ssh daemon
           value: "true"
         - name: SAMBA       # not run samba daemon
@@ -222,15 +222,15 @@ spec:
         - name: WEBSSH      # run webssh server
           value: "true"
         - name: POLARIS     # run polaris
-          value: "true"
+          value: "false"
         - name: KUBEXP      # run kubexp
           value: "true"
         ports:
         - containerPort: 2666
-          name: kubexp
+          name: polaris
           protocol: TCP
         - containerPort: 2555
-          name: polaris
+          name: kubexp
           protocol: TCP
         - containerPort: 2444
           name: goserver

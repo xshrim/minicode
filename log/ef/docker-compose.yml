@@ -1,0 +1,77 @@
+version: "3"
+services:
+  filebeat:
+    container_name: fb01
+    image: docker.elastic.co/beats/filebeat:7.8.1
+    volumes:
+      - ./filebeat/filebeat.yml:/etc/filebeat.yml
+      - /var/log/containers:/var/log/containers
+    links:
+      - "elasticsearch"
+    deploy:
+      resources:
+         limits:
+            cpus: '1'
+            memory: 120M
+         reservations:
+            cpus: '0.5'
+            memory: 100M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "5"
+    networks:
+      - elastic
+  # echo '{"key 1": 123456789, "key 2": "abcdefg"}' | nc 127.0.0.1 5170
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+    container_name: es01
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic
+    environment:
+      - node.name=es01
+      #- discovery.type=single-node
+      - cluster.name=es-docker-cluster
+      - bootstrap.memory_lock=false
+      - cluster.initial_master_nodes=es01
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+
+  kibana:
+    image: kibana:7.8.1
+    container_name: kb01
+    links:
+      - "elasticsearch"
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_URL: http://es01:9200
+      ELASTICSEARCH_HOSTS: http://es01:9200
+    networks:
+      - elastic
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+# https://blog.csdn.net/dwyane__wade/article/details/80190738
+
+  #elastalert:
+    #container_name: ea01
+    #image: praecoapp/elastalert-server
+    #ports:
+      #- 3030:3030
+      #- 3333:3333
+    #links:
+      #- elasticsearch
+    #networks:
+      #- elastic
+    #restart: always
+    #volumes:
+      #- ./elastalert/config/config.yaml:/opt/elastalert/config.yaml
+      #- ./elastalert/config/config.json:/opt/elastalert-server/config/config.json
+      #- ./elastalert/rules:/opt/elastalert/rules
+
+networks:
+  elastic:
+    driver: bridge

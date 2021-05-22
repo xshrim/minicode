@@ -1,0 +1,4 @@
+SCANNER_LOG_LEVEL=info
+SCANNER_CLAIR_URL=http://clair:6060
+SCANNER_CLAIR_DATABASE_URL=postgresql://postgres:root123@postgresql:5432/postgres?sslmode=disable
+SCANNER_STORE_REDIS_URL=redis://redis:6379/4

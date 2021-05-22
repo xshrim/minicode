@@ -2767,6 +2767,28 @@ EOF
       skind=$(aliasKind $1)
     fi
     printSample "$skind"
+  elif [ "$1" == "ans" ]; then
+    shift
+    local text
+    local host=$1
+    local offset
+    host=$(echo $host|sed 's/\./\\./g')
+    #IFS=$'\r\n' read -d '' -r -a text < $2
+    if [ $# == 1 ]; then
+      text=$(cat $2)
+    else
+      if [ -f $2 ]; then
+        text=$(cat $2)
+      else
+        offset=$2
+        text=$(cat $3)
+      fi
+    fi
+    if [ -n "$offset" ] && type jq >/dev/null 2>&1; then
+      echo "$text" | \grep -Pzo "\[?$host\]?.* => {\n(.*\n)*?}\n?"|sed "s/^\S.* => {/{/g" | jq -rsM . | jq -rM .[$offset]
+    else
+      echo "$text" | \grep -Pzo "\[?$host\]?.* => {\n(.*\n)*?}\n?"|sed "s/^\S.* => {/{/g"
+    fi
   elif [ "$1" == "id" ] || [ "$1" == "uuid" ] || [ "$1" == "guid" ]; then
     require cat tr fold head
     if [ "$1" == "uuid" ]; then
@@ -3005,13 +3027,6 @@ EOF
         echo "error: need arguments"
         exit 1
       fi
-    elif [ "$subcmd" == "bat" ]; then
-      local text
-      local host=$1
-      host=$(echo $host|sed 's/\./\\./g')
-      shift
-      read text
-      cat $text | \grep -Pzo "\[?$host\]?.* => {\n(.*\n)*?}"|sed "s/^\S.* => {/{/g"
     elif [ "$subcmd" == "bat" ]; then
       if [ ${#mandatory[@]} -gt 0 ]; then
         mode=${mandatory[0]}

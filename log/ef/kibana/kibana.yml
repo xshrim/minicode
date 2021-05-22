@@ -1,0 +1,47 @@
+# Default Kibana configuration for docker target
+server.name: kibana
+server.host: "0"
+elasticsearch.hosts: [ "http://es01:9200" ]
+xpack.reporting.capture.browser.chromium.disableSandbox: false
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+sentinl:
+  es:
+    hosts:
+    - host: 'es01'
+      port: 9200
+    # protocol: 'http'
+    # results: 50
+    # timefield: '@timestamp'
+    # default_type: 'doc'
+    # alarm_index: 'watcher_alarms'
+    # alarm_type: 'sentinl-alarm'
+  settings:
+    email:
+      active: true
+      user: "xshrim@outlook.com"
+      password: "[0null0]"
+      host: "smtp.office365.com"
+      ssl: true
+      port: 587
+      # user: 'admin'
+      # password: 'password'
+      # port: 25
+      # domain: 'beast.com'
+      # ssl: false
+      # tls: false
+      # authentication: ['PLAIN', 'LOGIN', 'CRAM-MD5', 'XOAUTH2']
+      # timeout: 10000  # mail server connection timeout
+      # cert:
+      #   key: '/full/sys/path/to/key/file'
+      #   cert: '/full/sys/path/to/cert/file'
+      #   ca: '/full/sys/path/to/ca/file'
+    slack:
+      active: false
+    webhook:
+      active: false
+      host: 'es01'
+      port: 9200
+      # use_https: false
+      # path: ':/{{payload.watcher_id}}'
+      # body: '{{payload.watcher_id}}{payload.hits.total}}'
+      # method: POST
